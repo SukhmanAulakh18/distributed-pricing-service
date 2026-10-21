@@ -1,0 +1,20 @@
+[build-system]
+requires = ["scikit-build-core>=0.10", "pybind11>=2.13"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "pricer-core"
+version = "0.2.0"
+description = "C++ Monte Carlo and closed-form option analytics with pybind11 bindings"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.26"]
+
+[tool.scikit-build]
+cmake.source-dir = "core"
+wheel.packages = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = ["integration: needs the docker compose stack running"]
+addopts = "-m 'not integration'"

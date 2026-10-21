@@ -1,0 +1,22 @@
+.venv/
+__pycache__/
+*.so
+*.egg-info/
+build/
+.pytest_cache/
+# Benchmark results are committed (they are the evidence behind the docs),
+# except bulky raw event dumps and screenshot frames.
+bench/results/frames/
+bench/results/chaos.json
+bench/results/chaos-run*.json
+!bench/results/chaos-run3.json
+bench/results/*-kill-*.json
+bench/results/hpa-load.json
+bench/results/chaos.log
+
+
+# Local Rancher admin password (generated, never committed)
+deploy/rancher/.bootstrap-password
+deploy/rancher/.api-token
+deploy/rancher/.cluster-id
+bench/results/tracing-load.json
