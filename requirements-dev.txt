@@ -1,0 +1,10 @@
+-r requirements.txt
+pybind11==3.1.0
+scikit-build-core==0.12.2
+cmake==4.4.4
+ninja==1.13.2
+pytest==9.1.1
+httpx==0.28.1
+fakeredis==2.40.0
+matplotlib==3.11.2
+websocket-client==1.9.0

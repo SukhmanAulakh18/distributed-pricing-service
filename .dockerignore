@@ -1,0 +1,7 @@
+.venv
+.git
+build
+**/__pycache__
+*.so
+bench/results
+docs
