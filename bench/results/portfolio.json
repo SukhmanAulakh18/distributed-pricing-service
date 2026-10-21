@@ -1,0 +1,118 @@
+{
+ "scaling": [
+  {
+   "book": 1000,
+   "wall_s": 0.4833723751362413,
+   "trades_per_s": 2068.798407683402,
+   "workers": 1,
+   "tasks": 10
+  },
+  {
+   "book": 10000,
+   "wall_s": 4.357206208165735,
+   "trades_per_s": 2295.0485981726642,
+   "workers": 1,
+   "tasks": 100
+  },
+  {
+   "book": 1000,
+   "wall_s": 0.2945982499513775,
+   "trades_per_s": 3394.4532941558437,
+   "workers": 2,
+   "tasks": 10
+  },
+  {
+   "book": 10000,
+   "wall_s": 2.5145055828616023,
+   "trades_per_s": 3976.924954216893,
+   "workers": 2,
+   "tasks": 100
+  },
+  {
+   "book": 1000,
+   "wall_s": 0.1674654169473797,
+   "trades_per_s": 5971.382141031637,
+   "workers": 4,
+   "tasks": 10
+  },
+  {
+   "book": 10000,
+   "wall_s": 1.6142382498364896,
+   "trades_per_s": 6194.872411809673,
+   "workers": 4,
+   "tasks": 100
+  },
+  {
+   "book": 50000,
+   "wall_s": 8.00412179203704,
+   "trades_per_s": 6246.781508215288,
+   "workers": 4,
+   "tasks": 500
+  },
+  {
+   "book": 1000,
+   "wall_s": 0.17521408293396235,
+   "trades_per_s": 5707.30379233784,
+   "workers": 8,
+   "tasks": 10
+  },
+  {
+   "book": 10000,
+   "wall_s": 1.3634184999391437,
+   "trades_per_s": 7334.50514309902,
+   "workers": 8,
+   "tasks": 100
+  },
+  {
+   "book": 50000,
+   "wall_s": 6.924902457976714,
+   "trades_per_s": 7220.318308224773,
+   "workers": 8,
+   "tasks": 500
+  }
+ ],
+ "task_size": [
+  {
+   "task_size": 1,
+   "wall_s": 4.029267834033817,
+   "trades_per_s": 2481.840476210962,
+   "workers": 4,
+   "tasks": 10000
+  },
+  {
+   "task_size": 10,
+   "wall_s": 1.8940082911867648,
+   "trades_per_s": 5279.807932484873,
+   "workers": 4,
+   "tasks": 1000
+  },
+  {
+   "task_size": 50,
+   "wall_s": 1.5538688751403242,
+   "trades_per_s": 6435.549459793984,
+   "workers": 4,
+   "tasks": 200
+  },
+  {
+   "task_size": 100,
+   "wall_s": 1.5741612080018967,
+   "trades_per_s": 6352.589524609827,
+   "workers": 4,
+   "tasks": 100
+  },
+  {
+   "task_size": 500,
+   "wall_s": 1.5980543750338256,
+   "trades_per_s": 6257.609350613199,
+   "workers": 4,
+   "tasks": 20
+  },
+  {
+   "task_size": 2500,
+   "wall_s": 1.6196277500130236,
+   "trades_per_s": 6174.258251576382,
+   "workers": 4,
+   "tasks": 4
+  }
+ ]
+}

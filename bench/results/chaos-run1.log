@@ -1,0 +1,32 @@
+[  46.0s] api pod: SIGKILL pricer-api-89bd8c58f-4x2xr on pricing-worker3
+[  90.9s] intraday worker: SIGKILL pricer-worker-intraday-8d8d8f987-j6ns7 on pricing-worker2
+[ 135.8s] cassandra node: SIGKILL cassandra-0 on pricing-worker2
+[ 180.7s] batch worker: SIGKILL pricer-worker-batch-7b8756ccf5-tcsxx on pricing-worker3
+[ 225.8s] redis: SIGKILL redis-0 on pricing-worker
+[ 271.7s] api pod: SIGKILL pricer-api-89bd8c58f-4x2xr on pricing-worker3
+[ 318.0s] whole k8s node: stopped node pricing-worker2 for 60s
+[ 423.5s] intraday worker: SIGKILL pricer-worker-intraday-8d8d8f987-6lsh9 on pricing-worker
+[ 466.7s] cassandra node: SIGKILL cassandra-0 on pricing-worker2
+[ 511.1s] api pod: SIGKILL pricer-api-89bd8c58f-4x2xr on pricing-worker3
+[ 557.7s] redis: SIGKILL redis-0 on pricing-worker
+{
+  "minutes": 10.0,
+  "faults": 11,
+  "price_requests": 150101,
+  "price_errors": 1,
+  "availability_pct": 99.999,
+  "p50_ms": 18.7,
+  "p99_ms": 226.5,
+  "books": 38,
+  "books_complete": 35,
+  "books_partial": 0,
+  "trades_priced": 70000,
+  "trades_failed": 0,
+  "exposure_runs": 4,
+  "exposure_complete": 4,
+  "exposure_identical": true,
+  "alerts_fired": [
+    "CassandraReplicaDown -> database",
+    "PodRestarting -> core"
+  ]
+}

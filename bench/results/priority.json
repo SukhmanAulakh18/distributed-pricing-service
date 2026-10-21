@@ -1,0 +1,14 @@
+[
+ {
+  "mode": "fifo",
+  "intraday_idle_s": 0.21663224999792874,
+  "intraday_during_batch_s": 5.172539833001792,
+  "batch_s": 6.0021453748922795
+ },
+ {
+  "mode": "priority",
+  "intraday_idle_s": 0.2994499169290066,
+  "intraday_during_batch_s": 0.3162377090193331,
+  "batch_s": 6.586713541997597
+ }
+]

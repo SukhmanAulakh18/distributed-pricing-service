@@ -1,0 +1,8 @@
+n=300 paths=200,000 unique=True cached=0/300
+p50=4.15 ms  p95=6.27 ms  p99=19.14 ms
+n=300 paths=200,000 unique=False cached=300/300
+p50=0.90 ms  p95=1.13 ms  p99=1.32 ms
+n=300 paths=2,000,000 unique=True cached=0/300
+p50=23.29 ms  p95=25.62 ms  p99=36.70 ms
+n=300 paths=2,000,000 unique=False cached=300/300
+p50=0.85 ms  p95=1.08 ms  p99=1.20 ms

@@ -1,0 +1,23 @@
+{
+ "overhead": {
+  "off_rps": 311.6,
+  "on_rps": 278.3,
+  "cost_pct": 10.686777920410785
+ },
+ "book_trace": {
+  "trace_id": "9cf0795d8ee67496149e8ce6498ff5d5",
+  "trades": 2000,
+  "spans": 206,
+  "pods": 3,
+  "top_operations": {
+   "MGET": 40,
+   "SET (pipeline)": 40,
+   "pricer.bs_batch": 40,
+   "pricer.mc_batch": 40,
+   "task.portfolio": 40,
+   "book.submit": 1,
+   "HSET EXPIRE XADD (pipeline)": 1,
+   "HGETALL": 1
+  }
+ }
+}
