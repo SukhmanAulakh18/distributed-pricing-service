@@ -47,6 +47,7 @@ def main():
     ap.add_argument("--width", type=int, default=1600)
     ap.add_argument("--height", type=int, default=1000)
     ap.add_argument("--wait", type=float, default=8.0)
+    ap.add_argument("--pdf", action="store_true", help="print each page to PDF (CSS page size) instead of a screenshot")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
 
@@ -76,11 +77,15 @@ def main():
             name, url = page.split("=", 1)
             tab.call("Page.navigate", url=url)
             time.sleep(a.wait)
-            png = base64.b64decode(tab.call("Page.captureScreenshot", format="png")["data"])
-            path = os.path.join(a.out, f"{name}.png")
+            if a.pdf:
+                data = base64.b64decode(tab.call("Page.printToPDF", printBackground=True, preferCSSPageSize=True)["data"])
+                path = os.path.join(a.out, f"{name}.pdf")
+            else:
+                data = base64.b64decode(tab.call("Page.captureScreenshot", format="png")["data"])
+                path = os.path.join(a.out, f"{name}.png")
             with open(path, "wb") as f:
-                f.write(png)
-            print(path, len(png))
+                f.write(data)
+            print(path, len(data))
     finally:
         chrome.terminate()
 

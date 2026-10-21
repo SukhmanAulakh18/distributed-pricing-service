@@ -107,23 +107,55 @@ def numbers():
         "gil_rel": f"{gil[('released', 8)]:.0f}", "gil_held": f"{gil[('held', 8)]:.0f}",
         "batch8": f"{batch['bs_batch, 8 threads'] / 1e6:.0f}", "percall": f"{batch['per-call C++ binding'] / 1e6:.1f}",
         "cv": f"{vr['variance_reduction']:,.0f}", "cv_paths": fmt(vr["paths_to_match_plain"]),
+        "bs": f"{core['black_scholes']:.4f}",
+        "mc10m": f"{core['convergence'][-2]['price']:.4f}", "mc10m_se": f"{core['convergence'][-2]['std_err']:.4f}",
+        "mc10m_z": f"{core['convergence'][-2]['abs_err'] / core['convergence'][-2]['std_err']:.2f}",
+        "exp_scen": fmt(exp["profile"]["n_scenarios"]), "exp_epe": fmt(exp["profile"]["epe"]),
+        "exp_pfe": fmt(exp["profile"]["peak_pfe"]), "exp_cva": f"{exp['profile']['cva']:.2f}",
         "repo": REPO,
         "chart_data": chart_data(keda), "findings": findings(),
     }
 
 
+SITE = "https://sukhmanaulakh18.github.io/distributed-pricing-service"
+DESC = ("A distributed C++/pybind11 pricing and CVA service on Kubernetes with Redis Streams, Cassandra, "
+        "KEDA and Rancher: system design, chaos testing and SRE, with every number measured.")
+META = (f'<meta name="description" content="{DESC}">\n'
+        f'<meta property="og:type" content="website">\n<meta property="og:title" content="Distributed Pricing Service">\n'
+        f'<meta property="og:description" content="{DESC}">\n<meta property="og:url" content="{SITE}/">\n'
+        f'<meta property="og:image" content="{SITE}/img/og.png">\n<meta property="og:image:width" content="1200">\n'
+        f'<meta property="og:image:height" content="630">\n<meta name="twitter:card" content="summary_large_image">\n'
+        f'<meta name="author" content="Sukhmanpreet Singh Aulakh">\n')
+
 PAGE = Template(open(os.path.join(ROOT, "docs", "report.template.html")).read())
 
 
 def main():
-    body = PAGE.substitute(numbers())
+    n = numbers()
+    body = PAGE.substitute(n)
     with open(os.path.join(ROOT, "docs", "report.html"), "w") as f:
         f.write(body)
     with open(os.path.join(ROOT, "docs", "index.html"), "w") as f:
         f.write('<!doctype html>\n<html lang="en"><head><meta charset="utf-8">'
                 '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
+                + META +
                 "</head><body>\n" + body + "\n</body></html>\n")
-    print("wrote docs/report.html and docs/index.html")
+    # The shareable brief (docs/brief.html, printed to PDF by `make share`) and the
+    # link-preview card reuse the same numbers and the site's architecture diagram.
+    share = os.path.join(ROOT, "scripts", "share")
+    arch = re.search(r'<svg class="d".*?</svg>', PAGE.template, re.S).group(0)
+    extra = {**n, "site": SITE, "site_short": SITE.removeprefix("https://"), "repo_short": REPO.removeprefix("https://"),
+             "arch_svg": arch, "base": "."}
+    with open(os.path.join(share, "brief.template.html")) as f:
+        brief = Template(f.read()).substitute(extra)
+    with open(os.path.join(ROOT, "docs", "brief.html"), "w") as f:
+        f.write(brief)
+    os.makedirs(os.path.join(ROOT, "build"), exist_ok=True)
+    with open(os.path.join(share, "og.template.html")) as f:
+        og = Template(f.read()).substitute(extra)
+    with open(os.path.join(ROOT, "build", "og.html"), "w") as f:
+        f.write(og)
+    print("wrote docs/report.html, docs/index.html, docs/brief.html and build/og.html")
 
 
 if __name__ == "__main__":

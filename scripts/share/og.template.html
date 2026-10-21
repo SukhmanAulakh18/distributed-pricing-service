@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Distributed Pricing Service card</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,600&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+:root { --bg: #0e1113; --ink: #e7eae7; --muted: #9aa3aa; --line: #2a3035; --accent: #5cc0b4; --surface: #161a1d; color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 1200px; height: 630px; background: var(--bg); color: var(--ink); font-family: "IBM Plex Sans", sans-serif; overflow: hidden; }
+.card { padding: 56px 64px; height: 100%; display: grid; grid-template-rows: auto auto 1fr auto; gap: 18px; }
+.eyebrow { font: 500 20px "IBM Plex Mono", monospace; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+h1 { font: 600 76px/1.02 "Newsreader", Georgia, serif; margin: 0; }
+p { margin: 0; font-size: 27px; line-height: 1.4; color: var(--muted); max-width: 30em; }
+.row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.s { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; }
+.s b { display: block; font: 500 31px "IBM Plex Mono", monospace; }
+.s span { font-size: 17px; color: var(--muted); }
+.foot { display: flex; justify-content: space-between; font-size: 20px; color: var(--muted); }
+.foot b { color: var(--ink); font-weight: 500; }
+</style></head><body><div class="card">
+  <span class="eyebrow">Engineering case study · C++ · Kubernetes · SRE</span>
+  <h1>Distributed Pricing Service</h1>
+  <p>Monte Carlo pricing and CVA on Kubernetes, Redis Streams and Cassandra, managed in Rancher, then chaos-tested.</p>
+  <div class="row">
+    <div class="s"><b>$c3_avail%</b><span>served through $c3_faults faults</span></div>
+    <div class="s"><b>0 failed</b><span>of $c3_trades book trades</span></div>
+    <div class="s"><b>$fifo_busy→$pri_busy&#8202;s</b><span>intraday under batch load</span></div>
+    <div class="s"><b>$cv×</b><span>variance reduction</span></div>
+  </div>
+  <div class="foot"><span><b>Sukhmanpreet Singh Aulakh</b></span><span>$site_short</span></div>
+</div></body></html>

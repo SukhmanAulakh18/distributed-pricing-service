@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Distributed Pricing Service · project brief</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --bg: #ffffff; --surface: #f6f7f4; --ink: #15191d; --muted: #545d66; --line: #dcdfd8;
+  --accent: #0d6b62; --accent-soft: #e2efec; --warn: #a15c07; --warn-soft: #f6ead9;
+  --display: "Newsreader", Georgia, serif; --body: "IBM Plex Sans", -apple-system, sans-serif; --mono: "IBM Plex Mono", Menlo, monospace;
+  color-scheme: light;
+}
+@page { size: Letter; margin: 0.45in 0.5in; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 10.2px/1.45 var(--body); }
+.page { max-width: 7.5in; margin: 0 auto; display: grid; gap: 12px; }
+.page + .page { break-before: page; }
+@media screen { body { padding: 24px 16px; font-size: 13px; } .page + .page { margin-top: 48px; padding-top: 32px; border-top: 1px solid var(--line); } }
+h1, h2 { font-family: var(--display); font-weight: 600; margin: 0; line-height: 1.1; }
+h1 { font-size: 2.6em; }
+h2 { font-size: 1.45em; }
+p { margin: 0; }
+a { color: var(--accent); text-decoration: none; }
+.eyebrow { font: 500 0.82em/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.top { display: grid; gap: 6px; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+.links { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 0.95em; }
+.links b { font-weight: 600; color: var(--ink); }
+.lede { font-size: 1.12em; color: var(--muted); max-width: 70ch; }
+.ledger { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; }
+.stat b { display: block; font: 500 1.45em/1.15 var(--mono); }
+.stat span { color: var(--muted); font-size: 0.92em; }
+.cols { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 18px; }
+.cols h3 { font: 600 1.02em var(--body); margin: 0 0 3px; color: var(--accent); }
+.cols ul { margin: 0; padding-left: 14px; display: grid; gap: 2px; }
+.panel { border: 1px solid var(--line); border-radius: 6px; padding: 6px; }
+svg.d { width: 100%; height: auto; display: block; color: var(--ink); font-family: var(--body); }
+.d .box { fill: var(--bg); stroke: var(--muted); stroke-width: 1.2; }
+.d .soft { fill: var(--surface); stroke: var(--line); stroke-width: 1.2; }
+.d .hl { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.4; }
+.d .t { font-size: 14px; font-weight: 600; fill: var(--ink); }
+.d .s { font-size: 12px; fill: var(--muted); }
+.d .m { font: 12px var(--mono); fill: var(--ink); }
+.d .lbl { font: 11.5px var(--mono); fill: var(--muted); }
+.d .lbl.acc { fill: var(--accent); }
+.d .w { stroke: var(--ink); stroke-width: 1.4; fill: none; }
+.d .w.acc { stroke: var(--accent); }
+.d .w.dash { stroke-dasharray: 5 4; }
+.d .arrow { fill: var(--ink); }
+.d .arrow.acc { fill: var(--accent); }
+table { border-collapse: collapse; width: 100%; font-size: 0.95em; }
+th, td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 500 0.8em var(--mono); text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+td:first-child { font-weight: 600; white-space: nowrap; }
+img { width: 100%; height: auto; display: block; border: 1px solid var(--line); border-radius: 5px; }
+.chaos img { max-height: 2.9in; object-fit: contain; background: #fcfcfa; }
+.imgs img { height: 1.9in; object-fit: cover; object-position: top left; }
+.imgs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+figure { margin: 0; display: grid; gap: 3px; }
+figcaption { color: var(--muted); font-size: 0.9em; }
+.note { background: var(--warn-soft); border-radius: 6px; padding: 7px 9px; }
+.foot { color: var(--muted); font-size: 0.88em; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 6px; }
+</style></head>
+<body>
+<div class="page">
+  <div class="top">
+    <span class="eyebrow">Project brief · distributed systems · financial engineering · SRE</span>
+    <h1>Distributed Pricing Service</h1>
+    <p class="lede">A front-office pricing and CVA platform in miniature: a C++20 Monte Carlo library behind a Python service, distributed across Kubernetes worker pools on Redis Streams and Cassandra, managed in Rancher, observed end to end, and run through chaos tests that kill pods, databases and a whole node under load.</p>
+    <div class="links">
+      <span><b>Sukhmanpreet Singh Aulakh</b> · Oakville, ON</span>
+      <a href="$site/">Case study: $site_short</a>
+      <a href="$repo">Code: $repo_short</a>
+    </div>
+  </div>
+
+  <div class="ledger">
+    <div class="stat"><b>$c3_avail%</b><span>of $c3_requests prices served through $c3_faults faults, including a whole node stopped</span></div>
+    <div class="stat"><b>$c3_books_ok / $c3_books books</b><span>completed, with $c3_trades_failed of $c3_trades trades failed; exposure runs $c3_identical</span></div>
+    <div class="stat"><b>$fifo_busy → $pri_busy s</b><span>intraday book during a batch run, after splitting priority streams</span></div>
+    <div class="stat"><b>$w1 → $w8</b><span>trades/s on 1 → 8 workers; 50,000-trade book in $b50k_s s</span></div>
+    <div class="stat"><b>$cv× variance cut</b><span>Asian control variate: $cv_paths paths match 200,000</span></div>
+    <div class="stat"><b>$gil_rel vs $gil_held</b><span>pricings/s from 8 Python threads, GIL released vs held (pybind11)</span></div>
+  </div>
+
+  <div class="panel">$arch_svg</div>
+
+  <div class="cols">
+    <div><h3>Financial engineering</h3><ul>
+      <li>Black-Scholes, European and arithmetic Asian Monte Carlo with antithetic variates, a geometric control variate and pathwise Greeks</li>
+      <li>Exposure engine: correlated GBM, EE, PFE (exact top-k merge), EPE and unilateral CVA</li>
+      <li>Every model tested against an independent reference (textbook values, parity, closed forms)</li>
+    </ul></div>
+    <div><h3>Distributed systems</h3><ul>
+      <li>Redis Streams with consumer groups, reclaim of dead workers' tasks, poison handling, separate intraday and batch priority</li>
+      <li>Counter-based RNG keyed by request hash: exact sharding, safe caching, idempotent re-runs</li>
+      <li>Cassandra modelled query-first (RF 3, LOCAL_QUORUM, token-aware), written behind</li>
+    </ul></div>
+    <div><h3>Reliability and SRE</h3><ul>
+      <li>SLOs with multi-window burn-rate alerts; 14 alerts, each with an owner and a runbook link</li>
+      <li>Chaos runs that found three real problems; fixes measured; one still open and documented</li>
+      <li>OpenTelemetry traces across processes; runbook with 14 incidents; triage CLI</li>
+    </ul></div>
+    <div><h3>Platform and DevOps</h3><ul>
+      <li>4-node kind cluster over 3 zones, imported into Rancher; PDBs, zone spread, 30 s eviction</li>
+      <li>KEDA scaling on queue lag (batch from zero), HPA for the API; Kustomize base and overlays</li>
+      <li>CI: C++ (GCC, Clang), Python, ASan/UBSan, TSan, Valgrind, kubeconform, promtool, amtool</li>
+    </ul></div>
+  </div>
+  <div class="foot"><span>C++20 · pybind11 · Python · FastAPI · Pydantic · Redis · Cassandra · Kubernetes · KEDA · Rancher · Docker · Prometheus · Grafana · Jaeger</span><span>1 / 2</span></div>
+</div>
+
+<div class="page">
+  <h2>How it behaves under failure, and how you would know</h2>
+  <figure class="chaos"><img src="$base/img/chaos_timeline.png" alt="Chaos timeline"><figcaption>Ten minutes, 11 faults. Prices served per second (top) and errors per 5 s (bottom); dashed lines are faults. An interactive replay is on the case-study site.</figcaption></figure>
+  <table>
+    <tr><th>Operation or failure</th><th>What the system does</th><th>Evidence</th></tr>
+    <tr><td>Single price</td><td>Cache read; on a miss, one pod computes under a lock, with the GIL released</td><td>~1 ms hit; 4 ms p50 miss (200k paths)</td></tr>
+    <tr><td>Book (intraday)</td><td>Split into tasks on the intraday stream; one cache read, one C++ batch and one write per task</td><td>One trace across 3 pods ($trace_spans spans)</td></tr>
+    <tr><td>Exposure run (batch)</td><td>Scenario blocks on the batch stream; KEDA scales from 0; exact merge</td><td>$revals M revaluations in $e8_s s; identical on 1-8 workers</td></tr>
+    <tr><td>Worker killed</td><td>Unacked task reclaimed after 10 s idle and re-priced, same answer</td><td>0 of 10,000 trades lost</td></tr>
+    <tr><td>Redis killed</td><td>Circuit opens; pricing continues uncached; queues survive on the AOF</td><td>0 errors; RedisCircuitOpen → platform</td></tr>
+    <tr><td>Cassandra node killed</td><td>Quorum writes continue on 2 of 3 replicas</td><td>0 failed writes; ReplicaDown → database</td></tr>
+    <tr><td>Kubernetes node stopped</td><td>NotReady at ~50 s, pods evicted at ~80 s and rescheduled across zones</td><td>NodeNotReady → platform; 1 book lost (open item)</td></tr>
+    <tr><td>Load spike</td><td>Admission control returns 503 + Retry-After; HPA and KEDA add pods</td><td>API 3 → 8 pods in 26 s, 0 errors</td></tr>
+  </table>
+  <div class="imgs">
+    <figure><img src="$base/img/ui/rancher-nodes.png" alt="Rancher with one node unavailable"><figcaption>Rancher during the node outage: the node is Unavailable and tainted.</figcaption></figure>
+    <figure><img src="$base/img/ui/jaeger-trace.png" alt="Jaeger trace of a book"><figcaption>One book as one trace across the API and workers.</figcaption></figure>
+  </div>
+  <p class="note"><b>Found and fixed by the chaos runs:</b> books lost while a dead node was still in rotation (fixed with an idempotent retry); monitoring that died with the node it watched (moved to the control plane); an SLO panel that read "No data" when there were zero errors. <b>Still open:</b> one book in 30 lost during a two-minute node outage; the fix is an idempotency key the client polls on.</p>
+  <div class="foot"><span>Independent learning project on synthetic data; every number is generated from the measured results in the repository.</span><span>2 / 2</span></div>
+</div>
+</body></html>

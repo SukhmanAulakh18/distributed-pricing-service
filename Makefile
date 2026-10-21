@@ -2,7 +2,7 @@ PY ?= .venv/bin/python
 PIP ?= .venv/bin/pip
 COMPOSE = docker compose -f deploy/docker-compose.yml
 
-.PHONY: install test cpp-test cpp-checks bench plots up down cluster deploy rancher demo chaos triage
+.PHONY: install test cpp-test cpp-checks bench plots share up down cluster deploy rancher demo chaos triage
 
 install:
 	$(PIP) install -r requirements-dev.txt
@@ -26,6 +26,12 @@ bench:
 
 plots:
 	$(PY) bench/plots.py
+
+# The case-study site, the two-page PDF brief and the link-preview card, all from bench/results.
+share:
+	$(PY) scripts/build_report.py
+	$(PY) scripts/capture.py og=file://$(CURDIR)/build/og.html --out docs/img --width 1200 --height 630 --wait 3
+	$(PY) scripts/capture.py Distributed-Pricing-Service-Brief=file://$(CURDIR)/docs/brief.html --out docs --pdf --wait 4
 
 up:
 	$(COMPOSE) up --build -d
