@@ -12,7 +12,12 @@ managed in **Rancher**, traced with **OpenTelemetry** and **Jaeger**, and
 watched by **Prometheus**, **Alertmanager** and **Grafana** against written
 SLOs. Chaos tests then kill its pods, its databases and a whole node.
 
-**[Read the report →](https://sukhmanaulakh18.github.io/distributed-pricing-service/)** (one page; every number on it is generated from `bench/results`)
+| | |
+| --- | --- |
+| **Case study (live site)** | https://sukhmanaulakh18.github.io/distributed-pricing-service/ (diagrams, financial engineering, an interactive replay of the chaos run, SRE) |
+| **Two-page brief (PDF)** | [Distributed-Pricing-Service-Brief.pdf](https://sukhmanaulakh18.github.io/distributed-pricing-service/Distributed-Pricing-Service-Brief.pdf) |
+| **Interactive chaos replay** | [site#reliability](https://sukhmanaulakh18.github.io/distributed-pricing-service/#reliability) |
+| **Grafana dashboards** | Defined as code in [`deploy/observability/grafana/`](deploy/observability/grafana/), served at `localhost:3001` by `make cluster`; screenshots below and on the site |
 
 ![Chaos run: the cluster dashboard while faults are injected, with alerts routed by owner](docs/img/demo.gif)
 
@@ -127,6 +132,24 @@ prices under 250 ms, alerted on multi-window burn rate. See
 laptop struggles with.
 
 ![Grafana SLO dashboard](docs/img/ui/grafana-slo.png)
+
+## Financial engineering
+
+The models are standard on purpose, and each is tested against an
+independent reference. Details are in [docs/MODELS.md](docs/MODELS.md).
+
+| Product | Method | Validated against |
+| --- | --- | --- |
+| European call/put | Black-Scholes-Merton closed form | Hull's value (10.4506), put-call parity, finite-difference Greeks |
+| European call/put | Monte Carlo, antithetic variates, pathwise delta and vega | Closed form within 4 standard errors (10M paths: 7.1291 ± 0.0040 vs 7.1281) |
+| Arithmetic Asian | Monte Carlo with a geometric-Asian control variate (1,009× variance cut) | Plain MC; exact reduction to Black-Scholes with one fixing |
+| Exposure (EE, PFE, EPE, CVA) | Correlated GBM (Cholesky), full revaluation on a monthly grid | EE of a long call equals C(0)·e^{rt}; forwards against the Black formula |
+
+| Convergence | Variance reduction |
+| --- | --- |
+| ![Convergence](docs/img/convergence.png) | ![Variance reduction](docs/img/variance_reduction.png) |
+
+![Exposure profile](docs/img/exposure_profile.png)
 
 ## Distribution and performance
 
