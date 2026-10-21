@@ -1,5 +1,15 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="A distributed C++/pybind11 pricing and CVA service on Kubernetes with Redis Streams, Cassandra, KEDA and Rancher: system design, chaos testing and SRE, with every number measured.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Distributed Pricing Service">
+<meta property="og:description" content="A distributed C++/pybind11 pricing and CVA service on Kubernetes with Redis Streams, Cassandra, KEDA and Rancher: system design, chaos testing and SRE, with every number measured.">
+<meta property="og:url" content="https://sukhmanaulakh18.github.io/distributed-pricing-service/">
+<meta property="og:image" content="https://sukhmanaulakh18.github.io/distributed-pricing-service/img/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="author" content="Sukhmanpreet Singh Aulakh">
 </head><body>
 <title>Distributed Pricing Service</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -132,6 +142,7 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
   <b>Pricing Service</b>
   <a href="#design">System design</a>
   <a href="#flows">Request flows</a>
+  <a href="#quant">Financial engineering</a>
   <a href="#kubernetes">Kubernetes &amp; Rancher</a>
   <a href="#reliability">Reliability</a>
   <a href="#sre">SRE &amp; observability</a>
@@ -148,6 +159,7 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
   <div class="meta">
     <span>Sukhmanpreet Singh Aulakh · Oakville, ON</span>
     <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service">Source on GitHub</a>
+    <a href="Distributed-Pricing-Service-Brief.pdf">Two-page brief (PDF)</a>
     <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/PERFORMANCE_REVIEW.md">Performance review</a>
     <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/SYSTEM_DESIGN.md">System design</a>
     <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/OPERATIONS.md">Operations</a>
@@ -286,6 +298,31 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
     <tr><td>KEDA on stream lag</td><td>HPA on CPU</td><td>Lag leads; CPU lags behind a queue</td><td>Another controller, and its own failure domain</td></tr>
     <tr><td>Observability on the control plane</td><td>Scheduled anywhere</td><td>Monitoring must not die with the node it is watching (found by a chaos run)</td><td>On a real cluster, dedicated infra nodes or a separate cluster</td></tr>
   </table></div>
+</section>
+
+<section id="quant">
+  <span class="eyebrow">Financial engineering</span>
+  <h2>Textbook models, each checked against an independent reference</h2>
+  <p>The models are deliberately standard; the engineering is the point. Each one has a named test against something it does not share code with: a closed form, a textbook value, a parity relation or a brute-force simulation written out in the test.</p>
+  <div class="table-wrap"><table>
+    <tr><th>Product</th><th>Method</th><th>Validated against</th></tr>
+    <tr><td>European call/put</td><td>Black-Scholes-Merton closed form</td><td>Hull's textbook value (10.4506), put-call parity, finite-difference Greeks</td></tr>
+    <tr><td>European call/put</td><td>Monte Carlo, antithetic variates, pathwise delta and vega</td><td>Closed form within 4 standard errors</td></tr>
+    <tr><td>Arithmetic Asian</td><td>Monte Carlo with a geometric-Asian control variate</td><td>Plain Monte Carlo; with one fixing it reduces exactly to Black-Scholes</td></tr>
+    <tr><td>Geometric Asian</td><td>Closed form</td><td>Brute-force simulation in the test</td></tr>
+    <tr><td>Exposure: EE, PFE, EPE, CVA</td><td>Correlated GBM (Cholesky), full revaluation on a monthly grid</td><td>Long call: EE(t) = C(0)·e<sup>rt</sup> (martingale); forwards against the Black formula</td></tr>
+  </table></div>
+  <div class="two">
+    <figure><img src="img/convergence.png" alt="Monte Carlo price converging to Black-Scholes as paths increase" loading="lazy"><figcaption>Convergence to the closed form (7.1281). At 10 million paths, Monte Carlo gives 7.1291 ± 0.0040, which is 0.26 standard errors away.</figcaption></figure>
+    <figure><img src="img/variance_reduction.png" alt="Variance reduction for the arithmetic Asian" loading="lazy"><figcaption>Arithmetic Asian: the geometric control variate is about 99.95% correlated with the payoff, so variance falls 1,009×. 198 paths now match the precision of 200,000.</figcaption></figure>
+  </div>
+  <figure><img src="img/exposure_profile.png" alt="Expected exposure and PFE profile over five years" loading="lazy"><figcaption>A synthetic netting set of 200 options and forwards on 5 correlated indices, over 100,000 scenarios and 60 monthly steps. EPE is 1,556, peak PFE (95%) is 12,524, and unilateral CVA is 69.70, from CVA = (1 − R) Σ DF(t<sub>i</sub>) · EE(t<sub>i</sub>) · [Q(t<sub>i−1</sub>) − Q(t<sub>i</sub>)] with a flat hazard rate λ = s / (1 − R).</figcaption></figure>
+  <ul class="tight">
+    <li><b>Pathwise Greeks</b> come from the same paths as the price. Where a product has none, bump-and-revalue reuses the same random numbers through the counter-based RNG (common random numbers), so the differences are smooth.</li>
+    <li><b>Antithetic standard errors</b> are computed over pair averages, because the two halves of a pair are negatively correlated, not independent.</li>
+    <li><b>PFE is a quantile</b>, so it can't be averaged across workers. Each block returns its top-k exposures per step, and the merge is exact.</li>
+    <li><b>Stated simplifications:</b> no collateral or margin period of risk, flat curves, constant volatility, no wrong-way risk. A production XVA engine handles these. This project is about the distributed computation around the model.</li>
+  </ul>
 </section>
 
 <section id="flows">
