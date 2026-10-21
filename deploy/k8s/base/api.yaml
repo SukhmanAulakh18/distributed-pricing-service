@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pricer-api
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: {maxUnavailable: 0, maxSurge: 1}
+  selector:
+    matchLabels: {app: pricer-api}
+  template:
+    metadata:
+      labels: {app: pricer-api}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+    spec:
+      terminationGracePeriodSeconds: 20
+      # Pods on an unreachable node are evicted after 5 minutes by default.
+      # A stateless pricer can be rescheduled after 30 s.
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+      topologySpreadConstraints:
+        - {maxSkew: 1, topologyKey: topology.kubernetes.io/zone, whenUnsatisfiable: ScheduleAnyway,
+           labelSelector: {matchLabels: {app: pricer-api}}}
+      containers:
+        - name: api
+          image: mc-pricer:dev
+          imagePullPolicy: IfNotPresent
+          ports: [{containerPort: 8000, name: http}]
+          envFrom:
+            - configMapRef: {name: pricer-config}
+          # Concurrency sized to the CPU limit: COMPUTE_SLOTS x PRICER_THREADS
+          # = 2 = limits.cpu. With 4 x 2 = 8 threads on 2 CPUs the kernel's CFS
+          # quota throttled the pod (all threads stalled until the next 100 ms
+          # period), which showed up as tail latency. The API mostly serves
+          # many small requests, so one thread each; workers keep 2 for big
+          # tasks. (Explicit env wins over the ConfigMap.)
+          env:
+            - {name: PRICER_THREADS, value: "1"}
+            - {name: COMPUTE_SLOTS, value: "2"}
+          resources:
+            requests: {cpu: 500m, memory: 256Mi}
+            limits: {cpu: "2", memory: 512Mi}
+          startupProbe:
+            httpGet: {path: /health/live, port: http}
+            periodSeconds: 2
+            failureThreshold: 60
+          livenessProbe:
+            httpGet: {path: /health/live, port: http}
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: {path: /health/ready, port: http}
+            periodSeconds: 3
+            failureThreshold: 2
+          lifecycle:
+            # Give the Service time to drop this pod from its endpoints
+            # before uvicorn stops accepting connections.
+            preStop:
+              exec: {command: ["sleep", "5"]}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pricer-api
+spec:
+  selector: {app: pricer-api}
+  ports: [{port: 80, targetPort: http, name: http}]
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: pricer-api
+spec:
+  scaleTargetRef: {apiVersion: apps/v1, kind: Deployment, name: pricer-api}
+  minReplicas: 3
+  maxReplicas: 8
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: {type: Utilization, averageUtilization: 70}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: pricer-api
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels: {app: pricer-api}

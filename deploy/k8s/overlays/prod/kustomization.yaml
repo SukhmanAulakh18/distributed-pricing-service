@@ -1,0 +1,39 @@
+# Production-shaped overlay: a registry image, more API replicas, bigger
+# worker pools and wider autoscaling ranges. Rendered and schema-checked in
+# CI and dry-run against a live API server; not run on a production cluster.
+# Observability is expected to come from the platform's own monitoring here,
+# so this overlay does not include deploy/observability.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+images:
+  - name: mc-pricer
+    newName: registry.example.com/pricing/mc-pricer
+    newTag: "0.3.0"
+configMapGenerator:
+  - name: pricer-config
+    behavior: merge
+    literals:
+      - PRICER_THREADS=4
+      - OTEL_SAMPLE_RATIO=0.05
+patches:
+  - target: {kind: HorizontalPodAutoscaler, name: pricer-api}
+    patch: |
+      - {op: replace, path: /spec/minReplicas, value: 6}
+      - {op: replace, path: /spec/maxReplicas, value: 30}
+  - target: {kind: PodDisruptionBudget, name: pricer-api}
+    patch: |
+      - {op: replace, path: /spec/minAvailable, value: 4}
+  - target: {kind: ScaledObject, name: pricer-worker-intraday}
+    patch: |
+      - {op: replace, path: /spec/minReplicaCount, value: 4}
+      - {op: replace, path: /spec/maxReplicaCount, value: 40}
+  - target: {kind: ScaledObject, name: pricer-worker-batch}
+    patch: |
+      - {op: replace, path: /spec/maxReplicaCount, value: 60}
+  - target: {kind: Deployment, name: pricer-worker-(intraday|batch)}
+    patch: |
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value: {requests: {cpu: "4", memory: 1Gi}, limits: {cpu: "4", memory: 2Gi}}

@@ -1,0 +1,47 @@
+# Redis holds the cache (disposable) and the task queue and job state (not).
+# An append-only file on a persistent volume means queued tasks and results
+# survive a Redis restart; fsync every second bounds the loss to about a
+# second of writes.
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+spec:
+  selector: {app: redis}
+  ports: [{port: 6379, name: redis}]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+spec:
+  serviceName: redis
+  replicas: 1
+  selector:
+    matchLabels: {app: redis}
+  template:
+    metadata:
+      labels: {app: redis}
+    spec:
+      containers:
+        - name: redis
+          image: redis:7.4-alpine
+          # volatile-ttl evicts the keys closest to expiry first: 30 s cache
+          # entries go long before 1 h job state, and streams (no TTL) never
+          # do. allkeys-lru could evict queued work under memory pressure.
+          args: ["--appendonly", "yes", "--appendfsync", "everysec",
+                 "--maxmemory", "256mb", "--maxmemory-policy", "volatile-ttl"]
+          ports: [{containerPort: 6379, name: redis}]
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {memory: 384Mi}
+          readinessProbe:
+            exec: {command: ["redis-cli", "ping"]}
+            periodSeconds: 5
+          volumeMounts:
+            - {name: data, mountPath: /data}
+  volumeClaimTemplates:
+    - metadata: {name: data}
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources: {requests: {storage: 1Gi}}

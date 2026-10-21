@@ -1,0 +1,30 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: pricing
+resources:
+  - namespace.yaml
+  - redis.yaml
+  - cassandra.yaml
+  - api.yaml
+  - worker-intraday.yaml
+  - worker-batch.yaml
+  - keda.yaml
+images:
+  - name: mc-pricer
+    newTag: dev
+# Runtime settings live in one ConfigMap. The generator appends a content
+# hash to its name, so changing any value rolls the Deployments that use it.
+configMapGenerator:
+  - name: pricer-config
+    literals:
+      - REDIS_URL=redis://redis:6379/0
+      - CASSANDRA_HOSTS=cassandra
+      - CASSANDRA_RF=3
+      - CASSANDRA_DC=datacenter1
+      - PRICER_THREADS=2
+      - COMPUTE_SLOTS=4
+      - QUEUE_MODE=priority
+      - PRICE_LOG_MODE=async
+      # Traces go to Jaeger (deploy/observability). Unset to switch tracing off.
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger.observability.svc.cluster.local:4318
+      - OTEL_SAMPLE_RATIO=1.0

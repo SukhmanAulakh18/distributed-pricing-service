@@ -1,0 +1,26 @@
+# Four nodes: a control plane plus three workers labelled as three zones, so
+# topology spread, anti-affinity and node-failure tests mean something.
+# Pinned to Kubernetes v1.36, the newest version Rancher v2.15 supports.
+# The control plane publishes the NodePorts of the API and the observability
+# stack on localhost.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: pricing
+nodes:
+  - role: control-plane
+    image: kindest/node:v1.36.4@sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed
+    extraPortMappings:
+      - {containerPort: 30080, hostPort: 8080}    # pricing API
+      - {containerPort: 30300, hostPort: 3001}    # Grafana
+      - {containerPort: 30090, hostPort: 9091}    # Prometheus
+      - {containerPort: 30093, hostPort: 9093}    # Alertmanager
+      - {containerPort: 30686, hostPort: 16686}   # Jaeger
+  - role: worker
+    image: kindest/node:v1.36.4@sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed
+    labels: {topology.kubernetes.io/zone: zone-a}
+  - role: worker
+    image: kindest/node:v1.36.4@sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed
+    labels: {topology.kubernetes.io/zone: zone-b}
+  - role: worker
+    image: kindest/node:v1.36.4@sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed
+    labels: {topology.kubernetes.io/zone: zone-c}

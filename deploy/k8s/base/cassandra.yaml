@@ -1,0 +1,78 @@
+# A 3-node ring with replication factor 3: every row lives on all three
+# nodes. Job history and exposure runs are written at LOCAL_QUORUM (2 of 3),
+# so any one node can fail without losing a write or failing a read.
+apiVersion: v1
+kind: Service
+metadata:
+  name: cassandra
+spec:
+  clusterIP: None
+  # Nodes find the seed before it is Ready; without this the ring can't form.
+  publishNotReadyAddresses: true
+  selector: {app: cassandra}
+  ports:
+    - {port: 9042, name: cql}
+    - {port: 7000, name: intra-node}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: cassandra
+spec:
+  maxUnavailable: 1  # a voluntary drain never takes two replicas, so quorum holds
+  selector:
+    matchLabels: {app: cassandra}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cassandra
+spec:
+  serviceName: cassandra
+  replicas: 3
+  podManagementPolicy: OrderedReady  # nodes must join the ring one at a time
+  selector:
+    matchLabels: {app: cassandra}
+  template:
+    metadata:
+      labels: {app: cassandra}
+    spec:
+      terminationGracePeriodSeconds: 60
+      affinity:
+        podAntiAffinity:
+          # Two replicas on one Kubernetes node would make that node a single
+          # point of failure for quorum.
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector: {matchLabels: {app: cassandra}}
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: cassandra
+          image: cassandra:5.0
+          ports:
+            - {containerPort: 9042, name: cql}
+            - {containerPort: 7000, name: intra-node}
+          env:
+            - {name: CASSANDRA_CLUSTER_NAME, value: pricing}
+            - {name: CASSANDRA_SEEDS, value: cassandra-0.cassandra.pricing.svc.cluster.local}
+            - {name: MAX_HEAP_SIZE, value: 512M}
+            - {name: HEAP_NEWSIZE, value: 128M}
+          resources:
+            requests: {cpu: 250m, memory: 1Gi}
+            limits: {memory: 1536Mi}
+          readinessProbe:
+            exec: {command: ["sh", "-c", "cqlsh -e 'describe keyspaces' >/dev/null"]}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 10
+          lifecycle:
+            # Flush memtables and stop accepting writes before shutdown, so a
+            # rolling restart replays nothing from the commit log.
+            preStop:
+              exec: {command: ["nodetool", "drain"]}
+          volumeMounts:
+            - {name: data, mountPath: /var/lib/cassandra}
+  volumeClaimTemplates:
+    - metadata: {name: data}
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources: {requests: {storage: 2Gi}}

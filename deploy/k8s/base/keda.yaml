@@ -1,0 +1,39 @@
+# Event-driven autoscaling on queue lag (undelivered tasks), which leads CPU:
+# by the time CPU rises, the backlog is already there. Needs KEDA installed
+# (make cluster does it). Intraday keeps 2 warm replicas because latency
+# matters; batch scales to zero when no exposure run is queued.
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: pricer-worker-intraday
+spec:
+  scaleTargetRef: {name: pricer-worker-intraday}
+  minReplicaCount: 2
+  maxReplicaCount: 8
+  triggers:
+    - type: redis-streams
+      metadata:
+        address: redis.pricing.svc.cluster.local:6379
+        stream: "pricing:intraday"
+        consumerGroup: pricers
+        lagCount: "20"
+        activationLagCount: "1"
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: pricer-worker-batch
+spec:
+  scaleTargetRef: {name: pricer-worker-batch}
+  minReplicaCount: 0
+  maxReplicaCount: 6
+  pollingInterval: 5
+  cooldownPeriod: 90
+  triggers:
+    - type: redis-streams
+      metadata:
+        address: redis.pricing.svc.cluster.local:6379
+        stream: "pricing:batch"
+        consumerGroup: pricers
+        lagCount: "4"
+        activationLagCount: "1"

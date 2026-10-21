@@ -1,0 +1,84 @@
+services:
+  redis:
+    image: redis:7.4-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  cassandra:
+    image: cassandra:5.0
+    environment:
+      MAX_HEAP_SIZE: 512M
+      HEAP_NEWSIZE: 128M
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'describe keyspaces' >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+
+  api:
+    build:
+      context: ..
+    image: mc-pricer:dev
+    environment: &env
+      REDIS_URL: redis://redis:6379/0
+      CASSANDRA_HOSTS: cassandra
+      PRICER_THREADS: "2"
+      COMPUTE_SLOTS: "4"
+      CACHE_ENABLED: ${CACHE_ENABLED:-true}
+      PORTFOLIO_MODE: ${PORTFOLIO_MODE:-distributed}
+      QUEUE_MODE: ${QUEUE_MODE:-priority}
+      PRICE_LOG_MODE: ${PRICE_LOG_MODE:-async}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+    ports:
+      - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+      cassandra:
+        condition: service_healthy
+
+  worker:
+    image: mc-pricer:dev
+    command: ["python", "-m", "service.worker"]
+    environment: *env
+    deploy:
+      replicas: ${WORKERS:-3}
+    depends_on:
+      api:
+        condition: service_started
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./observability/rules:/etc/prometheus/rules:ro
+    ports:
+      - "9090:9090"
+
+  alertmanager:
+    image: prom/alertmanager:v0.33.1
+    volumes:
+      - ./observability/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    ports:
+      - "9093:9093"
+
+  jaeger:
+    image: jaegertracing/jaeger:2.21.0
+    ports:
+      - "16686:16686"
+
+  grafana:
+    image: grafana/grafana:12.1.0
+    environment:
+      PROMETHEUS_URL: http://prometheus:9090
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/pricing-slo.json
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    depends_on: [prometheus]
