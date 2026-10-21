@@ -1,0 +1,68 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      - run: pip install --no-build-isolation .
+      - run: pytest -q
+
+  cpp:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        compiler: [g++, clang++]
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y ninja-build libgtest-dev
+      - run: cmake -S core -B build -G Ninja -DMC_BUILD_TESTS=ON -DMC_BUILD_PYTHON=OFF -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
+      - run: cmake --build build
+      - run: ctest --test-dir build --output-on-failure
+
+  memory:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f docker/tools.Dockerfile -t mc-tools .
+      - name: ASan/UBSan, TSan, Valgrind (C++ tests and the Python extension)
+        run: docker run --rm --security-opt seccomp=unconfined -v "$PWD":/src:ro mc-tools scripts/cpp_checks.sh all
+
+  image:
+    runs-on: ubuntu-latest
+    needs: [python, cpp]
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t mc-pricer:ci .
+      - name: Smoke test the image
+        run: |
+          docker run -d --name api -p 8000:8000 mc-pricer:ci
+          for i in $(seq 1 30); do curl -sf localhost:8000/health/live && break; sleep 1; done
+          curl -sf -X POST localhost:8000/price -H 'Content-Type: application/json' -d '{"instrument_id":"CI","market_data_version":"ci","product":{"type":"european","spot":100,"strike":105,"rate":0.03,"vol":0.2,"maturity":1},"simulation":{"n_paths":100000}}'
+
+  manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: curl -sL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | tar xz
+      - name: Render and validate every overlay (KEDA CRDs from the community schema catalog)
+        run: |
+          for o in deploy/k8s/overlays/*/; do
+            echo "== $o"
+            kubectl kustomize "$o" | ./kubeconform -strict -summary -schema-location default \
+              -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' -
+          done
+      - name: Validate Prometheus rules and Alertmanager config
+        run: |
+          docker run --rm --entrypoint promtool -v "$PWD/deploy/observability/rules":/r:ro prom/prometheus:v3.5.0 check rules /r/pricing-rules.yml
+          docker run --rm --entrypoint amtool -v "$PWD/deploy/observability":/c:ro prom/alertmanager:v0.33.1 check-config /c/alertmanager.yml
