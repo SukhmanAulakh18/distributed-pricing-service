@@ -1,0 +1,309 @@
+{
+  "uid": "pricing-slo",
+  "title": "Pricing SLOs",
+  "schemaVersion": 39,
+  "refresh": "5s",
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Availability, last 1h (SLO 99.9%)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prom"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 3,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 0.999
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "1 - sli:price_error_ratio:rate1h"
+        }
+      ],
+      "options": {
+        "colorMode": "background"
+      },
+      "id": 1
+    },
+    {
+      "type": "stat",
+      "title": "Budget burn rate, 1h (page at 14.4x)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prom"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 6
+              },
+              {
+                "color": "red",
+                "value": 14.4
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sli:price_error_ratio:rate1h / 0.001"
+        }
+      ],
+      "options": {
+        "colorMode": "background"
+      },
+      "id": 2
+    },
+    {
+      "type": "stat",
+      "title": "Requests under 250 ms, 1h (SLO 99%)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prom"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 3,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 0.99
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "1 - sli:price_slow_ratio:rate1h"
+        }
+      ],
+      "options": {
+        "colorMode": "background"
+      },
+      "id": 3
+    },
+    {
+      "type": "stat",
+      "title": "Books with no failed trades, 1h (SLO 99%)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prom"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 3,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 0.99
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "1 - (sli:book_failure_ratio:rate1h or vector(0))"
+        }
+      ],
+      "options": {
+        "colorMode": "background"
+      },
+      "id": 4
+    },
+    {
+      "type": "timeseries",
+      "title": "Error-budget burn rate",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prom"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sli:price_error_ratio:rate5m / 0.001",
+          "legendFormat": "5m window"
+        },
+        {
+          "refId": "B",
+          "expr": "sli:price_error_ratio:rate1h / 0.001",
+          "legendFormat": "1h window"
+        },
+        {
+          "refId": "C",
+          "expr": "vector(14.4)",
+          "legendFormat": "page threshold"
+        },
+        {
+          "refId": "D",
+          "expr": "vector(6)",
+          "legendFormat": "ticket threshold"
+        }
+      ],
+      "id": 5
+    },
+    {
+      "type": "timeseries",
+      "title": "Slow-request ratio (over 250 ms)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prom"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sli:price_slow_ratio:rate5m",
+          "legendFormat": "5m"
+        },
+        {
+          "refId": "B",
+          "expr": "sli:price_slow_ratio:rate1h",
+          "legendFormat": "1h"
+        },
+        {
+          "refId": "C",
+          "expr": "vector(0.01)",
+          "legendFormat": "SLO 1%"
+        }
+      ],
+      "id": 6
+    },
+    {
+      "type": "table",
+      "title": "Firing alerts (routed by owner)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prom"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "ALERTS{alertstate=\"firing\"}",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "Value": true,
+              "__name__": true,
+              "alertstate": true
+            }
+          }
+        }
+      ],
+      "id": 7
+    }
+  ]
+}

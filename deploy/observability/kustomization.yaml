@@ -1,0 +1,40 @@
+# The in-cluster observability stack: Prometheus (pod discovery, SLO rules),
+# Alertmanager (routes alerts to the owning team), Grafana (provisioned
+# dashboards), Jaeger (traces) and kube-state-metrics (cluster state).
+# Shares its rules, dashboards and Grafana provisioning with the Compose stack.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: observability
+resources:
+  - k8s/namespace.yaml
+  - k8s/prometheus.yaml
+  - k8s/alertmanager.yaml
+  - k8s/grafana.yaml
+  - k8s/jaeger.yaml
+  - k8s/kube-state-metrics.yaml
+configMapGenerator:
+  - name: prometheus-config
+    files: [prometheus.yml=prometheus-k8s.yml]
+  - name: prometheus-rules
+    files: [rules/pricing-rules.yml]
+  - name: alertmanager-config
+    files: [alertmanager.yml]
+  - name: grafana-datasources
+    files: [grafana/provisioning/datasources/prometheus.yml]
+  - name: grafana-dashboard-provider
+    files: [grafana/provisioning/dashboards/provider.yml]
+  - name: grafana-dashboards
+    files: [grafana/dashboards/pricing.json, grafana/dashboards/pricing-slo.json, grafana/dashboards/pricing-cluster.json]
+# Monitoring runs on the control-plane node, outside the workloads' failure
+# domain. In a chaos run, stopping a worker node took kube-state-metrics with
+# it, and NodeNotReady never fired: the monitor died with the monitored.
+# (Production would use dedicated infra nodes.)
+patches:
+  - target: {kind: Deployment}
+    patch: |
+      - op: add
+        path: /spec/template/spec/nodeSelector
+        value: {node-role.kubernetes.io/control-plane: ""}
+      - op: add
+        path: /spec/template/spec/tolerations
+        value: [{key: node-role.kubernetes.io/control-plane, operator: Exists, effect: NoSchedule}]

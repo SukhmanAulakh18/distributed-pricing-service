@@ -1,0 +1,23 @@
+# Routes every alert to the team that owns it (the `owner` label), the same
+# ownership table as RUNBOOK.md. Receivers are empty here; in production each
+# would be a pager, chat channel or ticket queue.
+route:
+  receiver: core-engineering
+  group_by: [alertname, owner]
+  group_wait: 10s
+  group_interval: 1m
+  repeat_interval: 1h
+  routes:
+    - {matchers: ['owner="database"'], receiver: database-team}
+    - {matchers: ['owner="platform"'], receiver: platform}
+    - {matchers: ['owner="quant"'], receiver: quant-analytics}
+receivers:
+  - name: core-engineering
+  - name: database-team
+  - name: platform
+  - name: quant-analytics
+inhibit_rules:
+  # One root cause, one page: when Redis or a node is down, the backlog and
+  # stuck-task alerts it causes are noise.
+  - source_matchers: ['alertname=~"RedisCircuitOpen|NodeNotReady"']
+    target_matchers: ['alertname=~"IntradayBacklog|TasksStuckPending"']

@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: alertmanager}
+  template:
+    metadata:
+      labels: {app: alertmanager}
+    spec:
+      containers:
+        - name: alertmanager
+          image: prom/alertmanager:v0.33.1
+          args: ["--config.file=/etc/alertmanager/alertmanager.yml"]
+          ports: [{containerPort: 9093, name: web}]
+          resources:
+            requests: {cpu: 20m, memory: 32Mi}
+            limits: {memory: 128Mi}
+          volumeMounts:
+            - {name: config, mountPath: /etc/alertmanager}
+      volumes:
+        - {name: config, configMap: {name: alertmanager-config}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager
+spec:
+  type: NodePort
+  selector: {app: alertmanager}
+  ports: [{port: 9093, targetPort: web, nodePort: 30093}]

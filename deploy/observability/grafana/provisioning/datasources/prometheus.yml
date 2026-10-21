@@ -1,0 +1,10 @@
+# The URL comes from the environment, so Compose and Kubernetes share this
+# file. Traces and alerts have their own UIs (Jaeger, Alertmanager); the SLO
+# dashboard reads firing alerts from Prometheus.
+apiVersion: 1
+datasources:
+  - name: Prometheus
+    uid: prom
+    type: prometheus
+    url: ${PROMETHEUS_URL}
+    isDefault: true

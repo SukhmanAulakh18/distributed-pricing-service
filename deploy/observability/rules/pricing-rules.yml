@@ -1,0 +1,131 @@
+# SLOs, burn-rate alerts and component alerts for the pricing service.
+# Every alert carries `owner` (Alertmanager routes on it) and a runbook link,
+# the same routing RUNBOOK.md and tools/triage.py use.
+#
+# SLOs (docs/SLO.md):
+#   availability: 99.9% of /price requests succeed (not 5xx)
+#   latency:      99% of /price requests complete within 250 ms
+#   books:        99% of books complete with no failed trades
+groups:
+  - name: pricing-sli
+    interval: 15s
+    rules:
+      - record: sli:price_error_ratio:rate5m
+        expr: (sum(rate(http_request_seconds_count{route="/price",status=~"5.."}[5m])) or vector(0)) / sum(rate(http_request_seconds_count{route="/price"}[5m]))
+      - record: sli:price_error_ratio:rate30m
+        expr: (sum(rate(http_request_seconds_count{route="/price",status=~"5.."}[30m])) or vector(0)) / sum(rate(http_request_seconds_count{route="/price"}[30m]))
+      - record: sli:price_error_ratio:rate1h
+        expr: (sum(rate(http_request_seconds_count{route="/price",status=~"5.."}[1h])) or vector(0)) / sum(rate(http_request_seconds_count{route="/price"}[1h]))
+      - record: sli:price_error_ratio:rate6h
+        expr: (sum(rate(http_request_seconds_count{route="/price",status=~"5.."}[6h])) or vector(0)) / sum(rate(http_request_seconds_count{route="/price"}[6h]))
+      - record: sli:price_slow_ratio:rate5m
+        expr: 1 - sum(rate(price_latency_seconds_bucket{le="0.25"}[5m])) / sum(rate(price_latency_seconds_count[5m]))
+      - record: sli:price_slow_ratio:rate1h
+        expr: 1 - sum(rate(price_latency_seconds_bucket{le="0.25"}[1h])) / sum(rate(price_latency_seconds_count[1h]))
+      - record: sli:book_failure_ratio:rate1h
+        expr: (sum(rate(jobs_total{kind="portfolio",outcome!="complete"}[1h])) or vector(0)) / sum(rate(jobs_total{kind="portfolio"}[1h]))
+
+  - name: pricing-slo-burn
+    rules:
+      # Multi-window burn rates: the long window proves the burn is real, the
+      # short one that it is still happening. 14.4x spends 2% of a 30-day
+      # budget in an hour: page. 6x over 6 hours: ticket.
+      - alert: PriceAvailabilityFastBurn
+        expr: sli:price_error_ratio:rate1h > (14.4 * 0.001) and sli:price_error_ratio:rate5m > (14.4 * 0.001)
+        labels: {severity: page, owner: core}
+        annotations:
+          summary: "/price is burning its 99.9% availability budget 14x too fast"
+          runbook_url: "https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/RUNBOOK.md#2-errors-5xx-resets-or-pods-restarting"
+      - alert: PriceAvailabilitySlowBurn
+        expr: sli:price_error_ratio:rate6h > (6 * 0.001) and sli:price_error_ratio:rate30m > (6 * 0.001)
+        labels: {severity: ticket, owner: core}
+        annotations:
+          summary: "/price error budget burning at 6x"
+          runbook_url: "https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/RUNBOOK.md#2-errors-5xx-resets-or-pods-restarting"
+      - alert: PriceLatencyBurn
+        expr: sli:price_slow_ratio:rate1h > (14.4 * 0.01) and sli:price_slow_ratio:rate5m > (14.4 * 0.01)
+        labels: {severity: page, owner: core}
+        annotations:
+          summary: "More than 14% of /price requests are slower than 250 ms"
+          runbook_url: "https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/RUNBOOK.md#1-price-slow-or-503s"
+
+  - name: pricing-components
+    rules:
+      - alert: IntradayBacklog
+        expr: max(pricing_queue_backlog{stream="pricing:intraday",kind="lag"}) > 100
+        for: 1m
+        labels: {severity: page, owner: core}
+        annotations:
+          summary: "{{ $value }} intraday tasks waiting for a worker"
+          runbook_url: "https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/RUNBOOK.md#5-books-slow-partial-http-206-or-exposure-runs-stuck"
+      - alert: TasksStuckPending
+        expr: max by (stream) (pricing_queue_backlog{kind="pending"}) > 0 and max by (stream) (pricing_queue_backlog{kind="pending"} offset 2m) > 0
+        for: 2m
+        labels: {severity: ticket, owner: core}
+        annotations:
+          summary: "Tasks on {{ $labels.stream }} delivered but unacked for over 2 minutes: no live worker to reclaim them?"
+          runbook_url: "https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/RUNBOOK.md#5-books-slow-partial-http-206-or-exposure-runs-stuck"
+      - alert: RedisCircuitOpen
+        expr: max(dependency_circuit_state{dependency="redis"}) == 2
+        for: 30s
+        labels: {severity: page, owner: platform}
+        annotations:
+          summary: "Pods have stopped calling Redis: pricing is uncached, books run on the API pods"
+          runbook_url: "https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/RUNBOOK.md#3-redis-down"
+      - alert: CassandraCircuitOpen
+        expr: max(dependency_circuit_state{dependency="cassandra"}) == 2
+        for: 30s
+        labels: {severity: ticket, owner: database}
+        annotations:
+          summary: "Pods have stopped writing to Cassandra: the price log has a gap"
+          runbook_url: "https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/RUNBOOK.md#4-cassandra-down-or-slow"
+      - alert: PriceLogDropping
+        expr: sum(rate(price_log_dropped_rows_total[5m])) > 0
+        labels: {severity: ticket, owner: database}
+        annotations:
+          summary: "Price-log rows are being dropped (write-behind queue full)"
+          runbook_url: "https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/RUNBOOK.md#4-cassandra-down-or-slow"
+      - alert: AdmissionRejecting
+        expr: sum(rate(compute_rejected_total[5m])) > 1
+        for: 2m
+        labels: {severity: ticket, owner: core}
+        annotations:
+          summary: "API pods are shedding load (503): capacity"
+          runbook_url: "https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/RUNBOOK.md#1-price-slow-or-503s"
+      - alert: PoisonTrade
+        expr: sum(increase(worker_tasks_total{outcome="poison"}[10m])) > 0
+        labels: {severity: ticket, owner: quant}
+        annotations:
+          summary: "A task crashed workers 3 times and was failed: send the trade to quant analytics"
+          runbook_url: "https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/RUNBOOK.md#5-books-slow-partial-http-206-or-exposure-runs-stuck"
+
+  - name: kubernetes
+    rules:
+      # kube-state-metrics series: only present on Kubernetes.
+      - alert: NodeNotReady
+        expr: kube_node_status_condition{condition="Ready",status="true"} == 0
+        for: 30s
+        labels: {severity: page, owner: platform}
+        annotations:
+          summary: "Node {{ $labels.node }} is NotReady"
+          runbook_url: "https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/RUNBOOK.md#7-a-kubernetes-node-is-lost"
+      - alert: CassandraReplicaDown
+        expr: kube_statefulset_status_replicas_ready{namespace="pricing",statefulset="cassandra"} < kube_statefulset_replicas{namespace="pricing",statefulset="cassandra"}
+        for: 1m
+        labels: {severity: ticket, owner: database}
+        annotations:
+          summary: "Cassandra running on {{ $value }} of 3 nodes: quorum holds with 2, not with 1"
+          runbook_url: "https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/RUNBOOK.md#4-cassandra-down-or-slow"
+      - alert: PodRestarting
+        expr: increase(kube_pod_container_status_restarts_total{namespace="pricing"}[10m]) > 2
+        labels: {severity: ticket, owner: core}
+        annotations:
+          summary: "{{ $labels.pod }} restarted {{ $value }} times in 10 minutes"
+          runbook_url: "https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/RUNBOOK.md#6-pods-restarted-at-startup"
+      - alert: ApiReplicasUnavailable
+        expr: kube_deployment_status_replicas_available{namespace="pricing",deployment="pricer-api"} < 2
+        for: 30s
+        labels: {severity: page, owner: core}
+        annotations:
+          summary: "Fewer than 2 API pods available"
+          runbook_url: "https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/RUNBOOK.md#2-errors-5xx-resets-or-pods-restarting"
