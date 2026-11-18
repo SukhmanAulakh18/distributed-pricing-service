@@ -57,6 +57,15 @@ section:last-of-type { border-bottom: 0; }
 .stat b { font: 500 1.6rem/1.1 var(--mono); font-variant-numeric: tabular-nums; color: var(--ink); }
 .stat span { font-size: 0.9rem; color: var(--muted); }
 .stat em { font-style: normal; color: var(--accent); font-weight: 600; }
+.cta { display: inline-flex; align-items: center; gap: 8px; margin-top: 20px; padding: 12px 22px; min-height: 48px; border-radius: 8px; background: var(--accent); color: #fff; font: 600 1rem var(--body); text-decoration: none; justify-self: start; }
+.cta:hover { filter: brightness(1.08); }
+:root[data-theme="dark"] .cta { color: #0e1113; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .cta { color: #0e1113; } }
+.biz { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 24px; }
+.biz .stat { border-color: var(--accent); }
+.biz .stat b { color: var(--accent); }
+.biz-label { margin-top: 24px; font: 500 0.78rem/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.stat .fix { font-size: 0.82rem; }
 figure { margin: 0; display: grid; gap: 8px; min-width: 0; }
 figure img { width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
 figcaption { font-size: 0.88rem; color: var(--muted); max-width: 82ch; }
@@ -136,6 +145,7 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
   <a href="#performance">Performance</a>
   <a href="#engineering">C++ &amp; pybind11</a>
   <a href="#run">Run it</a>
+  <a href="desk.html">Try it: XVA desk</a>
 </div></nav>
 
 <div class="wrap">
@@ -143,6 +153,7 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
   <span class="eyebrow">Engineering case study · distributed systems · SRE</span>
   <h1>Distributed Pricing Service</h1>
   <p class="lede">I built a front-office pricing platform in miniature and then tried to break it. A C++ pricing and risk library sits behind a Python service. Books and risk runs are spread across Kubernetes worker pools, with Redis and Cassandra underneath. The cluster is managed in Rancher and observed end to end, and chaos tests kill its pods, its databases and a whole node while it is under load.</p>
+  <a class="cta" href="desk.html">Try the XVA desk &rarr;</a>
   <div class="meta">
     <span>Sukhmanpreet Singh Aulakh · Oakville, ON</span>
     <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service">Source on GitHub</a>
@@ -152,9 +163,16 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
     <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/OPERATIONS.md">Operations</a>
     <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/RUNBOOK.md">Runbook</a>
   </div>
-  <div class="ledger">
+  <div class="biz-label" id="biz-h">What it means for the desk (XVA bench, 50,000 scenarios)</div>
+  <div class="biz" role="list" aria-labelledby="biz-h">
+    <div class="stat" role="listitem"><b>−72% CVA with a CSA</b><span>CVA with a CSA: collateral cuts the credit charge on the book, so more trades fit at a lower price.</span></div>
+    <div class="stat" role="listitem"><b>0.27 s pre-deal check</b><span>A trader gets the credit cost and limit usage of a new trade while the client is still on the phone.</span></div>
+    <div class="stat" role="listitem"><b>10.4&times; tighter what-if pricing</b><span>Same scenarios before and after, so a small change in CVA is signal, not simulation noise.</span></div>
+  </div>
+  <div class="biz-label">Reliability, from the chaos run</div>
+  <div class="ledger" style="margin-top:12px">
     <div class="stat"><b>99.992%</b><span>of 76,481 single prices served in a 10-minute chaos run with <em>11 faults</em>, including a whole Kubernetes node stopped</span></div>
-    <div class="stat"><b>29 of 30 books</b><span>completed in that run, with <em>0 failed trades</em> out of 58,000</span></div>
+    <div class="stat"><b>29 of 30 books</b><span>completed in that run, with <em>0 failed trades</em> out of 58,000</span><span class="fix">The lost book was a connection reset. It is fixed with an <code>Idempotency-Key</code> and <code>GET /jobs/{id}</code> and covered by unit tests; the chaos run has not been repeated yet.</span></div>
     <div class="stat"><b>4 of 4</b><span>exposure (CVA) runs completed during the chaos, every one <em>bit-identical</em></span></div>
     <div class="stat"><b>4 owners</b><span>every alert is routed by an <em>owner</em> label: core engineering, database, platform or quant</span></div>
     <div class="stat"><b>5.17 s → 0.32 s</b><span>for an intraday book while a big batch run is queued, after splitting the streams</span></div>
@@ -533,7 +551,7 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
   </div>
   <div class="callout warn">
     <p><b>What the chaos runs found.</b> Run 1 lost 3 books at the connection level before Kubernetes declared the node NotReady; the fix was an idempotent retry. Run 2 showed that the node alert could never fire, because kube-state-metrics was running on the node that died; the fix was moving the observability stack to the control plane.</p>
-    <p><b>Still open.</b> In run 3, 1 of 30 books failed on both attempts, with connection resets during the outage. A single HTTP retry is too short for a two-minute outage. The next step is an idempotency key that the client polls on.</p>
+    <p><b>Fixed in code, not yet re-measured.</b> In run 3, 1 of 30 books failed on both attempts, with connection resets during the outage. A single HTTP retry is too short for a two-minute outage. The fix is now in the code: the client sends an <code>Idempotency-Key</code> and polls <code>GET /jobs/{id}</code>, covered by unit tests. The 10-minute chaos run has not been repeated since, so the figures above still show the lost book.</p>
   </div>
 </section>
 
