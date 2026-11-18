@@ -71,6 +71,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker build -f docker/tools.Dockerfile -t mc-tools .
+      # Runner kernels randomize mmap with 32 bits of entropy, which TSan's
+      # fixed shadow layout cannot fit: it segfaults at startup. Containers
+      # share the host kernel, so lower it here, on the host.
+      - run: sudo sysctl -w vm.mmap_rnd_bits=28
       - name: ASan/UBSan, TSan, Valgrind (C++ tests and the Python extension)
         run: docker run --rm --security-opt seccomp=unconfined -v "$PWD":/src:ro mc-tools scripts/cpp_checks.sh all
 
