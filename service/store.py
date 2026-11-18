@@ -64,6 +64,10 @@ SCHEMA = [
 MIGRATIONS = [
     "ALTER TABLE {ks}.prices_by_day ADD method text",
     "ALTER TABLE {ks}.prices_by_day ADD job_id text",
+    # Collateral and own credit (null for runs without them).
+    "ALTER TABLE {ks}.exposure_runs ADD dva double",
+    "ALTER TABLE {ks}.exposure_runs ADD cva_csa double",
+    "ALTER TABLE {ks}.exposure_runs ADD peak_pfe_csa double",
 ]
 
 
@@ -154,9 +158,11 @@ class CassandraStore:
             "FROM job_runs WHERE day = ? LIMIT ?", ConsistencyLevel.LOCAL_QUORUM)
         self._insert_exposure = prepare(
             "INSERT INTO exposure_runs (netting_set_id, run_at, job_id, market_data_version, grid, ee, pfe, "
-            "epe, peak_pfe, cva, n_scenarios) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", ConsistencyLevel.LOCAL_QUORUM)
+            "epe, peak_pfe, cva, n_scenarios, dva, cva_csa, peak_pfe_csa) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            ConsistencyLevel.LOCAL_QUORUM)
         self._latest_exposure = prepare(
-            "SELECT run_at, job_id, market_data_version, grid, ee, pfe, epe, peak_pfe, cva, n_scenarios "
+            "SELECT run_at, job_id, market_data_version, grid, ee, pfe, epe, peak_pfe, cva, n_scenarios, "
+            "dva, cva_csa, peak_pfe_csa "
             "FROM exposure_runs WHERE netting_set_id = ? LIMIT 1")
 
     def _exec(self, stmt, params):
@@ -208,7 +214,8 @@ class CassandraStore:
 
     def write_exposure(self, run):
         params = (run["netting_set_id"], datetime.now(timezone.utc), run["job_id"], run["market_data_version"],
-                  run["grid"], run["ee"], run["pfe"], run["epe"], run["peak_pfe"], run["cva"], run["n_scenarios"])
+                  run["grid"], run["ee"], run["pfe"], run["epe"], run["peak_pfe"], run["cva"], run["n_scenarios"],
+                  run.get("dva"), run.get("cva_csa"), run.get("peak_pfe_csa"))
         self._guarded(lambda: self._exec(self._insert_exposure, params))
 
     def latest_exposure(self, netting_set_id):

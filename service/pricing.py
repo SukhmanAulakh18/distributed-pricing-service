@@ -93,7 +93,8 @@ def compute(req: PriceRequest, h: str, span: bool = True) -> dict:
             elif sim.greeks:
                 # Central differences with the same seed: common random
                 # numbers cancel most of the noise in the difference.
-                ds, dv = 0.01 * p.spot, 0.01
+                # Vol bump capped at half the vol: vol - 0.01 must stay positive.
+                ds, dv = 0.01 * p.spot, min(0.01, p.vol / 2)
                 out["delta"] = (_mc(p, sim, seed, spot=p.spot + ds).price.value
                                 - _mc(p, sim, seed, spot=p.spot - ds).price.value) / (2 * ds)
                 out["vega"] = (_mc(p, sim, seed, vol=p.vol + dv).price.value

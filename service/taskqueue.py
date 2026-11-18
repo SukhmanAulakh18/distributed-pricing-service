@@ -73,23 +73,42 @@ def ensure_groups(r: redis.Redis) -> None:
 
 
 def submit(r: redis.Redis, kind: str, priority: str, tasks: list[dict], meta: dict,
-           payload: bytes | None = None, request_id: str = "-") -> str:
-    """Enqueues a job in one pipelined round trip, however many tasks it has."""
-    job_id = uuid.uuid4().hex
+           payload: bytes | None = None, request_id: str = "-", job_id: str | None = None) -> str:
+    """Enqueues a job in one round trip, however many tasks it has.
+
+    With a caller-chosen job_id (idempotency) the existence check, meta and
+    enqueue are one WATCH/MULTI transaction: a retry of a job that already
+    exists enqueues nothing and just returns the id.
+    """
     stream = stream_for(priority)
-    pipe = r.pipeline(transaction=False)
-    pipe.hset(_key(job_id, "meta"), mapping={
-        "kind": kind, "n": len(tasks), "submitted_at": time.time(), "request_id": request_id,
-        "meta": json.dumps(meta)})
-    pipe.expire(_key(job_id, "meta"), JOB_TTL_S)
-    if payload is not None:
-        pipe.set(_key(job_id, "payload"), payload, ex=JOB_TTL_S)
     traceparent = tracing.inject()
-    for i, task in enumerate(tasks):
-        pipe.xadd(stream, {"job": job_id, "idx": i, "kind": kind, "task": json.dumps(task), "traceparent": traceparent},
-                  maxlen=STREAM_MAXLEN, approximate=True)
-    pipe.execute()
-    return job_id
+    explicit = job_id is not None
+    job_id = job_id or uuid.uuid4().hex
+    meta_key = _key(job_id, "meta")
+    with r.pipeline(transaction=explicit) as pipe:
+        while True:
+            try:
+                if explicit:
+                    pipe.watch(meta_key)
+                    if pipe.exists(meta_key):
+                        return job_id
+                    pipe.multi()
+                    # Meta expired but results outlive it (their TTL refreshes on
+                    # every write): clear leftovers so a reused key starts fresh.
+                    pipe.delete(*(_key(job_id, p) for p in ("results", "blobs", "payload", "recorded", "final")))
+                pipe.hset(meta_key, mapping={
+                    "kind": kind, "n": len(tasks), "submitted_at": time.time(), "request_id": request_id,
+                    "meta": json.dumps(meta)})
+                pipe.expire(meta_key, JOB_TTL_S)
+                if payload is not None:
+                    pipe.set(_key(job_id, "payload"), payload, ex=JOB_TTL_S)
+                for i, task in enumerate(tasks):
+                    pipe.xadd(stream, {"job": job_id, "idx": i, "kind": kind, "task": json.dumps(task),
+                                       "traceparent": traceparent}, maxlen=STREAM_MAXLEN, approximate=True)
+                pipe.execute()
+                return job_id
+            except redis.WatchError:
+                continue  # someone created it first; the next pass sees it and returns
 
 
 def payload(r: redis.Redis, job_id: str) -> bytes | None:
@@ -97,13 +116,30 @@ def payload(r: redis.Redis, job_id: str) -> bytes | None:
 
 
 def complete(r: redis.Redis, job_id: str, idx: int, result: dict, blob: bytes | None = None) -> None:
+    """Stores a task result. An error never replaces an existing result (a
+    duplicate run or fail_poison must not clobber a good one); a success may
+    replace an error."""
     pipe = r.pipeline(transaction=False)
-    pipe.hset(_key(job_id, "results"), idx, json.dumps(result))
+    if "error" in result:
+        pipe.hsetnx(_key(job_id, "results"), idx, json.dumps(result))
+    else:
+        pipe.hset(_key(job_id, "results"), idx, json.dumps(result))
     pipe.expire(_key(job_id, "results"), JOB_TTL_S)
     if blob is not None:
         pipe.hset(_key(job_id, "blobs"), idx, blob)
         pipe.expire(_key(job_id, "blobs"), JOB_TTL_S)
     pipe.execute()
+
+
+def heartbeat(r: redis.Redis, stream: str, consumer: str, message_id: str) -> bool:
+    """Resets the idle clock of a task this consumer is still running, so
+    reclaim() only takes tasks whose worker is really gone. JUSTID leaves the
+    delivery count alone. Returns False if another consumer now owns the
+    message: XCLAIM would steal it back, so we leave it alone."""
+    if not r.xpending_range(stream, GROUP, min=message_id, max=message_id, count=1, consumername=consumer):
+        return False
+    r.xclaim(stream, GROUP, consumer, min_idle_time=0, message_ids=[message_id], justid=True)
+    return True
 
 
 def meta(r: redis.Redis, job_id: str) -> dict | None:

@@ -121,16 +121,20 @@ def main():
             req = {"book_id": "CHAOS", "market_data_version": f"md-{uuid.uuid4().hex[:8]}", "trades": trades,
                    "simulation": {"n_paths": 20_000}, "task_size": 50, "timeout_s": 120}
             rec = {"t": t, "attempts": 0}
+            # One key per book, reused on every retry: a retry after a
+            # connection reset joins the job already running on the workers
+            # instead of losing it (the open issue from chaos run 3).
+            headers = {"Idempotency-Key": uuid.uuid4().hex}
             while rec["attempts"] <= a.book_retries:
                 rec["attempts"] += 1
                 try:
-                    r = httpx.post(f"{a.api}/portfolio/price", json=req, timeout=150)
+                    r = httpx.post(f"{a.api}/portfolio/price", json=req, headers=headers, timeout=150)
                     d = r.json() if r.headers.get("content-type", "").startswith("application/json") else {}
                     rec.update(s=now() - t, status=r.status_code, failed=d.get("n_failed"), mode=d.get("mode"))
-                    break
+                    if r.status_code != 503:  # 503: queue down, retry later with the same key
+                        break
+                    time.sleep(2)
                 except httpx.HTTPError as e:
-                    # A book is idempotent (same input, same prices), so a
-                    # client may retry a connection-level failure.
                     rec.update(s=now() - t, status=0, failed=None, error=str(e))
                     time.sleep(2)
             with lock:
