@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>XVA desk: try the CSA</title>
+<meta name="description" content="Negotiate a collateral agreement in your browser and watch credit exposure and CVA move, then see the same effects measured on the C++ engine.">
+<meta name="author" content="Sukhmanpreet Singh Aulakh">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --bg: #f5f6f3; --surface: #ffffff; --ink: #15191d; --muted: #59626b; --line: #dcdfd8;
+  --accent: #0d6b62; --accent-soft: #e2efec; --warn: #a15c07; --warn-soft: #f6ead9; --bad: #c0392b; --good: #1d7340; --code-bg: #eef0eb;
+  --s1: #2a78d6; --s2: #eb6834;
+  --display: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --body: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1113; --surface: #161a1d; --ink: #e7eae7; --muted: #9aa3aa; --line: #2a3035;
+    --accent: #5cc0b4; --accent-soft: #15302d; --warn: #e3a34d; --warn-soft: #33270f; --bad: #f07167; --good: #6cc48c; --code-bg: #1d2226;
+    --s1: #3987e5; --s2: #d95926; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1113; --surface: #161a1d; --ink: #e7eae7; --muted: #9aa3aa; --line: #2a3035;
+  --accent: #5cc0b4; --accent-soft: #15302d; --warn: #e3a34d; --warn-soft: #33270f; --bad: #f07167; --good: #6cc48c; --code-bg: #1d2226;
+  --s1: #3987e5; --s2: #d95926; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { scroll-behavior: smooth; scroll-padding-top: 64px; -webkit-text-size-adjust: 100%; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; animation: none !important; } }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 var(--body); overflow-x: hidden; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 56px; }
+nav.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+nav.top .in { max-width: 1080px; margin: 0 auto; padding-inline: 16px; display: flex; gap: 18px; align-items: center; overflow-x: auto; white-space: nowrap; height: 48px; font-size: 0.88rem; }
+nav.top b { font-family: var(--display); font-size: 1.05rem; margin-right: 6px; }
+nav.top a { color: var(--muted); text-decoration: none; }
+nav.top a:hover, nav.top a[aria-current] { color: var(--accent); }
+h1, h2, h3 { font-family: var(--display); font-weight: 600; line-height: 1.15; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(2rem, 5.5vw, 3.1rem); letter-spacing: -0.01em; }
+h2 { font-size: clamp(1.5rem, 4vw, 1.9rem); margin-bottom: 4px; }
+h3 { font-size: 1.2rem; }
+p { margin: 0; max-width: 70ch; }
+a { color: var(--accent); }
+code { font-family: var(--mono); font-size: 0.86em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+.eyebrow { font: 500 0.78rem/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.lede { font-size: 1.1rem; color: var(--muted); margin-top: 14px; max-width: 72ch; }
+.lede strong { color: var(--ink); font-weight: 600; }
+header { display: grid; gap: 4px; padding-bottom: 28px; border-bottom: 1px solid var(--line); }
+section { padding-block: 40px; border-bottom: 1px solid var(--line); display: grid; gap: 16px; min-width: 0; }
+section:last-of-type { border-bottom: 0; }
+.note { font-size: 0.88rem; color: var(--muted); max-width: 82ch; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 24px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: grid; gap: 4px; align-content: start; min-width: 0; }
+.stat b { font: 500 1.5rem/1.1 var(--mono); font-variant-numeric: tabular-nums; }
+.stat span { font-size: 0.88rem; color: var(--muted); }
+.stat em { font-style: normal; color: var(--accent); font-weight: 600; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: grid; gap: 6px; align-content: start; min-width: 0; }
+.card h3 { font-size: 1.1rem; }
+.card .q { font-size: 0.92rem; }
+.card .n { font: 0.8rem/1.4 var(--mono); color: var(--accent); }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px; min-width: 0; }
+.sim { display: grid; grid-template-columns: minmax(0, 330px) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 820px) { .sim { grid-template-columns: minmax(0, 1fr); } }
+.ctl { display: grid; gap: 12px; }
+.ctl label, .ctl .lab { display: grid; gap: 4px; font-size: 0.88rem; font-weight: 500; }
+.ctl .row { display: flex; justify-content: space-between; gap: 8px; }
+.ctl output { font: 500 0.88rem var(--mono); color: var(--accent); }
+.ctl fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 12px; min-width: 0; }
+.ctl fieldset[disabled] { opacity: 0.45; }
+input[type=range] { width: 100%; accent-color: var(--accent); height: 28px; margin: 0; }
+select { font: 0.92rem var(--body); padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); width: 100%; }
+.check { display: flex !important; align-items: center; gap: 10px; font-size: 0.95rem !important; }
+.check input { width: 20px; height: 20px; accent-color: var(--accent); }
+.big { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.big div { background: var(--bg); border-radius: 6px; padding: 10px 12px; min-width: 0; }
+.big small { display: block; font-size: 0.76rem; color: var(--muted); line-height: 1.3; }
+.big b { font: 500 1.25rem/1.3 var(--mono); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.big .hl { background: var(--accent-soft); }
+.big .hl b { color: var(--accent); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 0.82rem; color: var(--muted); margin: 6px 0 0; padding: 0; list-style: none; }
+.legend i { display: inline-block; width: 18px; height: 0; border-top: 3px solid; vertical-align: middle; margin-right: 6px; }
+.legend i.d { border-top-style: dashed; }
+.chart { position: relative; min-width: 0; }
+.chart svg { width: 100%; height: auto; display: block; font-family: var(--body); touch-action: pan-y; }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.chart .axis { font: 11px var(--mono); fill: var(--muted); }
+.chart .cross { stroke: var(--ink); stroke-width: 1; opacity: 0.45; }
+.tip { position: absolute; top: 4px; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 9px; font-size: 0.78rem; line-height: 1.4; box-shadow: 0 4px 14px rgba(0,0,0,0.14); white-space: nowrap; z-index: 2; }
+.tip b { font-family: var(--mono); font-weight: 500; }
+.try { display: grid; gap: 8px; margin-top: 4px; }
+.try h3 { font-size: 1rem; font-family: var(--body); font-weight: 600; }
+.try .t { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; align-items: start; font-size: 0.9rem; }
+button { font: 500 0.88rem var(--body); padding: 8px 12px; min-height: 40px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button[aria-pressed="true"], button[aria-current="step"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; align-items: start; }
+.two > * { min-width: 0; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 500 0.74rem/1.3 var(--mono); text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+tr:last-child td { border-bottom: 0; }
+td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.callout { background: var(--accent-soft); border-radius: 8px; padding: 14px 16px; max-width: 82ch; display: grid; gap: 6px; font-size: 0.95rem; }
+.callout.warn { background: var(--warn-soft); }
+.steps { display: flex; flex-wrap: wrap; gap: 6px; }
+.steps button { display: inline-flex; gap: 8px; align-items: center; }
+.steps button span { font-family: var(--mono); font-size: 0.78rem; opacity: 0.8; }
+.stepbody { display: grid; gap: 12px; }
+.stepbody dl { margin: 0; display: grid; gap: 10px; }
+.stepbody dt { font: 500 0.74rem/1.3 var(--mono); text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.stepbody dd { margin: 2px 0 0; max-width: 72ch; }
+.nav2 { display: flex; gap: 8px; }
+ul.tight { margin: 0; padding-left: 20px; display: grid; gap: 6px; max-width: 76ch; }
+footer { padding-top: 24px; font-size: 0.9rem; color: var(--muted); display: grid; gap: 6px; }
+footer nav { display: flex; flex-wrap: wrap; gap: 6px 18px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+</head><body>
+<nav class="top" aria-label="Sections"><div class="in">
+  <b>Pricing Service</b>
+  <a href="index.html">Case study</a>
+  <a href="#who">Who uses it</a>
+  <a href="#play">Negotiate the CSA</a>
+  <a href="#measured">Measured</a>
+  <a href="#request">One request</a>
+  <a href="#limits">Limits</a>
+</div></nav>
+<div class="wrap">
+<header>
+  <div class="eyebrow">XVA desk</div>
+  <h1>Should we say yes to this trade, and what does the client's credit cost us?</h1>
+  <p class="lede">A corporate client asks the bank for a 5-year equity hedge. Before the trader says yes, the XVA desk must answer three questions in seconds. <strong>How much of the client's credit line does it use</strong> (PFE)? <strong>What will the client's possible default cost us</strong> (CVA)? <strong>Does a collateral agreement change the answer?</strong></p>
+  <p class="note" style="margin-top:10px">PFE is the bad-case exposure (95th percentile) at each future date. CVA is the price tag on the client defaulting while they owe us money. A CSA is the collateral agreement: when the trade moves in our favour, they hand over cash.</p>
+  <div class="tiles" id="tiles" role="list"></div>
+  <p class="note" style="margin-top:12px">Measured by <code>bench/bench_xva.py</code> on the author's laptop (<span id="mach"></span>), with a zero-threshold CSA and a 10-day margin period unless stated. Percentages are computed on this page from the raw benchmark file, on the same scenarios.</p>
+</header>
+
+<section id="who" aria-labelledby="who-h">
+  <div><h2 id="who-h">Who uses it</h2><p class="note">Five people ask this system different questions. Each one acts on a different number.</p></div>
+  <div class="cards">
+    <div class="card"><h3>Trader</h3><p class="q"><b>Decision:</b> can I do this trade, and what do I charge on top of the market price?</p><p class="n">Driven by: incremental CVA of the new trade</p></div>
+    <div class="card"><h3>XVA desk</h3><p class="q"><b>Decision:</b> how much CVA and DVA P&amp;L do we carry, and what do we hedge?</p><p class="n">Driven by: CVA, DVA, bilateral CVA</p></div>
+    <div class="card"><h3>Credit risk</h3><p class="q"><b>Decision:</b> does the worst plausible exposure fit inside this client's credit limit?</p><p class="n">Driven by: peak PFE at 95%</p></div>
+    <div class="card"><h3>Collateral and legal</h3><p class="q"><b>Decision:</b> which CSA terms are worth negotiating: threshold, minimum transfer, margin period?</p><p class="n">Driven by: CVA and PFE with and without the CSA</p></div>
+    <div class="card"><h3>SRE and platform</h3><p class="q"><b>Decision:</b> will the numbers arrive on time, and the same, even when nodes die?</p><p class="n">Driven by: latency, and identical results on any worker count</p></div>
+  </div>
+</section>
+
+<section id="play" aria-labelledby="play-h">
+  <div><h2 id="play-h">Negotiate the CSA</h2>
+  <p class="note"><b>In-browser model, same rules as the engine, 2,000 scenarios: for intuition. Platform results below are from the C++ engine.</b> One underlying (spot 100, 3% rate), a small book, monthly dates for five years, margin calls at each node. The book is a different one from the benchmark's, so percentages will differ; the shape is the point.</p></div>
+  <div class="sim">
+    <form class="panel ctl" id="ctl" onsubmit="return false" aria-label="Simulation inputs">
+      <label>Book (what we hold against the client)
+        <select id="preset">
+          <option value="puts">Long put book: client wrote us downside protection</option>
+          <option value="fwds">Client hedges with forwards: we are long two forwards</option>
+          <option value="mixed" selected>Mixed book: forward, put and a short call</option>
+        </select></label>
+      <label><span class="row">Volatility <output id="o-vol" for="vol"></output></span><input type="range" id="vol" min="10" max="60" step="1" value="25"></label>
+      <label><span class="row">Client CDS spread <output id="o-cds" for="cds"></output></span><input type="range" id="cds" min="25" max="600" step="25" value="150"></label>
+      <label class="check"><input type="checkbox" id="csa" checked> CSA in force</label>
+      <fieldset id="csaset">
+        <legend class="sr">CSA terms</legend>
+        <label><span class="row">Threshold they post above <output id="o-tr" for="tr"></output></span><input type="range" id="tr" min="0" max="7" step="1" value="0"></label>
+        <label><span class="row">Threshold we post above <output id="o-tp" for="tp"></output></span><input type="range" id="tp" min="0" max="7" step="1" value="0"></label>
+        <label><span class="row">Minimum transfer amount <output id="o-mta" for="mta"></output></span><input type="range" id="mta" min="0" max="4" step="1" value="2"></label>
+        <label><span class="row">Margin period of risk <output id="o-mpor" for="mpor"></output></span><input type="range" id="mpor" min="0" max="4" step="1" value="3"></label>
+      </fieldset>
+      <p class="note" id="speed"></p>
+    </form>
+    <div class="panel">
+      <div class="big" role="status" aria-live="polite" aria-atomic="true" id="bignums">
+        <div><small>CVA, no CSA</small><b id="n-cva">-</b></div>
+        <div class="hl"><small>CVA, with CSA</small><b id="n-cvac">-</b></div>
+        <div class="hl"><small>CVA saving</small><b id="n-save">-</b></div>
+        <div><small>Peak PFE, no CSA</small><b id="n-peak">-</b></div>
+        <div class="hl"><small>Peak PFE, with CSA</small><b id="n-peakc">-</b></div>
+      </div>
+      <div class="chart" id="c-sim"></div>
+      <ul class="legend" id="lg-sim"></ul>
+      <div class="try">
+        <h3>Try this</h3>
+        <div class="t"><button type="button" data-try="mpor0">MPoR 0</button><span>Margin period zero, thresholds zero: collateral removes almost all exposure.</span></div>
+        <div class="t"><button type="button" data-try="mpor20">MPoR 20</button><span>Now 20 days. Exposure grows back because the price can move a lot before we can close out, which is why regulators floor it at 10 days for most netting sets.</span></div>
+        <div class="t"><button type="button" data-try="thr">High thresholds</button><span>Raise both thresholds. The CSA asks for collateral less often and CVA climbs back toward the uncollateralized number.</span></div>
+        <div class="t"><button type="button" data-try="reset">Reset</button><span>Back to a zero-threshold CSA, 10-day margin period, 150 bps.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="measured" aria-labelledby="m-h">
+  <div><h2 id="m-h">Measured on the platform</h2>
+  <p class="note">These come from the C++ engine, not the browser model above: 200 trades, 50,000 scenarios, one measurement run on the author's laptop by <code>bench/bench_xva.py</code>. Counterparty CDS 150 bps, recovery 40%. CSA terms: two-way, minimum transfer $250,000.</p></div>
+  <div class="two">
+    <div class="panel"><h3>CVA against the threshold</h3>
+      <p class="note">10-day margin period. Raising the threshold lets exposure build before collateral flows, so CVA returns toward the uncollateralized line.</p>
+      <div class="chart" id="c-thr"></div><ul class="legend" id="lg-thr"></ul></div>
+    <div class="panel"><h3>CVA against the margin period</h3>
+      <p class="note">Zero threshold. Each extra day between the last margin call and close-out is a day the price can run away from the collateral held. This is the cost of slow margining.</p>
+      <div class="chart" id="c-mpor"></div><ul class="legend" id="lg-mpor"></ul></div>
+  </div>
+  <div class="table-wrap"><table><caption class="sr">Threshold sweep</caption>
+    <thead><tr><th>Threshold (each way)</th><th>CVA with CSA</th><th>CVA, no CSA</th><th>Peak PFE with CSA</th><th>Peak PFE, no CSA</th></tr></thead><tbody id="tb-thr"></tbody></table></div>
+  <p class="note" id="pfe-note">One counterintuitive line in the table: a two-way CSA can leave a higher peak PFE at low thresholds than at high ones, because collateral we have posted is at risk if they default. If the trade swings in our favour inside the margin period, we are owed the value and the collateral we posted.</p>
+  <div class="panel"><h3>Exposure profile, with and without a zero-threshold CSA</h3>
+    <p class="note">Expected exposure (EE) and 95% PFE over five years. The collateralized lines sit far below. The jump at year 5 is the lag at work: collateral still held from before the trades matured.</p>
+    <div class="chart" id="c-prof"></div><ul class="legend" id="lg-prof"></ul></div>
+  <div class="panel"><h3>Pre-deal: what does the new 5-year forward add?</h3>
+    <p class="note" id="pre-lead"></p>
+    <div class="chart" id="c-pre"></div>
+    <p class="note" id="pre-note" style="margin-top:8px"></p></div>
+</section>
+
+<section id="request" aria-labelledby="r-h">
+  <div><h2 id="r-h">Follow one request</h2><p class="note">A pre-deal exposure request from the API to the stored answer. Pick a step to see what can fail there and what keeps the answer correct.</p></div>
+  <div class="steps" role="group" aria-label="Request steps" id="steps"></div>
+  <div class="panel stepbody" id="stepbody" aria-live="polite"></div>
+  <div class="nav2"><button type="button" id="prev">Previous</button><button type="button" id="next">Next</button></div>
+  <div class="callout warn"><b>Where this stands.</b> The idempotency fix (an <code>Idempotency-Key</code> plus polling <code>GET /jobs/{id}</code>) closes the open issue from chaos run 3 and is covered by unit tests. The 10-minute chaos run has not been re-run since.</div>
+</section>
+
+<section id="limits" aria-labelledby="l-h">
+  <h2 id="l-h">Limitations, stated plainly</h2>
+  <ul class="tight">
+    <li>Flat interest rate and flat credit curves; constant volatility; Black-Scholes revaluation.</li>
+    <li>PFE is risk-neutral (drift at the risk-free rate), not a real-world projection.</li>
+    <li>No wrong-way risk: the client's default chance does not depend on the market.</li>
+    <li>Defaults of the bank and the client are independent.</li>
+    <li>Synthetic data. The in-browser model is a teaching sketch with 2,000 scenarios, so its numbers carry sampling noise and are not comparable to the engine's.</li>
+    <li>An independent learning project, not affiliated with any employer.</li>
+  </ul>
+</section>
+
+<footer>
+  <nav aria-label="Links">
+    <a href="index.html">Case study</a>
+    <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service">GitHub repository</a>
+    <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/MODELS.md">Models and validation (MODELS.md)</a>
+  </nav>
+  <p>Built by Sukhmanpreet Singh Aulakh.</p>
+</footer>
+</div>
+
+<script>
+// Copied from bench/results/xva.json (measured on the author's laptop by bench/bench_xva.py).
+const XVA = {"machine":"arm64, 10 threads","n_trades":200,"n_scenarios":50000,"units":"USD; 1,000 units per contract","counterparty":{"recovery":0.4,"cds_spread_bps":150.0},"own_credit":{"recovery":0.4,"cds_spread_bps":60.0},"uncollateralized":{"cva":101934.27,"peak_pfe":12475949.31,"epe":1547230.82,"dva":100933.9,"bilateral_cva":-1279.0,"seconds":1.17,"v0":-1407374.16},"profile":{"grid":[0.08333333333333333,0.16666666666666666,0.25,0.3333333333333333,0.4166666666666667,0.5,0.5833333333333334,0.6666666666666666,0.75,0.8333333333333334,0.9166666666666666,1.0,1.0833333333333333,1.1666666666666667,1.25,1.3333333333333333,1.4166666666666667,1.5,1.5833333333333333,1.6666666666666667,1.75,1.8333333333333333,1.9166666666666667,2.0,2.0833333333333335,2.1666666666666665,2.25,2.3333333333333335,2.4166666666666665,2.5,2.5833333333333335,2.6666666666666665,2.75,2.8333333333333335,2.9166666666666665,3.0,3.0833333333333335,3.1666666666666665,3.25,3.3333333333333335,3.4166666666666665,3.5,3.5833333333333335,3.6666666666666665,3.75,3.8333333333333335,3.9166666666666665,4.0,4.083333333333333,4.166666666666667,4.25,4.333333333333333,4.416666666666667,4.5,4.583333333333333,4.666666666666667,4.75,4.833333333333333,4.916666666666667,5.0],"ee":[185556.42,403365.14,585946.99,1090510.56,1316483.27,1242401.84,1210819.58,1631251.75,1461701.71,1623875.92,1892204.84,2225693.73,2227516.41,1721641.71,1618469.31,2324864.21,2470103.94,3404477.36,3466221.99,3633724.36,2526850.48,2418443.06,2122574.18,1463230.25,1580233.27,1717792.13,1321707.13,1954080.4,1493865.37,1484219.94,1475901.87,1305683.99,1264863.23,930342.47,965632.47,1273000.56,1310561.22,1145306.67,1211185.96,1457321.09,2023603.0,1873802.09,1812440.83,1503447.04,1985470.05,1693865.31,1388379.29,1199672.71,747126.02,1001458.18,1352435.04,1039102.06,745772.29,1405954.17,2399967.8,1179621.84,2042731.46,1008309.18,271063.86,0.0],"pfe":[1328291.1,2415644.49,3261858.5,5144860.67,6034062.58,5911055.65,5927132.95,7190959.44,7015460.38,7331775.11,7616958.84,8576992.54,8834272.6,7707111.76,7267785.6,9422751.89,9720307.39,12189198.9,12439516.26,12475949.31,10409997.03,10288765.6,9781407.06,7664700.38,8146151.57,8707940.03,7256764.35,9306841.57,8056509.41,8170324.21,8108941.89,7366864.09,7096210.09,6042774.85,6220544.94,7172970.76,7360443.8,6922859.42,7217452.94,8220191.35,10409270.02,9857281.18,9845393.91,7553676.48,8900702.56,8090725.83,7395218.8,5734400.26,4369482.58,5322162.41,6533152.11,5279050.49,4150668.88,5335089.47,7080140.37,6697255.31,9557347.07,4110390.77,1597839.27,0.0],"ene":[1601947.97,1821011.27,2014749.96,2184791.33,2303669.57,2504539.78,2826625.77,2509504.8,3129195.68,2752103.84,2173023.23,2068905.27,2522704.13,3249104.45,3130611.73,3045757.9,3064207.13,3005732.14,3123658.39,2891932.93,4240629.94,4217248.12,5087369.67,4655293.03,5191473.69,5418761.48,6200895.28,5758832.17,6416262.76,7333145.93,7452674.95,6302973.98,6162142.14,7504198.03,7550732.84,6731397.82,6777571.51,7174548.6,6020906.59,5043385.6,4416044.19,5221872.0,5206896.94,6120433.18,5040995.55,4233881.69,4192296.28,4094687.84,2984707.82,3316803.43,2483034.27,2815653.08,3079948.66,2561216.67,2128603.98,1164437.1,1040162.86,1229835.32,2988721.37,0.0],"ee_csa":[389443.17,396391.37,395955.24,305619.99,459963.02,246624.0,429675.49,419227.97,315194.81,436113.56,637951.09,332235.38,372002.75,359307.0,495653.96,450746.52,444351.12,376042.35,438758.66,431513.12,73714.95,669212.16,183405.05,333085.71,352889.41,463692.32,725455.6,424519.09,239870.34,177902.99,444877.09,362193.95,470467.45,165366.93,365998.34,624101.07,358005.38,306684.86,991148.23,319346.67,361939.95,307295.84,467723.8,325501.47,509714.18,1137077.05,238643.47,775205.68,674767.76,550024.66,1375328.57,161053.4,70081.23,1266058.89,1115961.65,121327.91,141759.67,102016.18,32472.32,1725566.24],"pfe_csa":[1604256.84,1613019.0,1624904.6,1526331.01,1886628.21,1422483.76,1744922.06,1719300.98,1529199.65,1718931.1,2111577.63,1450361.09,1550750.76,1634199.58,2135397.19,1730988.6,1722602.61,1672876.07,1842962.09,1791882.44,545202.98,2578167.05,1150860.84,1610579.33,1563025.04,1775246.26,2450044.96,1785215.12,1458087.74,1034571.08,1944446.38,1545990.19,2072202.17,962303.74,1569576.89,2098861.8,1532957.46,1479476.11,3976721.05,1496253.98,1351517.6,1570668.54,1919857.91,1407024.41,1686254.53,4646948.58,1043713.48,2804321.82,3207458.96,1778013.94,4545146.98,716608.53,513070.2,3715366.52,3190753.93,582642.93,685350.62,451894.97,212878.81,7123881.66]},"thresholds":[{"threshold":0,"cva":28928.65,"peak_pfe":7123881.66,"epe":446357.42,"dva":12541.52,"bilateral_cva":15660.34,"seconds":2.39,"same_scenarios_uncollateralized":{"cva":102161.16,"peak_pfe":12430337.9,"epe":1550809.5,"dva":100668.64,"bilateral_cva":-793.39}},{"threshold":1000000,"cva":32129.58,"peak_pfe":6123881.66,"epe":494610.08,"dva":19341.08,"bilateral_cva":11994.67,"seconds":2.35,"same_scenarios_uncollateralized":{"cva":102161.16,"peak_pfe":12430337.9,"epe":1550809.5,"dva":100668.64,"bilateral_cva":-793.39}},{"threshold":5000000,"cva":77531.0,"peak_pfe":5917916.38,"epe":1177943.27,"dva":55682.3,"bilateral_cva":20105.7,"seconds":2.35,"same_scenarios_uncollateralized":{"cva":102161.16,"peak_pfe":12430337.9,"epe":1550809.5,"dva":100668.64,"bilateral_cva":-793.39}},{"threshold":20000000,"cva":101982.8,"peak_pfe":12430337.9,"epe":1547972.45,"dva":96007.99,"bilateral_cva":3694.4,"seconds":2.36,"same_scenarios_uncollateralized":{"cva":102161.16,"peak_pfe":12430337.9,"epe":1550809.5,"dva":100668.64,"bilateral_cva":-793.39}},{"threshold":100000000,"cva":102161.16,"peak_pfe":12430337.9,"epe":1550809.5,"dva":100668.31,"bilateral_cva":-793.06,"seconds":2.42,"same_scenarios_uncollateralized":{"cva":102161.16,"peak_pfe":12430337.9,"epe":1550809.5,"dva":100668.64,"bilateral_cva":-793.39}}],"mpor":[{"mpor_days":0,"cva":419.06,"peak_pfe":120506.77,"epe":6418.84,"dva":161.98,"bilateral_cva":247.1,"same_scenarios_uncollateralized":{"cva":101934.27,"peak_pfe":12475949.31,"epe":1547230.82,"dva":100933.9,"bilateral_cva":-1279.0}},{"mpor_days":2,"cva":11788.23,"peak_pfe":7577230.92,"epe":181651.73,"dva":5506.92,"bilateral_cva":5988.96,"same_scenarios_uncollateralized":{"cva":102599.7,"peak_pfe":12483554.4,"epe":1557759.63,"dva":101048.37,"bilateral_cva":-747.8}},{"mpor_days":5,"cva":21517.21,"peak_pfe":7351135.05,"epe":333423.5,"dva":8436.73,"bilateral_cva":12524.48,"same_scenarios_uncollateralized":{"cva":101783.38,"peak_pfe":12467644.61,"epe":1545554.64,"dva":100702.32,"bilateral_cva":-1201.82}},{"mpor_days":10,"cva":28928.65,"peak_pfe":7123881.66,"epe":446357.42,"dva":12541.52,"bilateral_cva":15660.34,"same_scenarios_uncollateralized":{"cva":102161.16,"peak_pfe":12430337.9,"epe":1550809.5,"dva":100668.64,"bilateral_cva":-793.39}},{"mpor_days":20,"cva":49681.93,"peak_pfe":10857251.09,"epe":767065.76,"dva":17686.71,"bilateral_cva":30742.14,"same_scenarios_uncollateralized":{"cva":103260.49,"peak_pfe":12506564.82,"epe":1567684.65,"dva":99831.77,"bilateral_cva":1116.04}}],"pre_deal":{"trade":{"trade_id":"NEW","underlying":"SPX","kind":"forward","strike":100.0,"maturity":5.0,"quantity":40000},"n_scenarios":10000,"incremental_cva_mean":11942.98,"stdev_common_random_numbers":187.972,"stdev_independent_seeds":1960.695,"seconds_per_run":0.27}};
+/*CORE-START*/
+const RATE = 0.03, S0 = 100, REC = 0.4, NS = 2000, MONTHS = 60, QPFE = 0.95;
+const OFFS = [20, 10, 5, 2, 0];                    // days before each month-end: the lag nodes, then the month-end itself
+const SLOT = { 20: 0, 10: 1, 5: 2, 2: 3, 0: 4 };
+const NN = MONTHS * 5;
+const BOOKS = {
+  puts: { name: "Long put book", trades: [
+    { k: "put", K: 100, T: 5, q: 100000 }, { k: "put", K: 90, T: 3, q: 100000 }, { k: "put", K: 110, T: 2, q: 50000 }] },
+  fwds: { name: "Forwards", trades: [
+    { k: "fwd", K: 100, T: 5, q: 50000 }, { k: "fwd", K: 100, T: 2, q: 40000 }] },
+  mixed: { name: "Mixed book", trades: [
+    { k: "fwd", K: 100, T: 5, q: 40000 }, { k: "put", K: 95, T: 4, q: 100000 }, { k: "call", K: 120, T: 3, q: -60000 }] },
+};
+function mulberry32(a) { return function () { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function normCdf(x) {                              // Abramowitz-Stegun 7.1.26 via erf, |error| < 1.5e-7
+  const z = Math.abs(x) / Math.SQRT2, t = 1 / (1 + 0.3275911 * z);
+  const e = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-z * z);
+  return x >= 0 ? 0.5 * (1 + e) : 0.5 * (1 - e);
+}
+function bs(s, k, r, vol, tau, call) {
+  const sq = vol * Math.sqrt(tau), d1 = (Math.log(s / k) + (r + 0.5 * vol * vol) * tau) / sq, d2 = d1 - sq, df = Math.exp(-r * tau);
+  return call ? s * normCdf(d1) - k * df * normCdf(d2) : k * df * normCdf(-d2) - s * normCdf(-d1);
+}
+// Same rules as trade_value in core/src/exposure.cpp: nothing after maturity, intrinsic on the maturity date.
+function tradeValue(t, spot, now, vol) {
+  const tau = t.T - now;
+  if (tau < -1e-12) return 0;
+  if (tau <= 1e-12) return t.q * (t.k === "call" ? Math.max(spot - t.K, 0) : t.k === "put" ? Math.max(t.K - spot, 0) : spot - t.K);
+  if (t.k === "fwd") return t.q * (spot - t.K * Math.exp(-RATE * tau));
+  return t.q * bs(spot, t.K, RATE, vol, tau, t.k === "call");
+}
+const csaTarget = (v, rec, post) => Math.max(v - rec, 0) - Math.max(-v - post, 0);   // csa_target in exposure.cpp
+
+// Brownian paths on a fixed fine node set, drawn once from a seeded generator, so moving a slider never re-rolls the dice.
+const TS = new Float64Array(NN);
+for (let k = 0; k < MONTHS; k++) for (let m = 0; m < 5; m++) TS[k * 5 + m] = (k + 1) / 12 - OFFS[m] / 365;
+const W = new Float64Array(NN * NS);               // node-major: W[i*NS + s]
+(function () {
+  const rnd = mulberry32(20240607);
+  let spare = null;
+  const normal = () => {
+    if (spare !== null) { const z = spare; spare = null; return z; }
+    const u = 1 - rnd(), v = rnd(), r = Math.sqrt(-2 * Math.log(u));
+    spare = r * Math.sin(2 * Math.PI * v); return r * Math.cos(2 * Math.PI * v);
+  };
+  for (let i = 0; i < NN; i++) {
+    const sd = Math.sqrt(TS[i] - (i ? TS[i - 1] : 0)), o = i * NS, p = (i - 1) * NS;
+    for (let s = 0; s < NS; s++) W[o + s] = (i ? W[p + s] : 0) + sd * normal();
+  }
+})();
+
+let cache = { key: "", vals: [], unc: null };
+function nodeValues(i, book, vol) {
+  let a = cache.vals[i];
+  if (a) return a;
+  a = cache.vals[i] = new Float64Array(NS);
+  const t = TS[i], mu = (RATE - 0.5 * vol * vol) * t, o = i * NS, tr = book.trades;
+  for (let s = 0; s < NS; s++) {
+    const spot = S0 * Math.exp(mu + vol * W[o + s]);
+    let v = 0;
+    for (let j = 0; j < tr.length; j++) v += tradeValue(tr[j], spot, t, vol);
+    a[s] = v;
+  }
+  return a;
+}
+function quantile(arr, q) {                        // k-th largest of n, k = n - ceil(q n) + 1, as in the engine
+  const c = Float64Array.from(arr).sort();
+  return c[Math.ceil(q * c.length - 1e-9) - 1];
+}
+function cvaOf(grid, ee, ee0, bps) {               // service/exposure.py cva(): trapezoid of DF*EE times default probability
+  const surv = t => Math.exp(-bps / 1e4 / (1 - REC) * t);
+  let tot = 0, pt = 0, pde = ee0;
+  for (let i = 0; i < grid.length; i++) {
+    const de = Math.exp(-RATE * grid[i]) * ee[i];
+    tot += 0.5 * (pde + de) * (surv(pt) - surv(grid[i]));
+    pt = grid[i]; pde = de;
+  }
+  return (1 - REC) * tot;
+}
+function simulate(p) {
+  const book = BOOKS[p.preset], key = p.preset + "|" + p.vol;
+  if (cache.key !== key) cache = { key, vals: [], unc: null };
+  const grid = new Float64Array(MONTHS), ri = new Int32Array(MONTHS);
+  for (let k = 0; k < MONTHS; k++) { ri[k] = k * 5 + 4; grid[k] = TS[ri[k]]; }
+  let v0 = 0;
+  for (const t of book.trades) v0 += tradeValue(t, S0, 0, p.vol);
+  if (!cache.unc) {
+    const ee = new Float64Array(MONTHS), pfe = new Float64Array(MONTHS), tmp = new Float64Array(NS);
+    for (let k = 0; k < MONTHS; k++) {
+      const v = nodeValues(ri[k], book, p.vol); let sum = 0;
+      for (let s = 0; s < NS; s++) { tmp[s] = v[s] > 0 ? v[s] : 0; sum += tmp[s]; }
+      ee[k] = sum / NS; pfe[k] = quantile(tmp, QPFE);
+    }
+    cache.unc = { ee, pfe };
+  }
+  const { ee, pfe } = cache.unc, ee0 = Math.max(v0, 0);
+  const out = { grid, v0, ee, pfe, eeC: ee, pfeC: pfe, cva: cvaOf(grid, ee, ee0, p.cds), peak: Math.max(...pfe) };
+  out.cvaC = out.cva; out.peakC = out.peak;
+  if (!p.csa) return out;
+  const d = p.mpor, nodes = [];
+  for (let k = 0; k < MONTHS; k++) { if (d > 0) nodes.push(k * 5 + SLOT[d]); nodes.push(k * 5 + 4); }
+  const stepK = d > 0 ? 2 : 1, off = d > 0 ? 1 : 0;      // reporting node of month k is at position stepK*k + off
+  const bal0 = csaTarget(v0, p.thrRecv, p.thrPost);
+  const prev = new Float64Array(NS).fill(bal0), bals = new Array(nodes.length);
+  const eeC = new Float64Array(MONTHS), pfeC = new Float64Array(MONTHS), tmp = new Float64Array(NS);
+  for (let j = 0; j < nodes.length; j++) {
+    const v = nodeValues(nodes[j], book, p.vol), b = bals[j] = new Float64Array(NS);
+    for (let s = 0; s < NS; s++) {
+      const tg = csaTarget(v[s], p.thrRecv, p.thrPost), pv = j ? bals[j - 1][s] : bal0;
+      b[s] = Math.abs(tg - pv) >= p.mta ? tg : pv;
+    }
+    if (j % stepK === off) {                       // reporting date: collateral held is the balance at t - MPoR
+      const k = (j - off) / stepK, held = d > 0 ? bals[j - 1] : b;
+      let sum = 0;
+      for (let s = 0; s < NS; s++) { const e = v[s] - held[s]; tmp[s] = e > 0 ? e : 0; sum += tmp[s]; }
+      eeC[k] = sum / NS; pfeC[k] = quantile(tmp, QPFE);
+    }
+  }
+  out.eeC = eeC; out.pfeC = pfeC;
+  out.cvaC = cvaOf(grid, eeC, Math.max(v0 - bal0, 0), p.cds);
+  out.peakC = Math.max(...pfeC);
+  return out;
+}
+/*CORE-END*/
+
+
+const $ = id => document.getElementById(id);
+const nf0 = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
+const usd = n => "$" + nf0.format(Math.round(n));
+const short = n => { const a = Math.abs(n); return a >= 1e6 ? "$" + (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M" : a >= 1e3 ? "$" + Math.round(n / 1e3) + "k" : "$" + Math.round(n); };
+const pct = x => (x * 100).toFixed(1) + "%";
+
+/* ---------- Hero tiles, all derived from XVA ---------- */
+const thr0 = XVA.thresholds[0], sameU = thr0.same_scenarios_uncollateralized, pd = XVA.pre_deal;
+const cvaCut = 1 - thr0.cva / sameU.cva, pfeCut = 1 - thr0.peak_pfe / sameU.peak_pfe, noise = pd.stdev_independent_seeds / pd.stdev_common_random_numbers;
+$("mach").textContent = XVA.machine;
+$("tiles").innerHTML = [
+  ["CVA cut by the CSA", "-" + pct(cvaCut), `${usd(sameU.cva)} to ${usd(thr0.cva)}`],
+  ["Peak PFE cut by the CSA", "-" + pct(pfeCut), `${short(sameU.peak_pfe)} to ${short(thr0.peak_pfe)}`],
+  ["Pre-deal noise, common random numbers", noise.toFixed(1) + "x tighter", `stdev ${usd(pd.stdev_common_random_numbers)} vs ${usd(pd.stdev_independent_seeds)}`],
+  ["Pre-deal run time", pd.seconds_per_run + " s", `${nf0.format(pd.n_scenarios)} scenarios x ${XVA.n_trades} trades`],
+].map(([l, v, s]) => `<div class="stat" role="listitem"><span>${l}</span><b>${v}</b><span>${s}</span></div>`).join("");
+
+/* ---------- Charts ---------- */
+function chart(host, o) {
+  // o: xs (numbers), series [{y, color, dash, name}], xticks [{x,label}], yfmt, tip(i) -> html, aria
+  const W = Math.max(host.clientWidth, 260), H = W < 420 ? 230 : 280, m = { l: 46, r: 20, t: 12, b: 28 };
+  const xs = o.xs, x0 = o.xmin ?? xs[0], x1 = o.xmax ?? xs[xs.length - 1];
+  let ymax = 0; for (const s of o.series) for (const v of s.y) if (v > ymax) ymax = v;
+  const step = niceStep(ymax / 4); ymax = Math.ceil(ymax / step) * step || 1;
+  const X = x => m.l + (x - x0) / (x1 - x0) * (W - m.l - m.r), Y = y => H - m.b - y / ymax * (H - m.t - m.b);
+  let g = "";
+  for (let v = 0; v <= ymax + 1e-9; v += step) g += `<line class="grid" x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}"/><text class="axis" x="${m.l - 6}" y="${Y(v) + 4}" text-anchor="end">${o.yfmt(v)}</text>`;
+  for (const t of o.xticks) g += `<text class="axis" x="${X(t.x)}" y="${H - 8}" text-anchor="middle">${t.label}</text>`;
+  for (const s of o.series) {
+    const d = s.y.map((v, i) => (i ? "L" : "M") + X(xs[i]).toFixed(1) + " " + Y(v).toFixed(1)).join("");
+    g += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2.2" ${s.dash ? 'stroke-dasharray="6 4"' : ""} stroke-linejoin="round"/>`;
+    if (o.dots) g += s.y.map((v, i) => `<circle cx="${X(xs[i])}" cy="${Y(v)}" r="4" fill="${s.color}"/>`).join("");
+  }
+  host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${o.aria}">${g}<line class="cross" id="x" y1="${m.t}" y2="${H - m.b}" style="display:none"/></svg><div class="tip" hidden></div>`;
+  const svg = host.firstChild, cross = svg.querySelector(".cross"), tip = host.lastChild;
+  const move = e => {
+    const r = svg.getBoundingClientRect(), px = (e.clientX - r.left) / r.width * W;
+    let bi = 0, bd = 1e9; xs.forEach((x, i) => { const d = Math.abs(X(x) - px); if (d < bd) { bd = d; bi = i; } });
+    cross.setAttribute("x1", X(xs[bi])); cross.setAttribute("x2", X(xs[bi])); cross.style.display = "";
+    tip.innerHTML = o.tip(bi); tip.hidden = false;
+    const tx = X(xs[bi]) / W * r.width, tw = tip.offsetWidth;
+    tip.style.left = Math.max(0, Math.min(r.width - tw, tx + 10 + tw > r.width ? tx - tw - 10 : tx + 10)) + "px";
+  };
+  svg.addEventListener("pointermove", move); svg.addEventListener("pointerdown", move);
+  svg.addEventListener("pointerleave", () => { cross.style.display = "none"; tip.hidden = true; });
+}
+function niceStep(raw) { if (!(raw > 0)) return 1; const p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p; }
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const legend = (id, items) => $(id).innerHTML = items.map(([n, c, d]) => `<li><i style="border-color:${c}" ${d ? 'class="d"' : ""}></i>${n}</li>`).join("");
+const yrTicks = max => Array.from({ length: max + 1 }, (_, i) => ({ x: i, label: i + "y" }));
+
+/* ---------- Simulator ---------- */
+const THR = [0, 250e3, 500e3, 1e6, 2e6, 5e6, 10e6, 20e6], MTAS = [0, 100e3, 250e3, 500e3, 1e6], MPORS = [0, 2, 5, 10, 20];
+let last = null, pending = false;
+function readParams() {
+  return { preset: $("preset").value, vol: +$("vol").value / 100, cds: +$("cds").value, csa: $("csa").checked,
+    thrRecv: THR[$("tr").value], thrPost: THR[$("tp").value], mta: MTAS[$("mta").value], mpor: MPORS[$("mpor").value] };
+}
+function labels(p) {
+  $("o-vol").textContent = Math.round(p.vol * 100) + "%"; $("o-cds").textContent = p.cds + " bps";
+  $("o-tr").textContent = short(p.thrRecv); $("o-tp").textContent = short(p.thrPost);
+  $("o-mta").textContent = short(p.mta); $("o-mpor").textContent = p.mpor + (p.mpor === 1 ? " day" : " days");
+  $("csaset").disabled = !p.csa;
+}
+function render() {
+  pending = false;
+  const p = readParams(); labels(p);
+  const t0 = performance.now(), r = simulate(p), ms = performance.now() - t0;
+  last = r;
+  $("n-cva").textContent = usd(r.cva); $("n-cvac").textContent = p.csa ? usd(r.cvaC) : "no CSA";
+  $("n-save").textContent = p.csa && r.cva > 0 ? pct(1 - r.cvaC / r.cva) : "-";
+  $("n-peak").textContent = short(r.peak); $("n-peakc").textContent = p.csa ? short(r.peakC) : "no CSA";
+  $("speed").textContent = `Recomputed in ${ms < 1 ? "<1" : Math.round(ms)} ms. Fixed random numbers, so only your changes move the lines.`;
+  drawSim();
+}
+function drawSim() {
+  if (!last) return;
+  const r = last, p = readParams(), g = Array.from(r.grid), s1 = css("--s1"), s2 = css("--s2");
+  const series = [{ y: Array.from(r.pfe), color: s2, dash: true }, { y: Array.from(r.ee), color: s2 }];
+  if (p.csa) series.push({ y: Array.from(r.pfeC), color: s1, dash: true }, { y: Array.from(r.eeC), color: s1 });
+  chart($("c-sim"), { xs: g, xmin: 0, xmax: 5, series, xticks: yrTicks(5), yfmt: short,
+    aria: `Expected exposure and 95 percent PFE over five years. Without a CSA the peak PFE is ${short(r.peak)}${p.csa ? `; with the CSA it is ${short(r.peakC)}` : ""}.`,
+    tip: i => `<b>${g[i].toFixed(2)}y</b><br>PFE no CSA <b>${short(r.pfe[i])}</b><br>EE no CSA <b>${short(r.ee[i])}</b>` + (p.csa ? `<br>PFE CSA <b>${short(r.pfeC[i])}</b><br>EE CSA <b>${short(r.eeC[i])}</b>` : "") });
+  legend("lg-sim", [["PFE 95%, no CSA", s2, 1], ["EE, no CSA", s2, 0]].concat(p.csa ? [["PFE 95%, CSA", s1, 1], ["EE, CSA", s1, 0]] : []));
+}
+function schedule() { if (!pending) { pending = true; requestAnimationFrame(render); } }
+$("ctl").addEventListener("input", schedule);
+const TRY = {
+  mpor0: { csa: true, tr: 0, tp: 0, mta: 0, mpor: 0 }, mpor20: { csa: true, tr: 0, tp: 0, mta: 0, mpor: 4 },
+  thr: { csa: true, tr: 5, tp: 5, mta: 2, mpor: 3 }, reset: { csa: true, tr: 0, tp: 0, mta: 2, mpor: 3, cds: 150, vol: 25 },
+};
+document.querySelectorAll("[data-try]").forEach(b => b.addEventListener("click", () => {
+  const t = TRY[b.dataset.try]; $("csa").checked = t.csa; $("tr").value = t.tr; $("tp").value = t.tp; $("mta").value = t.mta; $("mpor").value = t.mpor;
+  if (t.cds) $("cds").value = t.cds; if (t.vol) $("vol").value = t.vol; render();
+}));
+
+/* ---------- Measured charts ---------- */
+const TH_LABELS = XVA.thresholds.map(t => t.threshold >= 1e8 ? "none" : t.threshold === 0 ? "$0" : short(t.threshold));
+function drawMeasured() {
+  const s1 = css("--s1"), s2 = css("--s2");
+  const th = XVA.thresholds, idx = th.map((_, i) => i);
+  chart($("c-thr"), { xs: idx, series: [{ y: th.map(t => t.same_scenarios_uncollateralized.cva), color: s2, dash: true }, { y: th.map(t => t.cva), color: s1 }],
+    xticks: idx.map(i => ({ x: i, label: TH_LABELS[i] })), yfmt: short, dots: true,
+    aria: "CVA with a CSA rises from " + usd(th[0].cva) + " at zero threshold toward the uncollateralized " + usd(th[th.length - 1].same_scenarios_uncollateralized.cva) + " as the threshold grows.",
+    tip: i => `Threshold <b>${TH_LABELS[i]}</b><br>CVA with CSA <b>${usd(th[i].cva)}</b><br>No CSA <b>${usd(th[i].same_scenarios_uncollateralized.cva)}</b>` });
+  legend("lg-thr", [["No CSA", s2, 1], ["With CSA", s1, 0]]);
+  const mp = XVA.mpor, mi = mp.map((_, i) => i);
+  chart($("c-mpor"), { xs: mi, series: [{ y: mp.map(t => t.same_scenarios_uncollateralized.cva), color: s2, dash: true }, { y: mp.map(t => t.cva), color: s1 }],
+    xticks: mi.map(i => ({ x: i, label: mp[i].mpor_days + "d" })), yfmt: short, dots: true,
+    aria: "CVA with a CSA grows from " + usd(mp[0].cva) + " at zero days to " + usd(mp[mp.length - 1].cva) + " at " + mp[mp.length - 1].mpor_days + " days.",
+    tip: i => `MPoR <b>${mp[i].mpor_days} days</b><br>CVA with CSA <b>${usd(mp[i].cva)}</b><br>No CSA <b>${usd(mp[i].same_scenarios_uncollateralized.cva)}</b>` });
+  legend("lg-mpor", [["No CSA", s2, 1], ["With CSA", s1, 0]]);
+  const pr = XVA.profile, g = pr.grid;
+  chart($("c-prof"), { xs: g, xmin: 0, xmax: 5, series: [{ y: pr.pfe, color: s2, dash: true }, { y: pr.ee, color: s2 }, { y: pr.pfe_csa, color: s1, dash: true }, { y: pr.ee_csa, color: s1 }],
+    xticks: yrTicks(5), yfmt: short, aria: "Exposure profile over five years: peak PFE " + short(Math.max(...pr.pfe)) + " without a CSA and " + short(Math.max(...pr.pfe_csa)) + " with one.",
+    tip: i => `<b>${g[i].toFixed(2)}y</b><br>PFE no CSA <b>${short(pr.pfe[i])}</b><br>EE no CSA <b>${short(pr.ee[i])}</b><br>PFE CSA <b>${short(pr.pfe_csa[i])}</b><br>EE CSA <b>${short(pr.ee_csa[i])}</b>` });
+  legend("lg-prof", [["PFE 95%, no CSA", s2, 1], ["EE, no CSA", s2, 0], ["PFE 95%, CSA", s1, 1], ["EE, CSA", s1, 0]]);
+  drawPre();
+}
+function drawPre() {
+  const host = $("c-pre"), W = Math.max(host.clientWidth, 260), H = 130, m = { l: W < 420 ? 96 : 150, r: 16 };
+  const mean = pd.incremental_cva_mean, rows = [["Common random numbers", pd.stdev_common_random_numbers, css("--s1")], ["Independent seeds", pd.stdev_independent_seeds, css("--s2")]];
+  const lo = mean - 1.25 * pd.stdev_independent_seeds, hi = mean + 1.25 * pd.stdev_independent_seeds, X = v => m.l + (v - lo) / (hi - lo) * (W - m.l - m.r);
+  let g = `<line class="grid" x1="${X(mean)}" x2="${X(mean)}" y1="8" y2="${H - 28}" stroke-dasharray="3 3"/>`;
+  rows.forEach(([n, sd, c], i) => {
+    const y = 34 + i * 44;
+    g += `<text class="axis" x="${m.l - 8}" y="${y + 4}" text-anchor="end" style="fill:var(--ink)">${W < 420 ? n.split(" ")[0] : n}</text><line x1="${X(mean - sd)}" x2="${X(mean + sd)}" y1="${y}" y2="${y}" stroke="${c}" stroke-width="3"/><line x1="${X(mean - sd)}" x2="${X(mean - sd)}" y1="${y - 8}" y2="${y + 8}" stroke="${c}" stroke-width="3"/><line x1="${X(mean + sd)}" x2="${X(mean + sd)}" y1="${y - 8}" y2="${y + 8}" stroke="${c}" stroke-width="3"/><circle cx="${X(mean)}" cy="${y}" r="5" fill="${c}"/>`;
+  });
+  g += `<text class="axis" x="${X(lo)}" y="${H - 8}">${usd(lo)}</text><text class="axis" x="${X(hi)}" y="${H - 8}" text-anchor="end">${usd(hi)}</text><text class="axis" x="${X(mean)}" y="${H - 8}" text-anchor="middle">mean ${usd(mean)}</text>`;
+  host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Incremental CVA of the new forward, mean ${usd(mean)}. One standard deviation is plus or minus ${usd(pd.stdev_common_random_numbers)} with common random numbers and plus or minus ${usd(pd.stdev_independent_seeds)} with independent seeds.">${g}</svg>`;
+}
+const ratio = pd.stdev_independent_seeds / pd.stdev_common_random_numbers;
+$("pre-lead").textContent = `A client wants a new ${pd.trade.maturity}-year forward (${nf0.format(pd.trade.quantity)} units, strike ${pd.trade.strike}). The trader needs the CVA it adds to the existing book: run the book with and without it, and subtract. Bars are ±1 standard deviation across 6 market-data versions, ${nf0.format(pd.n_scenarios)} scenarios each.`;
+$("pre-note").textContent = `Incremental CVA is about ${usd(pd.incremental_cva_mean)}. With the two runs on the same scenarios (common random numbers) the noise is ${usd(pd.stdev_common_random_numbers)}; with independent seeds it is ${usd(pd.stdev_independent_seeds)}, ${ratio.toFixed(1)}x wider. Noise falls with the square root of scenarios, so independent runs would need about ${Math.round(ratio * ratio)}x more scenarios to match. Each pre-deal run took ${pd.seconds_per_run} s.`;
+$("tb-thr").innerHTML = XVA.thresholds.map((t, i) => `<tr><td class="num">${t.threshold >= 1e8 ? usd(t.threshold) + " (effectively none)" : usd(t.threshold)}</td><td class="num">${usd(t.cva)}</td><td class="num">${usd(t.same_scenarios_uncollateralized.cva)}</td><td class="num">${usd(t.peak_pfe)}</td><td class="num">${usd(t.same_scenarios_uncollateralized.peak_pfe)}</td></tr>`).join("");
+
+/* ---------- Follow one request ---------- */
+const STEPS = [
+  { n: "API", t: "The request arrives at FastAPI", what: "A client posts an exposure request: trades, market data version, credit spread, optional CSA. Pydantic validates it against a typed schema before any work starts.",
+    fail: "A malformed or out-of-range request, or the client's connection resetting mid-call.", keeps: "Bad input is rejected immediately with a clear error. For resets, the client sends an Idempotency-Key and can poll GET /jobs/{id}; a retry returns the same answer instead of starting a second run." },
+  { n: "Plan", t: "The service plans the run", what: "It fixes the market-state seed and cuts the scenarios into blocks. The random numbers are counter-based: scenario number s always draws the same values, whichever machine computes it.",
+    fail: "Nothing needs to survive here. The plan is a pure function of the request.", keeps: "Because every scenario is reproducible from its index, any block can be recomputed anywhere and give the same numbers. This is also why what-if runs can share scenarios." },
+  { n: "Queue", t: "Blocks go onto a Redis Stream", what: "Each block becomes a task on the batch stream, read by a consumer group. Intraday pricing has its own stream so a large batch cannot starve it.",
+    fail: "Redis is down or slow.", keeps: "A circuit breaker stops requests piling onto a dead Redis, and queued work survived Redis being killed in the chaos run because the stream is persisted (AOF)." },
+  { n: "Workers", t: "Worker pods run the C++ core", what: "Workers pull blocks and call the C++20 engine through pybind11, with the GIL released so several run in parallel.",
+    fail: "A worker pod is killed, or its node is lost, in the middle of a block.", keeps: "The task was never acknowledged, so another worker reclaims it and recomputes the block deterministically. Delivery is at-least-once, and a repeated block gives identical numbers." },
+  { n: "Merge", t: "Results merge exactly", what: "Per-block sums add up. PFE is taken from the union of each block's top-k tail values, so it is exact, not approximated.",
+    fail: "Blocks finish in a different order, or on a different number of workers.", keeps: "Sums add and the tail union does not depend on arrival order, so the result is bit-identical on 1, 2, 4 or 8 workers. The same request gives the same CVA and PFE every time." },
+  { n: "Store", t: "The answer is returned and recorded", what: "The result goes back to the caller and the run is written to the Cassandra exposure_runs table (3 nodes, replication factor 3).",
+    fail: "A Cassandra node dies.", keeps: "Writes use LOCAL_QUORUM, so two of three replicas are enough; a token-aware driver routes around the dead node. The caller still receives the same result." },
+];
+let step = 0;
+function drawSteps() {
+  $("steps").innerHTML = STEPS.map((s, i) => `<button type="button" data-i="${i}" ${i === step ? 'aria-current="step"' : ""}><span>${i + 1}</span>${s.n}</button>`).join("");
+  const s = STEPS[step];
+  $("stepbody").innerHTML = `<h3>${step + 1}. ${s.t}</h3><dl><div><dt>What happens</dt><dd>${s.what}</dd></div><div><dt>What can fail</dt><dd>${s.fail}</dd></div><div><dt>What keeps the answer correct</dt><dd>${s.keeps}</dd></div></dl>`;
+  $("prev").disabled = step === 0; $("next").disabled = step === STEPS.length - 1;
+}
+$("steps").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { step = +b.dataset.i; drawSteps(); $("steps").querySelector(`[data-i="${step}"]`).focus(); } });
+$("prev").addEventListener("click", () => { step = Math.max(0, step - 1); drawSteps(); });
+$("next").addEventListener("click", () => { step = Math.min(STEPS.length - 1, step + 1); drawSteps(); });
+
+/* ---------- Boot ---------- */
+render(); drawMeasured(); drawSteps();
+let rt; const redraw = () => { clearTimeout(rt); rt = setTimeout(() => { drawSim(); drawMeasured(); }, 120); };
+addEventListener("resize", redraw);
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", redraw);
+</script>
+</body></html>

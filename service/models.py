@@ -1,4 +1,5 @@
 import math
+from fractions import Fraction
 from typing import Annotated, Literal, Union
 
 import numpy as np
@@ -11,10 +12,14 @@ MAX_REQUEST_WORK = 500_000_000
 MAX_PORTFOLIO_WORK = 50_000_000_000
 MAX_EXPOSURE_WORK = 200_000_000_000
 MAX_TAIL_BYTES = 64 * 1024 * 1024
+# All blocks' PFE tails together pass through Redis and the API-side merge.
+MAX_TOTAL_TAIL_BYTES = 1024 * 1024 * 1024
 
 
 class Strict(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    # JSON allows Infinity and NaN; "gt=0" lets infinity through, and it
+    # comes back out as a NaN price.
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
 
 
 class OptionTerms(Strict):
@@ -160,11 +165,32 @@ class ExposureTrade(Strict):
     quantity: float = Field(ge=-1e7, le=1e7)
 
 
-class ExposureRequest(Strict):
-    """A netting set's exposure profile (EE, PFE) and a unilateral CVA.
+class CsaSpec(Strict):
+    """A two-way CSA: the counterparty posts once our exposure passes
+    threshold_recv, we post once theirs passes threshold_post, calls smaller
+    than the MTA are not made, and on default collateral stops moving for the
+    margin period of risk before close-out."""
 
-    Simplifications, stated up front: no collateral or margin period of risk,
-    flat rate and hazard rate, Black-Scholes revaluation, and no wrong-way risk.
+    threshold_recv: float = Field(default=0.0, ge=0, le=1e12)
+    threshold_post: float = Field(default=0.0, ge=0, le=1e12)
+    mta: float = Field(default=0.0, ge=0, le=1e12)
+    independent_amount: float = Field(default=0.0, ge=0, le=1e12)
+    mpor_days: int = Field(default=10, ge=0, le=60)  # 10 business days: the Basel floor for most netting sets
+
+
+class OwnCredit(Strict):
+    """Our own credit, for DVA and a bilateral CVA."""
+
+    recovery: float = Field(default=0.4, ge=0, lt=1.0)
+    cds_spread_bps: float = Field(default=50.0, ge=0, le=10_000)
+
+
+class ExposureRequest(Strict):
+    """A netting set's exposure profile (EE, PFE), CVA, and optionally the
+    same under a CSA and a DVA / bilateral CVA from our own credit.
+
+    Simplifications, stated up front: flat rate and hazard rates, independent
+    defaults, Black-Scholes revaluation, risk-neutral PFE, and no wrong-way risk.
     """
 
     netting_set_id: str = Field(min_length=1, max_length=64)
@@ -179,6 +205,8 @@ class ExposureRequest(Strict):
     pfe_quantile: float = Field(default=0.95, ge=0.5, lt=1.0)
     recovery: float = Field(default=0.4, ge=0, lt=1.0)
     cds_spread_bps: float = Field(default=100.0, ge=0, le=10_000)
+    csa: CsaSpec | None = None
+    own_credit: OwnCredit | None = None
     # Scenarios per task. Also bounds how long a worker is busy with batch
     # work before it can pick up the next intraday task.
     block_size: int = Field(default=5_000, ge=500, le=200_000)
@@ -189,9 +217,34 @@ class ExposureRequest(Strict):
         return [min((i + 1) * self.step_months / 12, self.horizon_years) for i in range(n)]
 
     @property
+    def sim_grid(self) -> tuple[list[float], list[int], list[int]]:
+        """(nodes simulated, lag_index per node, positions of `grid` in it).
+
+        With a CSA, each reporting date t also needs a node at t - MPoR, the
+        last date collateral moved. A monthly grid cannot resolve 10 days, so
+        those nodes are added. lag_index[j] is the last node at or before
+        t_j - MPoR, or -1 for today.
+        """
+        grid = self.grid
+        if self.csa is None:
+            return grid, [], list(range(len(grid)))
+        delta = self.csa.mpor_days / 365.0
+        # Reporting dates stay exact; a lag node within 1e-9 of an existing
+        # node is that node (t - 0 must not become a second node an ulp away).
+        nodes = list(grid)
+        for t in grid:
+            if t - delta > 1e-9 and all(abs(u - (t - delta)) > 1e-9 for u in nodes):
+                nodes.append(t - delta)
+        nodes.sort()
+        lag = [max((i for i, u in enumerate(nodes) if u <= t - delta + 1e-9), default=-1) for t in nodes]
+        pos = {t: i for i, t in enumerate(nodes)}
+        return nodes, lag, [pos[t] for t in grid]
+
+    @property
     def tail_k(self) -> int:
         # PFE at quantile q is the k-th largest of n, k = n - ceil(q n) + 1.
-        return self.n_scenarios - math.ceil(self.pfe_quantile * self.n_scenarios) + 1
+        # Exact rational arithmetic: 0.95 * 20_000 must be 19_000, not 19_000.000000000004.
+        return self.n_scenarios - math.ceil(Fraction(repr(self.pfe_quantile)) * self.n_scenarios) + 1
 
     @model_validator(mode="after")
     def consistent(self):
@@ -206,19 +259,28 @@ class ExposureRequest(Strict):
             n = len(names)
             if c.shape != (n, n):
                 raise ValueError(f"correlation must be {n}x{n}")
-            if not np.allclose(c, c.T, atol=1e-12) or not np.allclose(np.diag(c), 1.0, atol=1e-12):
+            # Same tolerances as the C++ core (exposure.cpp: cholesky), so a
+            # matrix accepted here never fails later inside every worker.
+            if not np.allclose(c, c.T, rtol=0, atol=1e-12) or not np.allclose(np.diag(c), 1.0, rtol=0, atol=1e-12):
                 raise ValueError("correlation must be symmetric with a unit diagonal")
             if np.any(np.abs(c) > 1):
                 raise ValueError("correlations must be in [-1, 1]")
             try:
-                np.linalg.cholesky(c)
+                pivots = np.diag(np.linalg.cholesky(c)) ** 2
             except np.linalg.LinAlgError:
+                pivots = np.zeros(1)
+            if pivots.min() <= 1e-12:
                 raise ValueError("correlation must be positive definite") from None
-        work = self.n_scenarios * len(self.grid) * len(self.trades)
+        steps = len(self.sim_grid[0])
+        work = self.n_scenarios * steps * len(self.trades)
         if work > MAX_EXPOSURE_WORK:
             raise ValueError(f"scenarios x steps x trades = {work:,} exceeds {MAX_EXPOSURE_WORK:,}")
-        if len(self.grid) * min(self.tail_k, self.block_size) * 8 > MAX_TAIL_BYTES:
+        series = 2 if self.csa else 1
+        block_tail = steps * min(self.tail_k, self.block_size) * 8 * series
+        if block_tail > MAX_TAIL_BYTES:
             raise ValueError("PFE tail per block is too large: raise pfe_quantile or reduce block_size")
+        if block_tail * math.ceil(self.n_scenarios / self.block_size) > MAX_TOTAL_TAIL_BYTES:
+            raise ValueError("PFE tails across all blocks are too large: raise pfe_quantile")
         return self
 
 
@@ -240,6 +302,19 @@ class ExposureResult(BaseModel):
     epe: float | None = None
     peak_pfe: float | None = None
     cva: float | None = None
+    ee_se: list[float] | None = None  # Monte Carlo standard error of each EE point
+    ene: list[float] | None = None  # expected negative exposure: what we owe them
+    v0: float | None = None  # netting-set value today
+    dva: float | None = None
+    bilateral_cva: float | None = None  # CVA - DVA, with first-to-default survival
+    # Under the CSA, from the same scenarios:
+    ee_csa: list[float] | None = None
+    pfe_csa: list[float] | None = None
+    epe_csa: float | None = None
+    peak_pfe_csa: float | None = None
+    cva_csa: float | None = None
+    dva_csa: float | None = None
+    bilateral_cva_csa: float | None = None
     n_scenarios: int | None = None
     workers_used: dict[str, int] | None = None
     elapsed_ms: float | None = None

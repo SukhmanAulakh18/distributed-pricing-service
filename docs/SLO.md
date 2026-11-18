@@ -44,7 +44,7 @@ alert links to its runbook section. It's the same ownership table as
 | `IntradayBacklog` | core | intraday tasks are waiting for a worker |
 | `TasksStuckPending` | core | delivered tasks not acked for 2 minutes: no live worker to reclaim them |
 | `AdmissionRejecting` | core | API pods shedding load with 503s: a capacity question |
-| `ApiReplicasUnavailable`, `PodRestarting` | core | fewer than 2 API pods, or crash loops |
+| `ApiReplicasUnavailable`, `PodRestarting` | core | fewer API pods available than desired, or crash loops |
 | `RedisCircuitOpen`, `NodeNotReady` | platform | infrastructure under the service is down |
 | `CassandraCircuitOpen`, `CassandraReplicaDown`, `PriceLogDropping` | database | the price log has a gap, or quorum is at risk |
 | `PoisonTrade` | quant | a trade crashed the pricer three times |

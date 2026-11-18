@@ -1,0 +1,66 @@
+# Ingress is denied by default; each policy below opens one path. Egress is
+# left open (DNS, Jaeger in `observability`, KEDA lookups) on purpose: the
+# datastores are the assets worth fencing. Needs a CNI that enforces
+# NetworkPolicy (kindnet in kind does).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+---
+# Clients and Prometheus both reach the API; the Service port 80 maps to 8000.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-ingress
+spec:
+  podSelector: {matchLabels: {app: pricer-api}}
+  policyTypes: [Ingress]
+  ingress:
+    - ports: [{port: 8000, protocol: TCP}]
+---
+# Only Prometheus (observability namespace) scrapes the workers.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: worker-metrics-from-prometheus
+spec:
+  podSelector: {matchLabels: {app: pricer-worker}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: observability}}
+          podSelector: {matchLabels: {app: prometheus}}
+      ports: [{port: 9100, protocol: TCP}]
+---
+# KEDA's operator (namespace `keda`) reads stream lag straight from Redis.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: redis-ingress
+spec:
+  podSelector: {matchLabels: {app: redis}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {matchExpressions: [{key: app, operator: In, values: [pricer-api, pricer-worker]}]}
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: keda}}
+      ports: [{port: 6379, protocol: TCP}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cassandra-ingress
+spec:
+  podSelector: {matchLabels: {app: cassandra}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {matchExpressions: [{key: app, operator: In, values: [pricer-api, pricer-worker]}]}
+      ports: [{port: 9042, protocol: TCP}]
+    # Gossip and streaming between ring members.
+    - from:
+        - podSelector: {matchLabels: {app: cassandra}}
+      ports: [{port: 7000, protocol: TCP}]

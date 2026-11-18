@@ -259,7 +259,10 @@ request, same hash, same prices), so the client now retries once. In run 3
 that saved 3 books. **One book still failed both attempts**, both times a
 connection reset while the node was down. A blind HTTP retry is the wrong
 tool for a two-minute outage; the fix is an idempotency key the client
-can poll on (next step 2).
+can poll on (next step 2). **Done since, not yet re-run:** `/portfolio/price`
+takes an `Idempotency-Key`; a retry with the same key joins the running job
+and `GET /jobs/{id}` returns the same result (`tests/test_idempotency.py`).
+`bench/chaos.py` now sends a key per book.
 
 **What run 2 found.** NodeNotReady never fired, because kube-state-metrics
 was scheduled on the node that was stopped: the monitoring died with the

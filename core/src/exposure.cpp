@@ -19,7 +19,15 @@ constexpr double kMaxTailElements = 2.5e8;  // 2 GB of doubles across all thread
 double trade_value(const ExposureTrade& t, const Underlying& u, double spot, double now,
                    double rate) {
     const double tau = t.maturity - now;
-    if (tau <= 0) return 0.0;  // settled: no longer part of the exposure
+    // On the maturity date itself the payoff is still owed (it settles after
+    // the node), so it counts at intrinsic value; after that it is gone.
+    if (tau < -1e-12) return 0.0;
+    if (tau <= 1e-12) {
+        const double intrinsic = t.kind == TradeKind::Call  ? std::max(spot - t.strike, 0.0)
+                                 : t.kind == TradeKind::Put ? std::max(t.strike - spot, 0.0)
+                                                            : spot - t.strike;
+        return t.quantity * intrinsic;
+    }
     if (t.kind == TradeKind::Forward) {
         return t.quantity * (spot * std::exp(-u.div_yield * tau) - t.strike * std::exp(-rate * tau));
     }
@@ -66,7 +74,24 @@ void validate(const std::vector<Underlying>& underlyings, const std::vector<Expo
     }
 }
 
+void validate_csa(const CsaTerms& csa, std::size_t steps) {
+    if (!(csa.threshold_recv >= 0) || !(csa.threshold_post >= 0) || !(csa.mta >= 0) ||
+        !(csa.independent_amount >= 0) || std::isnan(csa.threshold_recv + csa.threshold_post)) {
+        throw std::invalid_argument("CSA thresholds, MTA and independent amount must be non-negative");
+    }
+    if (csa.lag_index.size() != steps) throw std::invalid_argument("CSA lag_index needs one entry per step");
+    for (std::size_t j = 0; j < steps; ++j) {
+        if (csa.lag_index[j] < -1 || csa.lag_index[j] > static_cast<int>(j)) {
+            throw std::invalid_argument("CSA lag_index[j] must be in [-1, j]");
+        }
+    }
+}
+
 }  // namespace
+
+double csa_target(double v, const CsaTerms& csa) {
+    return std::max(v - csa.threshold_recv, 0.0) - std::max(-v - csa.threshold_post, 0.0);
+}
 
 std::vector<double> cholesky(const std::vector<double>& a, int n) {
     if (n < 1 || a.size() != static_cast<std::size_t>(n) * n) {
@@ -99,7 +124,19 @@ ExposureBlock simulate_exposure(const std::vector<Underlying>& underlyings,
                                 const std::vector<ExposureTrade>& trades,
                                 const std::vector<double>& grid, double rate, std::uint64_t seed,
                                 std::int64_t start, std::int64_t count, int tail_k, int threads) {
+    return simulate_exposure(underlyings, correlation, trades, grid, rate, seed, start, count, tail_k,
+                             threads, nullptr);
+}
+
+ExposureBlock simulate_exposure(const std::vector<Underlying>& underlyings,
+                                const std::vector<double>& correlation,
+                                const std::vector<ExposureTrade>& trades,
+                                const std::vector<double>& grid, double rate, std::uint64_t seed,
+                                std::int64_t start, std::int64_t count, int tail_k, int threads,
+                                const CsaTerms* csa) {
     validate(underlyings, trades, grid, start, count, tail_k, threads);
+    if (csa) validate_csa(*csa, grid.size());
+    const int n_series = csa ? 2 : 1;  // uncollateralized, then collateralized
     const int n_u = static_cast<int>(underlyings.size());
     const int steps = static_cast<int>(grid.size());
     const std::vector<double> chol = cholesky(correlation, n_u);
@@ -107,7 +144,7 @@ ExposureBlock simulate_exposure(const std::vector<Underlying>& underlyings,
 
     const std::int64_t n_chunks = (count + kChunk - 1) / kChunk;
     threads = effective_threads(n_chunks, threads);
-    if (static_cast<double>(threads) * steps * k > kMaxTailElements) {
+    if (static_cast<double>(threads) * steps * k * n_series > kMaxTailElements) {
         throw std::invalid_argument("tail buffer too large: reduce tail_k, steps or threads");
     }
 
@@ -122,18 +159,29 @@ ExposureBlock simulate_exposure(const std::vector<Underlying>& underlyings,
         }
     }
 
-    std::vector<double> chunk_sums(n_chunks * steps * 2, 0.0);
-    const std::size_t stride = cache_line_stride<double>(4 * n_u);
+    double v0 = 0.0;  // today's value: deterministic, and the collateral balance at t = 0
+    for (const auto& t : trades) v0 += trade_value(t, underlyings[t.underlying], underlyings[t.underlying].spot, 0.0, rate);
+
+    // Per chunk and step: sum, sum of squares, negative sum; then the same
+    // three for the collateralized series.
+    const int n_acc = 3 * n_series;
+    std::vector<double> chunk_sums(n_chunks * steps * n_acc, 0.0);
+    // Per thread: uniforms, normals, log-spots, spots, then the collateral
+    // balance at each step of the current scenario. Reserved once, so no
+    // allocation per path.
+    const std::size_t stride = cache_line_stride<double>(4 * n_u + (csa ? steps : 0));
     AlignedBuffer<double> slab(stride * threads);
-    std::vector<std::vector<double>> heaps(static_cast<std::size_t>(threads) * steps);
+    std::vector<std::vector<double>> heaps(static_cast<std::size_t>(threads) * steps * n_series);
     for (auto& h : heaps) h.reserve(k);
+    const double balance0 = csa ? csa_target(v0, *csa) : 0.0;
 
     parallel_for(n_chunks, threads, [&](std::int64_t c, int w) {
         double* u = slab.data() + w * stride;
         double* z = u + n_u;
         double* log_s = z + n_u;
         double* spot = log_s + n_u;
-        double* sums = chunk_sums.data() + c * steps * 2;
+        double* balance = spot + n_u;
+        double* sums = chunk_sums.data() + c * steps * n_acc;
         const std::int64_t end = std::min(count, (c + 1) * kChunk);
         for (std::int64_t s = c * kChunk; s < end; ++s) {
             for (int a = 0; a < n_u; ++a) log_s[a] = std::log(underlyings[a].spot);
@@ -152,9 +200,24 @@ ExposureBlock simulate_exposure(const std::vector<Underlying>& underlyings,
                     value += trade_value(t, underlyings[t.underlying], spot[t.underlying], grid[j], rate);
                 }
                 const double e = std::max(value, 0.0);
-                sums[2 * j] += e;
-                sums[2 * j + 1] += e * e;
-                if (k > 0) push_top_k(heaps[static_cast<std::size_t>(w) * steps + j], k, e);
+                double* acc = sums + j * n_acc;
+                acc[0] += e;
+                acc[1] += e * e;
+                acc[2] += std::max(-value, 0.0);
+                if (k > 0) push_top_k(heaps[(static_cast<std::size_t>(w) * n_series) * steps + j], k, e);
+                if (csa) {
+                    // Margin call at this node, made only if it moves the balance by the MTA.
+                    const double prev = j ? balance[j - 1] : balance0;
+                    const double target = csa_target(value, *csa);
+                    balance[j] = std::abs(target - prev) >= csa->mta ? target : prev;
+                    const int lag = csa->lag_index[j];
+                    const double held = lag < 0 ? balance0 : balance[lag];
+                    const double ec = std::max(value - held - csa->independent_amount, 0.0);
+                    acc[3] += ec;
+                    acc[4] += ec * ec;
+                    acc[5] += std::max(held - value, 0.0);
+                    if (k > 0) push_top_k(heaps[(static_cast<std::size_t>(w) * n_series + 1) * steps + j], k, ec);
+                }
             }
         }
     });
@@ -162,25 +225,32 @@ ExposureBlock simulate_exposure(const std::vector<Underlying>& underlyings,
     ExposureBlock out;
     out.n = count;
     out.tail_k = k;
-    out.sum.assign(steps, 0.0);
-    out.sum_sq.assign(steps, 0.0);
-    for (std::int64_t c = 0; c < n_chunks; ++c) {  // chunk order: deterministic
-        for (int j = 0; j < steps; ++j) {
-            out.sum[j] += chunk_sums[c * steps * 2 + 2 * j];
-            out.sum_sq[j] += chunk_sums[c * steps * 2 + 2 * j + 1];
-        }
-    }
-    out.tails.resize(static_cast<std::size_t>(steps) * k);
+    out.v0 = v0;
+    std::vector<double>* sum_out[2][3] = {{&out.sum, &out.sum_sq, &out.neg_sum},
+                                          {&out.csa_sum, &out.csa_sum_sq, &out.csa_neg_sum}};
+    std::vector<double>* tail_out[2] = {&out.tails, &out.csa_tails};
     std::vector<double> merged;
     merged.reserve(static_cast<std::size_t>(threads) * k);
-    for (int j = 0; j < steps && k > 0; ++j) {
-        merged.clear();
-        for (int w = 0; w < threads; ++w) {
-            const auto& h = heaps[static_cast<std::size_t>(w) * steps + j];
-            merged.insert(merged.end(), h.begin(), h.end());
+    for (int series = 0; series < n_series; ++series) {
+        for (int a = 0; a < 3; ++a) sum_out[series][a]->assign(steps, 0.0);
+        for (std::int64_t c = 0; c < n_chunks; ++c) {  // chunk order: deterministic
+            for (int j = 0; j < steps; ++j) {
+                for (int a = 0; a < 3; ++a) {
+                    (*sum_out[series][a])[j] += chunk_sums[(c * steps + j) * n_acc + 3 * series + a];
+                }
+            }
         }
-        std::partial_sort(merged.begin(), merged.begin() + k, merged.end(), std::greater<>());
-        std::copy(merged.begin(), merged.begin() + k, out.tails.begin() + static_cast<std::ptrdiff_t>(j) * k);
+        auto& tails = *tail_out[series];
+        tails.resize(static_cast<std::size_t>(steps) * k);
+        for (int j = 0; j < steps && k > 0; ++j) {
+            merged.clear();
+            for (int w = 0; w < threads; ++w) {
+                const auto& h = heaps[(static_cast<std::size_t>(w) * n_series + series) * steps + j];
+                merged.insert(merged.end(), h.begin(), h.end());
+            }
+            std::partial_sort(merged.begin(), merged.begin() + k, merged.end(), std::greater<>());
+            std::copy(merged.begin(), merged.begin() + k, tails.begin() + static_cast<std::ptrdiff_t>(j) * k);
+        }
     }
     return out;
 }

@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "pricer-core"
-version = "0.2.0"
+version = "0.3.0"
 description = "C++ Monte Carlo and closed-form option analytics with pybind11 bindings"
 requires-python = ">=3.10"
 dependencies = ["numpy>=1.26"]
@@ -18,3 +18,32 @@ testpaths = ["tests"]
 pythonpath = ["."]
 markers = ["integration: needs the docker compose stack running"]
 addopts = "-m 'not integration'"
+
+# Lint gate sized to the code as it is: E501 is off (the repo keeps long
+# comment and table lines), and the few findings in existing files are listed
+# per file so CI passes today. Remove an entry when its file is fixed.
+[tool.ruff]
+target-version = "py310"
+extend-exclude = ["build", "graphify-out"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E501", "B905"]  # B905: zip() lengths are equal by construction here
+
+[tool.ruff.lint.per-file-ignores]
+"bench/bench_core.py" = ["B023"]
+"bench/bench_keda.py" = ["F841"]
+"service/main.py" = ["I001"]
+"service/worker.py" = ["I001"]
+"service/models.py" = ["UP007"]
+"service/retry.py" = ["UP035"]
+"tests/*.py" = ["I001"]
+
+# The gate itself (--cov-fail-under) is in CI, not pytest.ini, so local runs
+# stay fast.
+[tool.coverage.run]
+source = ["service", "tools"]
+branch = false
+
+[tool.coverage.report]
+exclude_lines = ["pragma: no cover", "if __name__ == .__main__.:"]

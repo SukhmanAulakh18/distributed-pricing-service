@@ -1,10 +1,12 @@
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 #include <algorithm>
 #include <cmath>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -164,7 +166,7 @@ PYBIND11_MODULE(pricer_core, m, py::mod_gil_not_used()) {
            const Array<int>& trade_kind, const Array<double>& strike,
            const Array<double>& maturity, const Array<double>& quantity,
            const Array<double>& grid, double rate, std::uint64_t seed, std::int64_t start,
-           std::int64_t count, int tail_k, int threads) {
+           std::int64_t count, int tail_k, int threads, const py::object& csa) {
             // Copy the (small) inputs into C++ structs while holding the GIL.
             const py::ssize_t n_u = spot.size(), n_t = trade_underlying.size();
             std::vector<mc::Underlying> und(n_u);
@@ -187,20 +189,41 @@ PYBIND11_MODULE(pricer_core, m, py::mod_gil_not_used()) {
                              strike.data()[i], maturity.data()[i], quantity.data()[i]};
             }
             std::vector<double> g(grid.data(), grid.data() + grid.size());
+            // csa: None, or a dict of threshold_recv, threshold_post, mta,
+            // independent_amount and lag_index (one int per grid step).
+            std::optional<mc::CsaTerms> terms;
+            if (!csa.is_none()) {
+                const auto d = csa.cast<py::dict>();
+                terms.emplace();
+                terms->threshold_recv = d["threshold_recv"].cast<double>();
+                terms->threshold_post = d["threshold_post"].cast<double>();
+                terms->mta = d["mta"].cast<double>();
+                terms->independent_amount = d["independent_amount"].cast<double>();
+                terms->lag_index = d["lag_index"].cast<std::vector<int>>();
+            }
 
             mc::ExposureBlock block;
             {
                 py::gil_scoped_release release;
                 block = mc::simulate_exposure(und, corr, trades, g, rate, seed, start, count,
-                                              tail_k, threads);
+                                              tail_k, threads, terms ? &*terms : nullptr);
             }
             const auto steps = static_cast<py::ssize_t>(g.size());
-            return py::dict("sum"_a = to_numpy(std::move(block.sum), {steps}),
-                            "sum_sq"_a = to_numpy(std::move(block.sum_sq), {steps}),
-                            "tails"_a = to_numpy(std::move(block.tails), {steps, block.tail_k}),
-                            "n"_a = block.n);
+            const auto k = static_cast<py::ssize_t>(block.tail_k);
+            py::dict out("sum"_a = to_numpy(std::move(block.sum), {steps}),
+                         "sum_sq"_a = to_numpy(std::move(block.sum_sq), {steps}),
+                         "neg_sum"_a = to_numpy(std::move(block.neg_sum), {steps}),
+                         "tails"_a = to_numpy(std::move(block.tails), {steps, k}),
+                         "v0"_a = block.v0, "n"_a = block.n);
+            if (terms) {
+                out["csa_sum"] = to_numpy(std::move(block.csa_sum), {steps});
+                out["csa_sum_sq"] = to_numpy(std::move(block.csa_sum_sq), {steps});
+                out["csa_neg_sum"] = to_numpy(std::move(block.csa_neg_sum), {steps});
+                out["csa_tails"] = to_numpy(std::move(block.csa_tails), {steps, k});
+            }
+            return out;
         },
         "spot"_a, "vol"_a, "div_yield"_a, "correlation"_a, "trade_underlying"_a, "trade_kind"_a,
         "strike"_a, "maturity"_a, "quantity"_a, "grid"_a, "rate"_a, "seed"_a, "start"_a,
-        "count"_a, "tail_k"_a, "threads"_a = 1);
+        "count"_a, "tail_k"_a, "threads"_a = 1, "csa"_a = py::none());
 }

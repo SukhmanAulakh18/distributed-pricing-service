@@ -9,6 +9,7 @@ resources:
   - worker-intraday.yaml
   - worker-batch.yaml
   - keda.yaml
+  - networkpolicy.yaml
 images:
   - name: mc-pricer
     newTag: dev

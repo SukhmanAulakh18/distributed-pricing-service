@@ -7,8 +7,10 @@ import logging
 import os
 import signal
 import socket
+import threading
 import time
 from collections import OrderedDict
+from contextlib import contextmanager
 
 import redis
 from prometheus_client import Counter, Gauge, Histogram, start_http_server
@@ -51,6 +53,27 @@ class Worker:
                 self.payloads.popitem(last=False)
         return self.payloads[job]
 
+    @contextmanager
+    def _heartbeat(self, stream: str, message_id: str):
+        """Keeps a long-running task from looking dead to reclaim(): without
+        it, anything slower than CLAIM_IDLE_MS is taken by another worker,
+        its delivery count climbs and fail_poison kills a healthy task."""
+        stop = threading.Event()
+
+        def beat():
+            while not stop.wait(taskqueue.CLAIM_IDLE_MS / 3000):
+                try:
+                    taskqueue.heartbeat(self.r, stream, self.consumer, message_id)
+                except redis.RedisError:
+                    pass  # the next beat retries; a long outage reclaims it anyway
+        t = threading.Thread(target=beat, daemon=True)
+        t.start()
+        try:
+            yield
+        finally:
+            stop.set()
+            t.join()
+
     def handle(self, stream: str, message_id: str, fields: dict) -> None:
         try:
             job, idx, kind = fields[b"job"].decode(), int(fields[b"idx"]), fields[b"kind"].decode()
@@ -69,15 +92,16 @@ class Worker:
                                                   attributes={"job.id": job, "task.idx": idx, "stream": stream}) as span:
             try:
                 task = json.loads(fields[b"task"])
-                if kind == "portfolio":
-                    span.set_attribute("task.trades", len(task["trades"]))
-                    result = price_task(task, self.cache, self.store, job_id=job)
-                elif kind == "exposure":
-                    span.set_attribute("task.scenarios", task["count"])
-                    result, blob = exposure.run_block(self._payload(job), task["start"], task["count"],
-                                                      PRICER_THREADS)
-                else:
-                    raise ValueError(f"unknown task kind {kind!r}")
+                with self._heartbeat(stream, message_id):
+                    if kind == "portfolio":
+                        span.set_attribute("task.trades", len(task["trades"]))
+                        result = price_task(task, self.cache, self.store, job_id=job)
+                    elif kind == "exposure":
+                        span.set_attribute("task.scenarios", task["count"])
+                        result, blob = exposure.run_block(self._payload(job), task["start"], task["count"],
+                                                          PRICER_THREADS)
+                    else:
+                        raise ValueError(f"unknown task kind {kind!r}")
                 outcome = "ok"
             except Exception as e:
                 log.exception("task failed", extra={"job_id": job, "idx": idx, "kind": kind})

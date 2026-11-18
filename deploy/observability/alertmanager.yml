@@ -8,6 +8,9 @@ route:
   group_interval: 1m
   repeat_interval: 1h
   routes:
+    # Must stay first (before the owner routes). The heartbeat repeats often so
+    # a dead-man's switch downstream notices within minutes if it stops.
+    - {matchers: ['alertname="Watchdog"'], receiver: watchdog, group_by: [alertname], repeat_interval: 5m}
     - {matchers: ['owner="database"'], receiver: database-team}
     - {matchers: ['owner="platform"'], receiver: platform}
     - {matchers: ['owner="quant"'], receiver: quant-analytics}
@@ -16,8 +19,12 @@ receivers:
   - name: database-team
   - name: platform
   - name: quant-analytics
+  - name: watchdog
 inhibit_rules:
   # One root cause, one page: when Redis or a node is down, the backlog and
   # stuck-task alerts it causes are noise.
   - source_matchers: ['alertname=~"RedisCircuitOpen|NodeNotReady"']
     target_matchers: ['alertname=~"IntradayBacklog|TasksStuckPending"']
+    # Only inhibit within one namespace. A label missing on both sides counts
+    # as equal, so today's aggregated (label-less) alerts still match.
+    equal: [namespace]

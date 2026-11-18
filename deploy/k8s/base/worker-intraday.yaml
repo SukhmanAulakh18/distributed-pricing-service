@@ -13,6 +13,13 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9100"
     spec:
+      # Matches the Dockerfile's uid 10001. The root filesystem is read-only;
+      # /tmp is the only writable path (libraries and OpenTelemetry may need it).
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
       # SIGTERM lets the worker finish its current task; anything unacked
       # after that is reclaimed by another worker via XAUTOCLAIM.
       terminationGracePeriodSeconds: 30
@@ -37,3 +44,25 @@ spec:
           livenessProbe:
             httpGet: {path: /metrics, port: metrics}
             periodSeconds: 15
+          # The metrics server starts before the Redis connection, so this only
+          # gates rollouts on the process being up; Redis loss shows as backlog.
+          readinessProbe:
+            httpGet: {path: /metrics, port: metrics}
+            periodSeconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: pricer-worker-intraday
+spec:
+  maxUnavailable: 1  # a drain never stops the whole pool; unacked tasks are reclaimed anyway
+  selector:
+    matchLabels: {app: pricer-worker, pool: intraday}
