@@ -17,8 +17,8 @@ from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_
 from . import exposure, logging_setup, taskqueue, tracing
 from .cache import PriceCache
 from .models import (ExposureJob, ExposureRequest, ExposureResult, PortfolioRequest,
-                     PortfolioResponse, PriceRequest, PriceResponse)
-from .pricing import HOSTNAME, Overloaded, price_task, price_with_cache
+                     PortfolioResponse, PredealRequest, PredealResult, PriceRequest, PriceResponse)
+from .pricing import HOSTNAME, PRICER_THREADS, Overloaded, admission, price_task, price_with_cache
 from .store import Store, build_store
 
 logging_setup.configure()
@@ -376,6 +376,72 @@ def _exposure_status(q: redis.Redis, job_id: str) -> ExposureResult:
         JOBS.labels("exposure", "distributed", "complete").inc()
         _persist_exposure(result, m["meta"], m["submitted_at"])
     return result
+
+
+def _exposure_inline(req: ExposureRequest) -> ExposureResult:
+    payload, _ = exposure.plan(req)
+    block = exposure.run_block(payload, 0, req.n_scenarios, PRICER_THREADS)
+    return _exposure_result("predeal", exposure_meta(req, payload), [block], {}, 0.0)
+
+
+@app.post("/risk/predeal", response_model=PredealResult)
+def predeal(body: PredealRequest) -> PredealResult:
+    """Should we do this trade? Runs the netting set with and without it on
+    the same scenarios (the seed ignores trades), so the incremental CVA is a
+    clean difference, then checks peak PFE against the credit limit.
+    Synchronous and capped: a quote for a trader, not a batch run."""
+    t0 = time.perf_counter()
+    ns = body.netting_set
+    # Rebuild rather than copy, so the work caps are checked with the new trade in.
+    after_req = ExposureRequest(**{**ns.model_dump(), "trades": [*ns.model_dump()["trades"], body.new_trade.model_dump()]})
+    with admission(), tracing.tracer.start_as_current_span("risk.predeal", attributes={"trades": len(ns.trades) + 1}):
+        # A trader re-quoting against one book reruns the same "before" each
+        # time: cache it (the price cache's short TTL, keyed by the whole
+        # netting set, so any change to the book or market data misses).
+        key = "predeal-base:" + hashlib.sha256(ns.model_dump_json().encode()).hexdigest()
+        hit = app.state.cache.get(key)
+        before = ExposureResult(**hit) if hit else _exposure_inline(ns)
+        if not hit:
+            app.state.cache.set(key, before.model_dump())
+        after = _exposure_inline(after_req)
+        has_csa = ns.csa is not None
+        breached = body.credit_limit is not None and (after.peak_pfe_csa if has_csa else after.peak_pfe) > body.credit_limit
+        fallback = None
+        # The collateralized run costs the most (extra MPoR nodes): only pay
+        # for it when the answer depends on it.
+        if body.fallback_csa is not None and breached:
+            fallback = _exposure_inline(ExposureRequest(**{**after_req.model_dump(), "csa": body.fallback_csa.model_dump()}))
+
+    inc_unc = after.cva - before.cva
+    inc_csa = after.cva_csa - before.cva_csa if has_csa else None
+    inc = inc_csa if has_csa else inc_unc
+    spot = next(u.spot for u in ns.underlyings if u.name == body.new_trade.underlying)
+    notional = abs(body.new_trade.quantity) * spot
+    peak_after = after.peak_pfe_csa if has_csa else after.peak_pfe
+    peak_csa = after.peak_pfe_csa if has_csa else (fallback.peak_pfe_csa if fallback else None)
+    limit = body.credit_limit
+    charge = f"Charge the client ${inc:,.0f} ({inc / notional * 1e4:,.1f} bp) for credit." if notional else ""
+
+    if limit is None:
+        verdict, reason = "no_limit", f"No credit limit given. {charge}".strip()
+    elif peak_after <= limit:
+        verdict, reason = "approve", f"Within the credit limit ({peak_after / limit:.0%} used). {charge}".strip()
+    elif not has_csa and peak_csa is not None and peak_csa <= limit:
+        verdict = "approve_with_csa"
+        reason = (f"Peak PFE ${peak_after:,.0f} exceeds the ${limit:,.0f} limit; under the proposed CSA it is "
+                  f"${peak_csa:,.0f}, within the limit.")
+    else:
+        over = (peak_csa if peak_csa is not None else peak_after) - limit
+        reason = f"Exceeds the limit by ${over:,.0f}" + (" even with collateral." if peak_csa is not None else ".")
+        verdict = "refer_to_credit"
+
+    return PredealResult(
+        verdict=verdict, reason=reason, incremental_cva=inc, incremental_cva_uncollateralized=inc_unc,
+        incremental_cva_csa=inc_csa, cva_charge_bps=inc / notional * 1e4 if notional else 0.0,
+        peak_pfe_before=before.peak_pfe_csa if has_csa else before.peak_pfe, peak_pfe_after=peak_after,
+        peak_pfe_after_csa=peak_csa, limit_basis="collateralized" if has_csa else "uncollateralized",
+        limit_utilisation=peak_after / limit if limit else None, risk_reducing=inc < 0,
+        baseline_cached=bool(hit), n_scenarios=ns.n_scenarios, elapsed_ms=round((time.perf_counter() - t0) * 1e3, 2))
 
 
 @app.get("/risk/exposure/latest/{netting_set_id}")

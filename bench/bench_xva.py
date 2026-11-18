@@ -104,6 +104,44 @@ def main():
         "seconds_per_run": round(statistics.median(secs_pre), 2),
     }
     print("pre-deal", out["pre_deal"])
+
+    # The same check as one API call: POST /risk/predeal, end to end through
+    # FastAPI and Pydantic, with an API pod's compute threads. Three cases: a
+    # first quote (book and book + trade), a re-quote with the book cached,
+    # and a limit breach that also prices the fallback CSA.
+    import fakeredis
+    from fastapi.testclient import TestClient
+
+    from service.cache import PriceCache
+    from service.main import app
+    from service.store import NullStore
+    fallback = {"threshold_recv": 0, "threshold_post": 0, "mta": 250_000, "mpor_days": 10}
+    body = {"netting_set": small | {"market_data_version": "md-0"}, "new_trade": new, "credit_limit": 15_000_000,
+            "fallback_csa": fallback}
+
+    def timed(cache, b, n=5):
+        app.state.store, app.state.cache, app.state.queue = NullStore(), cache, None
+        with TestClient(app) as c:
+            c.post("/risk/predeal", json=b)  # warm-up (and, with a cache, the book's first run)
+            runs = [c.post("/risk/predeal", json=b).json() for _ in range(n)]
+        return statistics.median(r["elapsed_ms"] for r in runs), runs[-1]
+
+    cold_ms, res = timed(PriceCache(None), body)
+    warm_ms, warm = timed(PriceCache(fakeredis.FakeRedis()), body)
+    breach_ms, breach = timed(PriceCache(None), body | {"credit_limit": 9_000_000})
+    assert warm["baseline_cached"] and warm["incremental_cva"] == res["incremental_cva"]
+    out["predeal_endpoint"] = {
+        "n_trades": len(small["trades"]) + 1, "n_scenarios": small["n_scenarios"],
+        "pricer_threads": int(os.getenv("PRICER_THREADS", "2")),
+        "first_quote_ms": round(cold_ms, 1), "requote_book_cached_ms": round(warm_ms, 1),
+        "limit_breach_with_fallback_csa_ms": round(breach_ms, 1),
+        "approve": {"credit_limit": 15_000_000, "verdict": res["verdict"],
+                    "incremental_cva": round(res["incremental_cva"], 2), "cva_charge_bps": round(res["cva_charge_bps"], 2),
+                    "peak_pfe_after": round(res["peak_pfe_after"], 2)},
+        "breach": {"credit_limit": 9_000_000, "verdict": breach["verdict"], "reason": breach["reason"],
+                   "peak_pfe_after_csa": round(breach["peak_pfe_after_csa"], 2)},
+    }
+    print("predeal endpoint", out["predeal_endpoint"])
     with open(OUT, "w") as f:
         json.dump(out, f, indent=1)
     print("wrote", OUT)

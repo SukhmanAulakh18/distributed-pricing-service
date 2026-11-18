@@ -17,7 +17,7 @@
   "epe": 1547230.82,
   "dva": 100933.9,
   "bilateral_cva": -1279.0,
-  "seconds": 1.17,
+  "seconds": 1.19,
   "v0": -1407374.16
  },
  "profile": {
@@ -402,7 +402,7 @@
    "epe": 446357.42,
    "dva": 12541.52,
    "bilateral_cva": 15660.34,
-   "seconds": 2.39,
+   "seconds": 2.43,
    "same_scenarios_uncollateralized": {
     "cva": 102161.16,
     "peak_pfe": 12430337.9,
@@ -418,7 +418,7 @@
    "epe": 494610.08,
    "dva": 19341.08,
    "bilateral_cva": 11994.67,
-   "seconds": 2.35,
+   "seconds": 2.42,
    "same_scenarios_uncollateralized": {
     "cva": 102161.16,
     "peak_pfe": 12430337.9,
@@ -434,7 +434,7 @@
    "epe": 1177943.27,
    "dva": 55682.3,
    "bilateral_cva": 20105.7,
-   "seconds": 2.35,
+   "seconds": 2.38,
    "same_scenarios_uncollateralized": {
     "cva": 102161.16,
     "peak_pfe": 12430337.9,
@@ -450,7 +450,7 @@
    "epe": 1547972.45,
    "dva": 96007.99,
    "bilateral_cva": 3694.4,
-   "seconds": 2.36,
+   "seconds": 2.4,
    "same_scenarios_uncollateralized": {
     "cva": 102161.16,
     "peak_pfe": 12430337.9,
@@ -466,7 +466,7 @@
    "epe": 1550809.5,
    "dva": 100668.31,
    "bilateral_cva": -793.06,
-   "seconds": 2.42,
+   "seconds": 2.36,
    "same_scenarios_uncollateralized": {
     "cva": 102161.16,
     "peak_pfe": 12430337.9,
@@ -567,5 +567,26 @@
   "stdev_common_random_numbers": 187.972,
   "stdev_independent_seeds": 1960.695,
   "seconds_per_run": 0.27
+ },
+ "predeal_endpoint": {
+  "n_trades": 201,
+  "n_scenarios": 10000,
+  "pricer_threads": 2,
+  "first_quote_ms": 1394.9,
+  "requote_book_cached_ms": 696.9,
+  "limit_breach_with_fallback_csa_ms": 2763.4,
+  "approve": {
+   "credit_limit": 15000000,
+   "verdict": "approve",
+   "incremental_cva": 12065.81,
+   "cva_charge_bps": 30.16,
+   "peak_pfe_after": 13505299.7
+  },
+  "breach": {
+   "credit_limit": 9000000,
+   "verdict": "approve_with_csa",
+   "reason": "Peak PFE $13,505,300 exceeds the $9,000,000 limit; under the proposed CSA it is $7,370,836, within the limit.",
+   "peak_pfe_after_csa": 7370835.87
+  }
  }
 }

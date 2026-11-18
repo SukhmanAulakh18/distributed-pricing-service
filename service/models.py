@@ -320,3 +320,48 @@ class ExposureResult(BaseModel):
     elapsed_ms: float | None = None
     errors: list[str] | None = None
 
+
+
+MAX_PREDEAL_SCENARIOS = 50_000  # runs synchronously on an API pod: a quote, not a batch run
+
+
+class PredealRequest(Strict):
+    """Should we do this trade? The netting set as it stands, the new trade,
+    and the client's credit limit on peak PFE. `fallback_csa` is the CSA we
+    would ask for if the limit is breached without one."""
+
+    netting_set: ExposureRequest
+    new_trade: ExposureTrade
+    credit_limit: float | None = Field(default=None, gt=0, le=1e13)
+    fallback_csa: CsaSpec | None = None
+
+    @model_validator(mode="after")
+    def consistent(self):
+        ns = self.netting_set
+        if ns.n_scenarios > MAX_PREDEAL_SCENARIOS:
+            raise ValueError(f"pre-deal checks run synchronously: n_scenarios <= {MAX_PREDEAL_SCENARIOS:,}")
+        if self.new_trade.underlying not in {u.name for u in ns.underlyings}:
+            raise ValueError(f"new_trade references unknown underlying {self.new_trade.underlying!r}")
+        if self.new_trade.trade_id in {t.trade_id for t in ns.trades}:
+            raise ValueError("new_trade.trade_id is already in the netting set")
+        if self.fallback_csa is not None and ns.csa is not None:
+            raise ValueError("fallback_csa only applies to a netting set without a CSA")
+        return self
+
+
+class PredealResult(BaseModel):
+    verdict: Literal["approve", "approve_with_csa", "refer_to_credit", "no_limit"]
+    reason: str
+    incremental_cva: float  # on the limit's basis: collateralized if the netting set has a CSA
+    incremental_cva_uncollateralized: float
+    incremental_cva_csa: float | None = None
+    cva_charge_bps: float  # incremental CVA over the new trade's notional (|quantity| x spot)
+    peak_pfe_before: float
+    peak_pfe_after: float
+    peak_pfe_after_csa: float | None = None  # under the netting set's CSA, or fallback_csa if the limit was breached
+    limit_basis: Literal["collateralized", "uncollateralized"]
+    limit_utilisation: float | None = None
+    risk_reducing: bool
+    baseline_cached: bool  # the book's own run came from the cache
+    n_scenarios: int
+    elapsed_ms: float
