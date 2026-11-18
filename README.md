@@ -16,6 +16,8 @@ SLOs. Chaos tests then kill its pods, its databases and a whole node.
 | --- | --- |
 | **Case study (live site)** | https://sukhmanaulakh18.github.io/distributed-pricing-service/ (diagrams, financial engineering, an interactive replay of the chaos run, SRE) |
 | **Two-page brief (PDF)** | [Distributed-Pricing-Service-Brief.pdf](https://sukhmanaulakh18.github.io/distributed-pricing-service/Distributed-Pricing-Service-Brief.pdf) |
+| **Interactive XVA desk** | [site/desk.html](https://sukhmanaulakh18.github.io/distributed-pricing-service/desk.html): negotiate a CSA and watch CVA and PFE move, plus the measured results |
+| **Business case** | [docs/BUSINESS_CASE.md](docs/BUSINESS_CASE.md): the decision it supports, who uses it, what the numbers are worth |
 | **Interactive chaos replay** | [site#reliability](https://sukhmanaulakh18.github.io/distributed-pricing-service/#reliability) |
 | **Grafana dashboards** | Defined as code in [`deploy/observability/grafana/`](deploy/observability/grafana/), served at `localhost:3001` by `make cluster`; screenshots below and on the site |
 
@@ -35,10 +37,12 @@ SLOs. Chaos tests then kill its pods, its databases and a whole node.
 | **Autoscaling on queue lag** | KEDA scales the batch pool 0 → 6 on stream lag; a cold start costs 10 s to the first worker (38 s run vs 9 s warm) |
 | **Intraday protected from batch** | An intraday book during a big exposure run: **5.17 s → 0.32 s** after splitting intraday and batch streams |
 | **Book pricing** | 50,000-trade book in **6.9 s** on 8 workers; 2,295 → 7,335 trades/s from 1 to 8 workers |
+| **Collateral (CSA) and own credit** | A zero-threshold CSA at a 10-day margin period cuts a 200-trade book's CVA **72%** and peak PFE **43%** (same scenarios); CVA rises from $0.4k to $49.7k as the margin period goes from 0 to 20 days. DVA and bilateral CVA from the same pass |
+| **Pre-deal checks** | Incremental CVA of a new trade is **10× tighter** at the same cost, because what-if runs share scenarios (common random numbers); 0.27 s per run |
 | **Exposure and CVA** | 604 million option revaluations in **2.7 s**; PFE and CVA identical on 1, 2, 4 and 8 workers |
 | **pybind11 and the GIL** | 8 Python threads: **175 pricings/s** with the GIL released vs 46 with it held; **147M** Black-Scholes prices/s through one zero-copy NumPy call |
 | **Memory and threads** | ASan + UBSan, ThreadSanitizer and Valgrind clean, including Valgrind on the Python extension |
-| **Tests** | 35 C++ (GoogleTest) and 74 Python (pytest). CI checks the manifests (kubeconform), alert rules (promtool) and Alertmanager routing (amtool) |
+| **Tests** | 41 C++ (GoogleTest) and 107 Python (pytest), 84% line coverage with a 75% gate. CI also lints (ruff), checks the manifests (kubeconform), alert rules (promtool) and Alertmanager routing (amtool); CD pushes a signed image with an SBOM after a Trivy scan |
 
 ## How this maps to the role
 
@@ -105,8 +109,11 @@ review (findings 11 and 14):
 - **Run 2** showed the node alert could never fire, because the monitoring
   lived on that node. The monitoring has been moved to the control plane.
 - **Run 3** still lost 1 book in 30 to connection resets during the
-  outage. Still open: the proposed fix is an idempotency key the client
-  can poll on.
+  outage. Fixed since, not yet re-run: `/portfolio/price` takes an
+  `Idempotency-Key`, so a retry joins the job already running instead of
+  losing it, and `GET /jobs/{id}` returns the same answer. The chaos
+  client now sends one. Unit tests cover it; the next `make chaos` is the
+  end-to-end check.
 
 ## Observability
 
