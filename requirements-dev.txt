@@ -1,7 +1,7 @@
 -r requirements.txt
 pybind11==3.1.0
 scikit-build-core==0.12.2
-cmake==4.4.4
+cmake==4.4.5
 ninja==1.13.2
 pytest==9.1.1
 httpx==0.28.1
