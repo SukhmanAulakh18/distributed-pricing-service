@@ -5,9 +5,29 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
+# A new push to a PR supersedes the running checks; main runs always finish.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # `ruff format --check` is not gated: 40 files predate the formatter.
+      - run: pip install ruff==0.17.5 && ruff check .
+
   python:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -16,10 +36,25 @@ jobs:
           cache: pip
       - run: pip install -r requirements-dev.txt
       - run: pip install --no-build-isolation .
-      - run: pytest -q
+      # Gate sits ~6 points under the measured 81% so it catches a
+      # collapse, not noise. Kept here, not in pytest.ini, so local runs stay fast.
+      - run: pytest -q --cov=service --cov=tools --cov-fail-under=75
+
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Advisory: a new upstream CVE must not block unrelated PRs. Read the log.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pip-audit && pip-audit -r requirements.txt
 
   cpp:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
       matrix:
         compiler: [g++, clang++]
@@ -32,6 +67,7 @@ jobs:
 
   memory:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - run: docker build -f docker/tools.Dockerfile -t mc-tools .
@@ -40,23 +76,28 @@ jobs:
 
   image:
     runs-on: ubuntu-latest
-    needs: [python, cpp]
+    timeout-minutes: 20
+    needs: [python, cpp, memory, manifests, lint]
     steps:
       - uses: actions/checkout@v4
       - run: docker build -t mc-pricer:ci .
       - name: Smoke test the image
         run: |
           docker run -d --name api -p 8000:8000 mc-pricer:ci
+          # Show the container's output when any step below fails.
+          trap 'rc=$?; [ $rc -eq 0 ] || docker logs api' EXIT
           for i in $(seq 1 30); do curl -sf localhost:8000/health/live && break; sleep 1; done
           curl -sf -X POST localhost:8000/price -H 'Content-Type: application/json' -d '{"instrument_id":"CI","market_data_version":"ci","product":{"type":"european","spot":100,"strike":105,"rate":0.03,"vol":0.2,"maturity":1},"simulation":{"n_paths":100000}}'
 
   manifests:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - run: curl -sL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | tar xz
       - name: Render and validate every overlay (KEDA CRDs from the community schema catalog)
         run: |
+          set -o pipefail
           for o in deploy/k8s/overlays/*/; do
             echo "== $o"
             kubectl kustomize "$o" | ./kubeconform -strict -summary -schema-location default \

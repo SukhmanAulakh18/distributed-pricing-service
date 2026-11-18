@@ -20,3 +20,5 @@ deploy/rancher/.bootstrap-password
 deploy/rancher/.api-token
 deploy/rancher/.cluster-id
 bench/results/tracing-load.json
+.coverage
+coverage.xml

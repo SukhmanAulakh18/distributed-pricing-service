@@ -22,6 +22,8 @@ groups:
         expr: 1 - sum(rate(price_latency_seconds_bucket{le="0.25"}[5m])) / sum(rate(price_latency_seconds_count[5m]))
       - record: sli:price_slow_ratio:rate1h
         expr: 1 - sum(rate(price_latency_seconds_bucket{le="0.25"}[1h])) / sum(rate(price_latency_seconds_count[1h]))
+      - record: sli:book_failure_ratio:rate5m
+        expr: (sum(rate(jobs_total{kind="portfolio",outcome!="complete"}[5m])) or vector(0)) / sum(rate(jobs_total{kind="portfolio"}[5m]))
       - record: sli:book_failure_ratio:rate1h
         expr: (sum(rate(jobs_total{kind="portfolio",outcome!="complete"}[1h])) or vector(0)) / sum(rate(jobs_total{kind="portfolio"}[1h]))
 
@@ -49,8 +51,35 @@ groups:
           summary: "More than 14% of /price requests are slower than 250 ms"
           runbook_url: "https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/RUNBOOK.md#1-price-slow-or-503s"
 
+      # Book SLO is 99% (budget 0.01). Same 14.4x page threshold and
+      # long/short window pairing as the /price alerts above.
+      - alert: BookFailureFastBurn
+        expr: sli:book_failure_ratio:rate1h > (14.4 * 0.01) and sli:book_failure_ratio:rate5m > (14.4 * 0.01)
+        labels: {severity: page, owner: core}
+        annotations:
+          summary: "More than 14% of books complete with failed trades: the 99% book SLO is burning 14x too fast"
+          runbook_url: "https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/RUNBOOK.md#5-books-slow-partial-http-206-or-exposure-runs-stuck"
+
   - name: pricing-components
     rules:
+      # Always firing. If Alertmanager or a dead-man's-switch receiver stops
+      # seeing it, the alerting pipeline itself is broken.
+      - alert: Watchdog
+        expr: vector(1)
+        labels: {severity: none, owner: platform}
+        annotations:
+          summary: "Alerting pipeline heartbeat: always firing by design"
+          runbook_url: "https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/RUNBOOK.md"
+      # pricing_queue_backlog is emitted only by workers, so with every worker
+      # dead (or the pool scaled to 0) IntradayBacklog has no series and can
+      # never fire. Absence is the signal then.
+      - alert: IntradayBacklogMetricAbsent
+        expr: absent_over_time(pricing_queue_backlog{stream="pricing:intraday",kind="lag"}[5m])
+        for: 2m
+        labels: {severity: page, owner: core}
+        annotations:
+          summary: "No worker reports the intraday backlog: all workers down or Prometheus cannot scrape them"
+          runbook_url: "https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/RUNBOOK.md#5-books-slow-partial-http-206-or-exposure-runs-stuck"
       - alert: IntradayBacklog
         expr: max(pricing_queue_backlog{stream="pricing:intraday",kind="lag"}) > 100
         for: 1m
@@ -123,9 +152,10 @@ groups:
           summary: "{{ $labels.pod }} restarted {{ $value }} times in 10 minutes"
           runbook_url: "https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/RUNBOOK.md#6-pods-restarted-at-startup"
       - alert: ApiReplicasUnavailable
-        expr: kube_deployment_status_replicas_available{namespace="pricing",deployment="pricer-api"} < 2
+        # Compare with the desired count (HPA moves it) instead of a fixed floor.
+        expr: kube_deployment_status_replicas_available{namespace="pricing",deployment="pricer-api"} < kube_deployment_spec_replicas{namespace="pricing",deployment="pricer-api"}
         for: 30s
         labels: {severity: page, owner: core}
         annotations:
-          summary: "Fewer than 2 API pods available"
+          summary: "{{ $value }} API pods available, fewer than desired"
           runbook_url: "https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/RUNBOOK.md#2-errors-5xx-resets-or-pods-restarting"

@@ -45,3 +45,14 @@ spec:
       spec:
         accessModes: [ReadWriteOnce]
         resources: {requests: {storage: 1Gi}}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: redis
+spec:
+  # Single replica holding the queue: a node drain blocks until an operator
+  # moves Redis on purpose, rather than silently dropping the queue's host.
+  maxUnavailable: 0
+  selector:
+    matchLabels: {app: redis}

@@ -16,7 +16,16 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8000"
     spec:
-      terminationGracePeriodSeconds: 20
+      # Matches the Dockerfile's uid 10001. The root filesystem is read-only;
+      # /tmp is the only writable path (libraries and OpenTelemetry may need it).
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      # preStop 5 s + a book wait (timeout_s defaults to 60 in service/models.py)
+      # + margin, so a rolling update does not cut in-flight books.
+      terminationGracePeriodSeconds: 75
       # Pods on an unreachable node are evicted after 5 minutes by default.
       # A stateless pricer can be rescheduled after 30 s.
       tolerations:
@@ -55,11 +64,19 @@ spec:
             httpGet: {path: /health/ready, port: http}
             periodSeconds: 3
             failureThreshold: 2
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
           lifecycle:
             # Give the Service time to drop this pod from its endpoints
             # before uvicorn stops accepting connections.
             preStop:
               exec: {command: ["sleep", "5"]}
+      volumes:
+        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
 ---
 apiVersion: v1
 kind: Service
