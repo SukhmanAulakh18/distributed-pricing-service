@@ -38,7 +38,7 @@ SLOs. Chaos tests then kill its pods, its databases and a whole node.
 | **Intraday protected from batch** | An intraday book during a big exposure run: **5.17 s → 0.32 s** after splitting intraday and batch streams |
 | **Book pricing** | 50,000-trade book in **6.9 s** on 8 workers; 2,295 → 7,335 trades/s from 1 to 8 workers |
 | **Collateral (CSA) and own credit** | A zero-threshold CSA at a 10-day margin period cuts a 200-trade book's CVA **72%** and peak PFE **43%** (same scenarios); CVA rises from $0.4k to $49.7k as the margin period goes from 0 to 20 days. DVA and bilateral CVA from the same pass |
-| **Pre-deal checks** | Incremental CVA of a new trade is **10× tighter** at the same cost, because what-if runs share scenarios (common random numbers); 0.27 s per run |
+| **Pre-deal checks** | `POST /risk/predeal` returns *approve*, *approve only with a CSA* or *refer to credit*, with the credit charge in $ and bp: **1.39 s** first quote, **0.70 s** re-quote on a 201-trade book (2 threads). Incremental CVA is **10× tighter** at the same cost because what-if runs share scenarios |
 | **Exposure and CVA** | 604 million option revaluations in **2.7 s**; PFE and CVA identical on 1, 2, 4 and 8 workers |
 | **pybind11 and the GIL** | 8 Python threads: **175 pricings/s** with the GIL released vs 46 with it held; **147M** Black-Scholes prices/s through one zero-copy NumPy call |
 | **Memory and threads** | ASan + UBSan, ThreadSanitizer and Valgrind clean, including Valgrind on the Python extension |

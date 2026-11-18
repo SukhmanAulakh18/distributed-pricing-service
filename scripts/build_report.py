@@ -80,6 +80,8 @@ def numbers():
     gil = {(r["gil"], r["python_threads"]): r["calls_per_s"] for r in core["gil"]}
     batch = {r["method"]: r["options_per_s"] for r in core["batch"]}
     vr = core["variance_reduction"][-1]
+    xva = load("xva.json")
+    t0, pdl = xva["thresholds"][0], xva["pre_deal"]
     e8 = next(r for r in exp["scaling"] if r["workers"] == 8)
     return {
         "c3_avail": c3["availability_pct"], "c3_requests": fmt(c3["price_requests"]), "c3_errors": fmt(c3["price_errors"]),
@@ -112,6 +114,9 @@ def numbers():
         "mc10m_z": f"{core['convergence'][-2]['abs_err'] / core['convergence'][-2]['std_err']:.2f}",
         "exp_scen": fmt(exp["profile"]["n_scenarios"]), "exp_epe": fmt(exp["profile"]["epe"]),
         "exp_pfe": fmt(exp["profile"]["peak_pfe"]), "exp_cva": f"{exp['profile']['cva']:.2f}",
+        "biz_cva_cut": f"\u2212{(1 - t0['cva'] / t0['same_scenarios_uncollateralized']['cva']) * 100:.0f}% CVA with a CSA",
+        "biz_precheck": f"{pdl['seconds_per_run']:.2f}",
+        "biz_tighter": f"{pdl['stdev_independent_seeds'] / pdl['stdev_common_random_numbers']:.1f}",
         "repo": REPO,
         "chart_data": chart_data(keda), "findings": findings(),
     }

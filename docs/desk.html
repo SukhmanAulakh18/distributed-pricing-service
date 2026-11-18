@@ -120,12 +120,28 @@ td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-spa
 ul.tight { margin: 0; padding-left: 20px; display: grid; gap: 6px; max-width: 76ch; }
 footer { padding-top: 24px; font-size: 0.9rem; color: var(--muted); display: grid; gap: 6px; }
 footer nav { display: flex; flex-wrap: wrap; gap: 6px 18px; }
+.verdict { border: 2px solid var(--line); border-radius: 8px; padding: 14px 16px; display: grid; gap: 6px; margin-bottom: 12px; background: var(--bg); }
+.verdict h3 { font-size: 1.5rem; }
+.verdict[data-v="approve"] { border-color: var(--good); } .verdict[data-v="approve"] h3 { color: var(--good); }
+.verdict[data-v="approve_with_csa"] { border-color: var(--warn); background: var(--warn-soft); } .verdict[data-v="approve_with_csa"] h3 { color: var(--warn); }
+.verdict[data-v="refer_to_credit"] { border-color: var(--bad); } .verdict[data-v="refer_to_credit"] h3 { color: var(--bad); }
+.badge { display: inline-block; justify-self: start; background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 3px 12px; font-size: 0.85rem; font-weight: 600; }
+.meter { height: 14px; border-radius: 7px; background: var(--code-bg); overflow: hidden; margin-top: 6px; border: 1px solid var(--line); }
+.meter i { display: block; height: 100%; background: var(--good); }
+.meter i.warn { background: var(--warn); } .meter i.bad { background: var(--bad); }
+input[type=number] { font: 0.92rem var(--mono); padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); width: 100%; min-height: 40px; }
+.ctl .two2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cta { display: inline-flex; align-items: center; margin-top: 16px; padding: 12px 22px; min-height: 48px; border-radius: 8px; background: var(--accent); color: #fff; font: 600 1rem var(--body); text-decoration: none; justify-self: start; }
+:root[data-theme="dark"] .cta { color: #0e1113; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .cta { color: #0e1113; } }
+pre.code { margin: 0; padding: 12px 14px; background: var(--code-bg); border-radius: 8px; overflow-x: auto; font: 0.8rem/1.5 var(--mono); max-width: 100%; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 </style>
 </head><body>
 <nav class="top" aria-label="Sections"><div class="in">
   <b>Pricing Service</b>
   <a href="index.html">Case study</a>
+  <a href="#predeal"><b>Pre-deal check</b></a>
   <a href="#who">Who uses it</a>
   <a href="#play">Negotiate the CSA</a>
   <a href="#measured">Measured</a>
@@ -138,9 +154,67 @@ footer nav { display: flex; flex-wrap: wrap; gap: 6px 18px; }
   <h1>Should we say yes to this trade, and what does the client's credit cost us?</h1>
   <p class="lede">A corporate client asks the bank for a 5-year equity hedge. Before the trader says yes, the XVA desk must answer three questions in seconds. <strong>How much of the client's credit line does it use</strong> (PFE)? <strong>What will the client's possible default cost us</strong> (CVA)? <strong>Does a collateral agreement change the answer?</strong></p>
   <p class="note" style="margin-top:10px">PFE is the bad-case exposure (95th percentile) at each future date. CVA is the price tag on the client defaulting while they owe us money. A CSA is the collateral agreement: when the trade moves in our favour, they hand over cash.</p>
+  <a class="cta" href="#predeal">Run a pre-deal check &darr;</a>
   <div class="tiles" id="tiles" role="list"></div>
   <p class="note" style="margin-top:12px">Measured by <code>bench/bench_xva.py</code> on the author's laptop (<span id="mach"></span>), with a zero-threshold CSA and a 10-day margin period unless stated. Percentages are computed on this page from the raw benchmark file, on the same scenarios.</p>
 </header>
+
+<section id="predeal" aria-labelledby="pd-h">
+  <div><h2 id="pd-h">Pre-deal check: say yes, say yes with a CSA, or refer</h2>
+  <p class="note"><b>In-browser model for intuition; the real engine is the API call below.</b> Pick the client's book, a new trade and the client's credit limit on peak PFE. The page prices the book with and without the new trade on the same random scenarios, so the difference is the trade and not the noise. The CSA terms come from the sliders in <a href="#play">Negotiate the CSA</a>.</p></div>
+  <div class="sim">
+    <form class="panel ctl" id="pdctl" onsubmit="return false" aria-label="Pre-deal inputs">
+      <label>Client's existing book
+        <select id="pd-preset">
+          <option value="puts">Long put book</option>
+          <option value="fwds">Two long forwards</option>
+          <option value="mixed" selected>Mixed book: forward, put and a short call</option>
+        </select></label>
+      <fieldset>
+        <legend class="sr">New trade</legend>
+        <div class="two2">
+          <label>New trade<select id="pd-kind"><option value="fwd" selected>Forward</option><option value="call">Call</option><option value="put">Put</option></select></label>
+          <label>Direction<select id="pd-dir"><option value="1" selected>We buy</option><option value="-1">We sell</option></select></label>
+          <label>Size (units)<input type="number" id="pd-size" min="1000" max="500000" step="1000" value="40000" inputmode="numeric"></label>
+          <label>Strike<input type="number" id="pd-strike" min="50" max="200" step="1" value="100" inputmode="decimal"></label>
+        </div>
+        <label><span class="row">Maturity <output id="o-pd-mat" for="pd-mat"></output></span><input type="range" id="pd-mat" min="0.5" max="5" step="0.5" value="5"></label>
+      </fieldset>
+      <label>Client's credit limit on peak PFE ($)<input type="number" id="pd-limit" min="100000" max="100000000" step="100000" value="5000000" inputmode="numeric"></label>
+      <label><span class="row">Client CDS spread <output id="o-pd-cds" for="pd-cds"></output></span><input type="range" id="pd-cds" min="25" max="600" step="25" value="150"></label>
+      <label class="check"><input type="checkbox" id="pd-csa"> CSA in force</label>
+      <p class="note" id="pd-terms"></p>
+      <p class="note" id="pd-speed"></p>
+      <div class="try">
+        <h3>Try this</h3>
+        <div class="t"><button type="button" data-pd="refer">Refer</button><span>A big 5-year forward against a $1M limit: too big even with collateral.</span></div>
+        <div class="t"><button type="button" data-pd="needcsa">Needs CSA</button><span>A smaller forward, no CSA: collateral is what makes it fit.</span></div>
+        <div class="t"><button type="button" data-pd="approve">Approve</button><span>The same trade with a CSA in force.</span></div>
+        <div class="t"><button type="button" data-pd="hedge">Hedge</button><span>Selling a call against the book offsets exposure and lowers CVA.</span></div>
+      </div>
+    </form>
+    <div class="panel">
+      <div role="status" aria-live="polite" aria-atomic="true" id="pd-out">
+        <div class="verdict" id="pd-verdict" data-v=""><h3 id="pd-vt">-</h3><p id="pd-reason"></p><span class="badge" id="pd-rr" hidden></span></div>
+        <div class="big">
+          <div class="hl"><small>Incremental CVA</small><b id="pd-cva">-</b></div>
+          <div class="hl"><small>Charge to the client</small><b id="pd-bp">-</b></div>
+          <div><small>Peak PFE, before &rarr; after</small><b id="pd-pfe">-</b></div>
+        </div>
+        <div><div class="row" style="display:flex;justify-content:space-between;font-size:0.88rem"><span>Credit limit used</span><b id="pd-util" style="font-family:var(--mono)">-</b></div>
+          <div class="meter" aria-hidden="true"><i id="pd-bar" style="width:0"></i></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="panel" style="display:grid;gap:10px">
+    <h3>Do this against the real engine</h3>
+    <p class="note">Runs the C++ engine synchronously on the API pod, capped at 50,000 scenarios; the same scenarios before and after. Run it locally with <code>make up</code>. The request below follows the inputs above. <span id="pd-latency"></span></p>
+    <pre class="code" id="pd-curl" tabindex="0" aria-label="curl example"></pre>
+    <div><button type="button" id="pd-copy">Copy the curl command</button> <span class="note" id="pd-copied" role="status" aria-live="polite"></span></div>
+    <p class="note">The response has these fields (the numbers below come from this page's model, and the scenario count and time from the benchmark run, not from a live call):</p>
+    <pre class="code" id="pd-resp" tabindex="0" aria-label="sample response"></pre>
+  </div>
+</section>
 
 <section id="who" aria-labelledby="who-h">
   <div><h2 id="who-h">Who uses it</h2><p class="note">Five people ask this system different questions. Each one acts on a different number.</p></div>
@@ -252,7 +326,7 @@ footer nav { display: flex; flex-wrap: wrap; gap: 6px 18px; }
 
 <script>
 // Copied from bench/results/xva.json (measured on the author's laptop by bench/bench_xva.py).
-const XVA = {"machine":"arm64, 10 threads","n_trades":200,"n_scenarios":50000,"units":"USD; 1,000 units per contract","counterparty":{"recovery":0.4,"cds_spread_bps":150.0},"own_credit":{"recovery":0.4,"cds_spread_bps":60.0},"uncollateralized":{"cva":101934.27,"peak_pfe":12475949.31,"epe":1547230.82,"dva":100933.9,"bilateral_cva":-1279.0,"seconds":1.17,"v0":-1407374.16},"profile":{"grid":[0.08333333333333333,0.16666666666666666,0.25,0.3333333333333333,0.4166666666666667,0.5,0.5833333333333334,0.6666666666666666,0.75,0.8333333333333334,0.9166666666666666,1.0,1.0833333333333333,1.1666666666666667,1.25,1.3333333333333333,1.4166666666666667,1.5,1.5833333333333333,1.6666666666666667,1.75,1.8333333333333333,1.9166666666666667,2.0,2.0833333333333335,2.1666666666666665,2.25,2.3333333333333335,2.4166666666666665,2.5,2.5833333333333335,2.6666666666666665,2.75,2.8333333333333335,2.9166666666666665,3.0,3.0833333333333335,3.1666666666666665,3.25,3.3333333333333335,3.4166666666666665,3.5,3.5833333333333335,3.6666666666666665,3.75,3.8333333333333335,3.9166666666666665,4.0,4.083333333333333,4.166666666666667,4.25,4.333333333333333,4.416666666666667,4.5,4.583333333333333,4.666666666666667,4.75,4.833333333333333,4.916666666666667,5.0],"ee":[185556.42,403365.14,585946.99,1090510.56,1316483.27,1242401.84,1210819.58,1631251.75,1461701.71,1623875.92,1892204.84,2225693.73,2227516.41,1721641.71,1618469.31,2324864.21,2470103.94,3404477.36,3466221.99,3633724.36,2526850.48,2418443.06,2122574.18,1463230.25,1580233.27,1717792.13,1321707.13,1954080.4,1493865.37,1484219.94,1475901.87,1305683.99,1264863.23,930342.47,965632.47,1273000.56,1310561.22,1145306.67,1211185.96,1457321.09,2023603.0,1873802.09,1812440.83,1503447.04,1985470.05,1693865.31,1388379.29,1199672.71,747126.02,1001458.18,1352435.04,1039102.06,745772.29,1405954.17,2399967.8,1179621.84,2042731.46,1008309.18,271063.86,0.0],"pfe":[1328291.1,2415644.49,3261858.5,5144860.67,6034062.58,5911055.65,5927132.95,7190959.44,7015460.38,7331775.11,7616958.84,8576992.54,8834272.6,7707111.76,7267785.6,9422751.89,9720307.39,12189198.9,12439516.26,12475949.31,10409997.03,10288765.6,9781407.06,7664700.38,8146151.57,8707940.03,7256764.35,9306841.57,8056509.41,8170324.21,8108941.89,7366864.09,7096210.09,6042774.85,6220544.94,7172970.76,7360443.8,6922859.42,7217452.94,8220191.35,10409270.02,9857281.18,9845393.91,7553676.48,8900702.56,8090725.83,7395218.8,5734400.26,4369482.58,5322162.41,6533152.11,5279050.49,4150668.88,5335089.47,7080140.37,6697255.31,9557347.07,4110390.77,1597839.27,0.0],"ene":[1601947.97,1821011.27,2014749.96,2184791.33,2303669.57,2504539.78,2826625.77,2509504.8,3129195.68,2752103.84,2173023.23,2068905.27,2522704.13,3249104.45,3130611.73,3045757.9,3064207.13,3005732.14,3123658.39,2891932.93,4240629.94,4217248.12,5087369.67,4655293.03,5191473.69,5418761.48,6200895.28,5758832.17,6416262.76,7333145.93,7452674.95,6302973.98,6162142.14,7504198.03,7550732.84,6731397.82,6777571.51,7174548.6,6020906.59,5043385.6,4416044.19,5221872.0,5206896.94,6120433.18,5040995.55,4233881.69,4192296.28,4094687.84,2984707.82,3316803.43,2483034.27,2815653.08,3079948.66,2561216.67,2128603.98,1164437.1,1040162.86,1229835.32,2988721.37,0.0],"ee_csa":[389443.17,396391.37,395955.24,305619.99,459963.02,246624.0,429675.49,419227.97,315194.81,436113.56,637951.09,332235.38,372002.75,359307.0,495653.96,450746.52,444351.12,376042.35,438758.66,431513.12,73714.95,669212.16,183405.05,333085.71,352889.41,463692.32,725455.6,424519.09,239870.34,177902.99,444877.09,362193.95,470467.45,165366.93,365998.34,624101.07,358005.38,306684.86,991148.23,319346.67,361939.95,307295.84,467723.8,325501.47,509714.18,1137077.05,238643.47,775205.68,674767.76,550024.66,1375328.57,161053.4,70081.23,1266058.89,1115961.65,121327.91,141759.67,102016.18,32472.32,1725566.24],"pfe_csa":[1604256.84,1613019.0,1624904.6,1526331.01,1886628.21,1422483.76,1744922.06,1719300.98,1529199.65,1718931.1,2111577.63,1450361.09,1550750.76,1634199.58,2135397.19,1730988.6,1722602.61,1672876.07,1842962.09,1791882.44,545202.98,2578167.05,1150860.84,1610579.33,1563025.04,1775246.26,2450044.96,1785215.12,1458087.74,1034571.08,1944446.38,1545990.19,2072202.17,962303.74,1569576.89,2098861.8,1532957.46,1479476.11,3976721.05,1496253.98,1351517.6,1570668.54,1919857.91,1407024.41,1686254.53,4646948.58,1043713.48,2804321.82,3207458.96,1778013.94,4545146.98,716608.53,513070.2,3715366.52,3190753.93,582642.93,685350.62,451894.97,212878.81,7123881.66]},"thresholds":[{"threshold":0,"cva":28928.65,"peak_pfe":7123881.66,"epe":446357.42,"dva":12541.52,"bilateral_cva":15660.34,"seconds":2.39,"same_scenarios_uncollateralized":{"cva":102161.16,"peak_pfe":12430337.9,"epe":1550809.5,"dva":100668.64,"bilateral_cva":-793.39}},{"threshold":1000000,"cva":32129.58,"peak_pfe":6123881.66,"epe":494610.08,"dva":19341.08,"bilateral_cva":11994.67,"seconds":2.35,"same_scenarios_uncollateralized":{"cva":102161.16,"peak_pfe":12430337.9,"epe":1550809.5,"dva":100668.64,"bilateral_cva":-793.39}},{"threshold":5000000,"cva":77531.0,"peak_pfe":5917916.38,"epe":1177943.27,"dva":55682.3,"bilateral_cva":20105.7,"seconds":2.35,"same_scenarios_uncollateralized":{"cva":102161.16,"peak_pfe":12430337.9,"epe":1550809.5,"dva":100668.64,"bilateral_cva":-793.39}},{"threshold":20000000,"cva":101982.8,"peak_pfe":12430337.9,"epe":1547972.45,"dva":96007.99,"bilateral_cva":3694.4,"seconds":2.36,"same_scenarios_uncollateralized":{"cva":102161.16,"peak_pfe":12430337.9,"epe":1550809.5,"dva":100668.64,"bilateral_cva":-793.39}},{"threshold":100000000,"cva":102161.16,"peak_pfe":12430337.9,"epe":1550809.5,"dva":100668.31,"bilateral_cva":-793.06,"seconds":2.42,"same_scenarios_uncollateralized":{"cva":102161.16,"peak_pfe":12430337.9,"epe":1550809.5,"dva":100668.64,"bilateral_cva":-793.39}}],"mpor":[{"mpor_days":0,"cva":419.06,"peak_pfe":120506.77,"epe":6418.84,"dva":161.98,"bilateral_cva":247.1,"same_scenarios_uncollateralized":{"cva":101934.27,"peak_pfe":12475949.31,"epe":1547230.82,"dva":100933.9,"bilateral_cva":-1279.0}},{"mpor_days":2,"cva":11788.23,"peak_pfe":7577230.92,"epe":181651.73,"dva":5506.92,"bilateral_cva":5988.96,"same_scenarios_uncollateralized":{"cva":102599.7,"peak_pfe":12483554.4,"epe":1557759.63,"dva":101048.37,"bilateral_cva":-747.8}},{"mpor_days":5,"cva":21517.21,"peak_pfe":7351135.05,"epe":333423.5,"dva":8436.73,"bilateral_cva":12524.48,"same_scenarios_uncollateralized":{"cva":101783.38,"peak_pfe":12467644.61,"epe":1545554.64,"dva":100702.32,"bilateral_cva":-1201.82}},{"mpor_days":10,"cva":28928.65,"peak_pfe":7123881.66,"epe":446357.42,"dva":12541.52,"bilateral_cva":15660.34,"same_scenarios_uncollateralized":{"cva":102161.16,"peak_pfe":12430337.9,"epe":1550809.5,"dva":100668.64,"bilateral_cva":-793.39}},{"mpor_days":20,"cva":49681.93,"peak_pfe":10857251.09,"epe":767065.76,"dva":17686.71,"bilateral_cva":30742.14,"same_scenarios_uncollateralized":{"cva":103260.49,"peak_pfe":12506564.82,"epe":1567684.65,"dva":99831.77,"bilateral_cva":1116.04}}],"pre_deal":{"trade":{"trade_id":"NEW","underlying":"SPX","kind":"forward","strike":100.0,"maturity":5.0,"quantity":40000},"n_scenarios":10000,"incremental_cva_mean":11942.98,"stdev_common_random_numbers":187.972,"stdev_independent_seeds":1960.695,"seconds_per_run":0.27}};
+const XVA = {"machine":"arm64, 10 threads","n_trades":200,"n_scenarios":50000,"units":"USD; 1,000 units per contract","counterparty":{"recovery":0.4,"cds_spread_bps":150.0},"own_credit":{"recovery":0.4,"cds_spread_bps":60.0},"uncollateralized":{"cva":101934.27,"peak_pfe":12475949.31,"epe":1547230.82,"dva":100933.9,"bilateral_cva":-1279.0,"seconds":1.19,"v0":-1407374.16},"profile":{"grid":[0.08333333333333333,0.16666666666666666,0.25,0.3333333333333333,0.4166666666666667,0.5,0.5833333333333334,0.6666666666666666,0.75,0.8333333333333334,0.9166666666666666,1.0,1.0833333333333333,1.1666666666666667,1.25,1.3333333333333333,1.4166666666666667,1.5,1.5833333333333333,1.6666666666666667,1.75,1.8333333333333333,1.9166666666666667,2.0,2.0833333333333335,2.1666666666666665,2.25,2.3333333333333335,2.4166666666666665,2.5,2.5833333333333335,2.6666666666666665,2.75,2.8333333333333335,2.9166666666666665,3.0,3.0833333333333335,3.1666666666666665,3.25,3.3333333333333335,3.4166666666666665,3.5,3.5833333333333335,3.6666666666666665,3.75,3.8333333333333335,3.9166666666666665,4.0,4.083333333333333,4.166666666666667,4.25,4.333333333333333,4.416666666666667,4.5,4.583333333333333,4.666666666666667,4.75,4.833333333333333,4.916666666666667,5.0],"ee":[185556.42,403365.14,585946.99,1090510.56,1316483.27,1242401.84,1210819.58,1631251.75,1461701.71,1623875.92,1892204.84,2225693.73,2227516.41,1721641.71,1618469.31,2324864.21,2470103.94,3404477.36,3466221.99,3633724.36,2526850.48,2418443.06,2122574.18,1463230.25,1580233.27,1717792.13,1321707.13,1954080.4,1493865.37,1484219.94,1475901.87,1305683.99,1264863.23,930342.47,965632.47,1273000.56,1310561.22,1145306.67,1211185.96,1457321.09,2023603.0,1873802.09,1812440.83,1503447.04,1985470.05,1693865.31,1388379.29,1199672.71,747126.02,1001458.18,1352435.04,1039102.06,745772.29,1405954.17,2399967.8,1179621.84,2042731.46,1008309.18,271063.86,0.0],"pfe":[1328291.1,2415644.49,3261858.5,5144860.67,6034062.58,5911055.65,5927132.95,7190959.44,7015460.38,7331775.11,7616958.84,8576992.54,8834272.6,7707111.76,7267785.6,9422751.89,9720307.39,12189198.9,12439516.26,12475949.31,10409997.03,10288765.6,9781407.06,7664700.38,8146151.57,8707940.03,7256764.35,9306841.57,8056509.41,8170324.21,8108941.89,7366864.09,7096210.09,6042774.85,6220544.94,7172970.76,7360443.8,6922859.42,7217452.94,8220191.35,10409270.02,9857281.18,9845393.91,7553676.48,8900702.56,8090725.83,7395218.8,5734400.26,4369482.58,5322162.41,6533152.11,5279050.49,4150668.88,5335089.47,7080140.37,6697255.31,9557347.07,4110390.77,1597839.27,0.0],"ene":[1601947.97,1821011.27,2014749.96,2184791.33,2303669.57,2504539.78,2826625.77,2509504.8,3129195.68,2752103.84,2173023.23,2068905.27,2522704.13,3249104.45,3130611.73,3045757.9,3064207.13,3005732.14,3123658.39,2891932.93,4240629.94,4217248.12,5087369.67,4655293.03,5191473.69,5418761.48,6200895.28,5758832.17,6416262.76,7333145.93,7452674.95,6302973.98,6162142.14,7504198.03,7550732.84,6731397.82,6777571.51,7174548.6,6020906.59,5043385.6,4416044.19,5221872.0,5206896.94,6120433.18,5040995.55,4233881.69,4192296.28,4094687.84,2984707.82,3316803.43,2483034.27,2815653.08,3079948.66,2561216.67,2128603.98,1164437.1,1040162.86,1229835.32,2988721.37,0.0],"ee_csa":[389443.17,396391.37,395955.24,305619.99,459963.02,246624.0,429675.49,419227.97,315194.81,436113.56,637951.09,332235.38,372002.75,359307.0,495653.96,450746.52,444351.12,376042.35,438758.66,431513.12,73714.95,669212.16,183405.05,333085.71,352889.41,463692.32,725455.6,424519.09,239870.34,177902.99,444877.09,362193.95,470467.45,165366.93,365998.34,624101.07,358005.38,306684.86,991148.23,319346.67,361939.95,307295.84,467723.8,325501.47,509714.18,1137077.05,238643.47,775205.68,674767.76,550024.66,1375328.57,161053.4,70081.23,1266058.89,1115961.65,121327.91,141759.67,102016.18,32472.32,1725566.24],"pfe_csa":[1604256.84,1613019.0,1624904.6,1526331.01,1886628.21,1422483.76,1744922.06,1719300.98,1529199.65,1718931.1,2111577.63,1450361.09,1550750.76,1634199.58,2135397.19,1730988.6,1722602.61,1672876.07,1842962.09,1791882.44,545202.98,2578167.05,1150860.84,1610579.33,1563025.04,1775246.26,2450044.96,1785215.12,1458087.74,1034571.08,1944446.38,1545990.19,2072202.17,962303.74,1569576.89,2098861.8,1532957.46,1479476.11,3976721.05,1496253.98,1351517.6,1570668.54,1919857.91,1407024.41,1686254.53,4646948.58,1043713.48,2804321.82,3207458.96,1778013.94,4545146.98,716608.53,513070.2,3715366.52,3190753.93,582642.93,685350.62,451894.97,212878.81,7123881.66]},"thresholds":[{"threshold":0,"cva":28928.65,"peak_pfe":7123881.66,"epe":446357.42,"dva":12541.52,"bilateral_cva":15660.34,"seconds":2.43,"same_scenarios_uncollateralized":{"cva":102161.16,"peak_pfe":12430337.9,"epe":1550809.5,"dva":100668.64,"bilateral_cva":-793.39}},{"threshold":1000000,"cva":32129.58,"peak_pfe":6123881.66,"epe":494610.08,"dva":19341.08,"bilateral_cva":11994.67,"seconds":2.42,"same_scenarios_uncollateralized":{"cva":102161.16,"peak_pfe":12430337.9,"epe":1550809.5,"dva":100668.64,"bilateral_cva":-793.39}},{"threshold":5000000,"cva":77531.0,"peak_pfe":5917916.38,"epe":1177943.27,"dva":55682.3,"bilateral_cva":20105.7,"seconds":2.38,"same_scenarios_uncollateralized":{"cva":102161.16,"peak_pfe":12430337.9,"epe":1550809.5,"dva":100668.64,"bilateral_cva":-793.39}},{"threshold":20000000,"cva":101982.8,"peak_pfe":12430337.9,"epe":1547972.45,"dva":96007.99,"bilateral_cva":3694.4,"seconds":2.4,"same_scenarios_uncollateralized":{"cva":102161.16,"peak_pfe":12430337.9,"epe":1550809.5,"dva":100668.64,"bilateral_cva":-793.39}},{"threshold":100000000,"cva":102161.16,"peak_pfe":12430337.9,"epe":1550809.5,"dva":100668.31,"bilateral_cva":-793.06,"seconds":2.36,"same_scenarios_uncollateralized":{"cva":102161.16,"peak_pfe":12430337.9,"epe":1550809.5,"dva":100668.64,"bilateral_cva":-793.39}}],"mpor":[{"mpor_days":0,"cva":419.06,"peak_pfe":120506.77,"epe":6418.84,"dva":161.98,"bilateral_cva":247.1,"same_scenarios_uncollateralized":{"cva":101934.27,"peak_pfe":12475949.31,"epe":1547230.82,"dva":100933.9,"bilateral_cva":-1279.0}},{"mpor_days":2,"cva":11788.23,"peak_pfe":7577230.92,"epe":181651.73,"dva":5506.92,"bilateral_cva":5988.96,"same_scenarios_uncollateralized":{"cva":102599.7,"peak_pfe":12483554.4,"epe":1557759.63,"dva":101048.37,"bilateral_cva":-747.8}},{"mpor_days":5,"cva":21517.21,"peak_pfe":7351135.05,"epe":333423.5,"dva":8436.73,"bilateral_cva":12524.48,"same_scenarios_uncollateralized":{"cva":101783.38,"peak_pfe":12467644.61,"epe":1545554.64,"dva":100702.32,"bilateral_cva":-1201.82}},{"mpor_days":10,"cva":28928.65,"peak_pfe":7123881.66,"epe":446357.42,"dva":12541.52,"bilateral_cva":15660.34,"same_scenarios_uncollateralized":{"cva":102161.16,"peak_pfe":12430337.9,"epe":1550809.5,"dva":100668.64,"bilateral_cva":-793.39}},{"mpor_days":20,"cva":49681.93,"peak_pfe":10857251.09,"epe":767065.76,"dva":17686.71,"bilateral_cva":30742.14,"same_scenarios_uncollateralized":{"cva":103260.49,"peak_pfe":12506564.82,"epe":1567684.65,"dva":99831.77,"bilateral_cva":1116.04}}],"pre_deal":{"trade":{"trade_id":"NEW","underlying":"SPX","kind":"forward","strike":100.0,"maturity":5.0,"quantity":40000},"n_scenarios":10000,"incremental_cva_mean":11942.98,"stdev_common_random_numbers":187.972,"stdev_independent_seeds":1960.695,"seconds_per_run":0.27},"predeal_endpoint":{"n_trades":201,"n_scenarios":10000,"pricer_threads":2,"first_quote_ms":1394.9,"requote_book_cached_ms":696.9,"limit_breach_with_fallback_csa_ms":2763.4,"approve":{"credit_limit":15000000,"verdict":"approve","incremental_cva":12065.81,"cva_charge_bps":30.16,"peak_pfe_after":13505299.7},"breach":{"credit_limit":9000000,"verdict":"approve_with_csa","reason":"Peak PFE $13,505,300 exceeds the $9,000,000 limit; under the proposed CSA it is $7,370,836, within the limit.","peak_pfe_after_csa":7370835.87}}};
 /*CORE-START*/
 const RATE = 0.03, S0 = 100, REC = 0.4, NS = 2000, MONTHS = 60, QPFE = 0.95;
 const OFFS = [20, 10, 5, 2, 0];                    // days before each month-end: the lag nodes, then the month-end itself
@@ -304,8 +378,13 @@ const W = new Float64Array(NN * NS);               // node-major: W[i*NS + s]
   }
 })();
 
-let cache = { key: "", vals: [], unc: null };
-function nodeValues(i, book, vol) {
+const caches = new Map();                          // book values per preset and volatility, shared by the simulator and the pre-deal check
+function cacheFor(key) {
+  let c = caches.get(key);
+  if (!c) { if (caches.size > 5) caches.clear(); c = { vals: [], unc: null, aft: null }; caches.set(key, c); }
+  return c;
+}
+function nodeValues(i, book, vol, cache) {
   let a = cache.vals[i];
   if (a) return a;
   a = cache.vals[i] = new Float64Array(NS);
@@ -316,6 +395,16 @@ function nodeValues(i, book, vol) {
     for (let j = 0; j < tr.length; j++) v += tradeValue(tr[j], spot, t, vol);
     a[s] = v;
   }
+  return a;
+}
+// Book value plus one new trade at node i; the book part is reused from the book cache, so only the new trade is revalued.
+function nodeValuesAfter(i, book, vol, cache, nt) {
+  const base = nodeValues(i, book, vol, cache);
+  let a = cache.aft.vals[i];
+  if (a) return a;
+  a = cache.aft.vals[i] = new Float64Array(NS);
+  const t = TS[i], mu = (RATE - 0.5 * vol * vol) * t, o = i * NS;
+  for (let s = 0; s < NS; s++) a[s] = base[s] + tradeValue(nt, S0 * Math.exp(mu + vol * W[o + s]), t, vol);
   return a;
 }
 function quantile(arr, q) {                        // k-th largest of n, k = n - ceil(q n) + 1, as in the engine
@@ -332,17 +421,24 @@ function cvaOf(grid, ee, ee0, bps) {               // service/exposure.py cva():
   }
   return (1 - REC) * tot;
 }
-function simulate(p) {
-  const book = BOOKS[p.preset], key = p.preset + "|" + p.vol;
-  if (cache.key !== key) cache = { key, vals: [], unc: null };
+function simulate(p, nt) {                         // nt: optional new trade {k, K, T, q}, valued on the same scenarios
+  const book = BOOKS[p.preset], base = cacheFor(p.preset + "|" + p.vol);
+  let cache = base;
+  if (nt) {
+    const ak = JSON.stringify(nt);
+    if (!base.aft || base.aft.key !== ak) base.aft = { key: ak, vals: [], unc: null };
+    cache = base.aft;
+  }
+  const nv = (i) => nt ? nodeValuesAfter(i, book, p.vol, base, nt) : nodeValues(i, book, p.vol, base);
   const grid = new Float64Array(MONTHS), ri = new Int32Array(MONTHS);
   for (let k = 0; k < MONTHS; k++) { ri[k] = k * 5 + 4; grid[k] = TS[ri[k]]; }
   let v0 = 0;
   for (const t of book.trades) v0 += tradeValue(t, S0, 0, p.vol);
+  if (nt) v0 += tradeValue(nt, S0, 0, p.vol);
   if (!cache.unc) {
     const ee = new Float64Array(MONTHS), pfe = new Float64Array(MONTHS), tmp = new Float64Array(NS);
     for (let k = 0; k < MONTHS; k++) {
-      const v = nodeValues(ri[k], book, p.vol); let sum = 0;
+      const v = nv(ri[k]); let sum = 0;
       for (let s = 0; s < NS; s++) { tmp[s] = v[s] > 0 ? v[s] : 0; sum += tmp[s]; }
       ee[k] = sum / NS; pfe[k] = quantile(tmp, QPFE);
     }
@@ -359,7 +455,7 @@ function simulate(p) {
   const prev = new Float64Array(NS).fill(bal0), bals = new Array(nodes.length);
   const eeC = new Float64Array(MONTHS), pfeC = new Float64Array(MONTHS), tmp = new Float64Array(NS);
   for (let j = 0; j < nodes.length; j++) {
-    const v = nodeValues(nodes[j], book, p.vol), b = bals[j] = new Float64Array(NS);
+    const v = nv(nodes[j]), b = bals[j] = new Float64Array(NS);
     for (let s = 0; s < NS; s++) {
       const tg = csaTarget(v[s], p.thrRecv, p.thrPost), pv = j ? bals[j - 1][s] : bal0;
       b[s] = Math.abs(tg - pv) >= p.mta ? tg : pv;
@@ -375,6 +471,21 @@ function simulate(p) {
   out.cvaC = cvaOf(grid, eeC, Math.max(v0 - bal0, 0), p.cds);
   out.peakC = Math.max(...pfeC);
   return out;
+}
+// Pre-deal verdict. Same rules as POST /risk/predeal. p carries the book, vol, cds and the CSA terms; p.csa says whether a CSA is in force.
+function predeal(p, nt, limit) {
+  const pp = { ...p, csa: true }, before = simulate(pp), after = simulate(pp, nt);
+  const useC = p.csa, basis = useC ? after.peakC : after.peak;
+  const inc = useC ? after.cvaC - before.cvaC : after.cva - before.cva, incU = after.cva - before.cva, incC = after.cvaC - before.cvaC;
+  const notional = Math.abs(nt.q) * S0, bps = inc / notional * 1e4;
+  const util = basis / limit;
+  let verdict, reason;
+  if (basis <= limit) verdict = "approve";
+  else if (!useC && after.peakC <= limit) verdict = "approve_with_csa";
+  else verdict = "refer_to_credit";
+  return { verdict, inc, incU, incC, bps, notional, util, limit,
+    pfeBefore: useC ? before.peakC : before.peak, pfeAfter: basis, pfeAfterU: after.peak, pfeAfterC: after.peakC,
+    excess: Math.max(after.peakC - limit, 0), riskReducing: inc < 0 };
 }
 /*CORE-END*/
 
@@ -512,6 +623,8 @@ function drawPre() {
 }
 const ratio = pd.stdev_independent_seeds / pd.stdev_common_random_numbers;
 $("pre-lead").textContent = `A client wants a new ${pd.trade.maturity}-year forward (${nf0.format(pd.trade.quantity)} units, strike ${pd.trade.strike}). The trader needs the CVA it adds to the existing book: run the book with and without it, and subtract. Bars are ±1 standard deviation across 6 market-data versions, ${nf0.format(pd.n_scenarios)} scenarios each.`;
+{ const e = XVA.predeal_endpoint;
+  $("pd-latency").textContent = `Measured end to end on the ${nf0.format(e.n_trades)}-trade benchmark book at ${nf0.format(e.n_scenarios)} scenarios with ${e.pricer_threads} compute threads: ${(e.first_quote_ms / 1000).toFixed(2)} s for a first quote, ${(e.requote_book_cached_ms / 1000).toFixed(2)} s to re-quote once the book is cached, ${(e.limit_breach_with_fallback_csa_ms / 1000).toFixed(2)} s when a limit breach also prices the CSA.`; }
 $("pre-note").textContent = `Incremental CVA is about ${usd(pd.incremental_cva_mean)}. With the two runs on the same scenarios (common random numbers) the noise is ${usd(pd.stdev_common_random_numbers)}; with independent seeds it is ${usd(pd.stdev_independent_seeds)}, ${ratio.toFixed(1)}x wider. Noise falls with the square root of scenarios, so independent runs would need about ${Math.round(ratio * ratio)}x more scenarios to match. Each pre-deal run took ${pd.seconds_per_run} s.`;
 $("tb-thr").innerHTML = XVA.thresholds.map((t, i) => `<tr><td class="num">${t.threshold >= 1e8 ? usd(t.threshold) + " (effectively none)" : usd(t.threshold)}</td><td class="num">${usd(t.cva)}</td><td class="num">${usd(t.same_scenarios_uncollateralized.cva)}</td><td class="num">${usd(t.peak_pfe)}</td><td class="num">${usd(t.same_scenarios_uncollateralized.peak_pfe)}</td></tr>`).join("");
 
@@ -541,8 +654,78 @@ $("steps").addEventListener("click", e => { const b = e.target.closest("button")
 $("prev").addEventListener("click", () => { step = Math.max(0, step - 1); drawSteps(); });
 $("next").addEventListener("click", () => { step = Math.min(STEPS.length - 1, step + 1); drawSteps(); });
 
+
+/* ---------- Pre-deal check ---------- */
+const PD_TRY = {
+  refer:   { preset: "mixed", kind: "fwd", dir: 1, size: 150000, strike: 100, mat: 5, limit: 1e6, csa: false },
+  needcsa: { preset: "mixed", kind: "fwd", dir: 1, size: 40000, strike: 100, mat: 5, limit: 1e6, csa: false },
+  approve: { preset: "mixed", kind: "fwd", dir: 1, size: 40000, strike: 100, mat: 5, limit: 1e6, csa: true },
+  hedge:   { preset: "mixed", kind: "call", dir: -1, size: 50000, strike: 100, mat: 5, limit: 5e6, csa: false },
+};
+function pdRead() {
+  const p = readParams(), q = Math.max(+$("pd-size").value || 0, 0) * +$("pd-dir").value;
+  const base = { ...p, preset: $("pd-preset").value, cds: +$("pd-cds").value, csa: $("pd-csa").checked };
+  const nt = { k: $("pd-kind").value, K: Math.max(+$("pd-strike").value || 100, 1), T: +$("pd-mat").value, q };
+  return { p: base, nt, limit: Math.max(+$("pd-limit").value || 0, 1) };
+}
+function pdBody(p, nt, limit) {
+  const kind = k => k === "fwd" ? "forward" : k;
+  const ns = { netting_set_id: "client-123", market_data_version: "md-demo", rate: RATE, underlyings: [{ name: "SPX", spot: S0, vol: p.vol }],
+    trades: BOOKS[p.preset].trades.map((t, i) => ({ trade_id: "T" + (i + 1), underlying: "SPX", kind: kind(t.k), strike: t.K, maturity: t.T, quantity: t.q })),
+    n_scenarios: pd.n_scenarios, block_size: 5000, cds_spread_bps: p.cds };
+  if (p.csa) ns.csa = { threshold_recv: p.thrRecv, threshold_post: p.thrPost, mta: p.mta, mpor_days: p.mpor };
+  return { netting_set: ns, new_trade: { trade_id: "NEW", underlying: "SPX", kind: kind(nt.k), strike: nt.K, maturity: nt.T, quantity: nt.q }, credit_limit: limit };
+}
+function pdRender() {
+  const { p, nt, limit } = pdRead();
+  $("o-pd-mat").textContent = nt.T.toFixed(1) + " years"; $("o-pd-cds").textContent = p.cds + " bps";
+  $("pd-terms").textContent = p.csa ? `CSA terms from the sliders below: they post above ${short(p.thrRecv)}, we post above ${short(p.thrPost)}, minimum transfer ${short(p.mta)}, margin period ${p.mpor} days.` : "No CSA: the limit is tested on uncollateralized peak PFE. If that fails, the check also tries your CSA terms from the sliders below.";
+  if (!nt.q) return;
+  const t0 = performance.now(), r = predeal(p, nt, limit), ms = performance.now() - t0;
+  $("pd-speed").textContent = `Recomputed in ${ms < 1 ? "<1" : Math.round(ms)} ms, on the same scenarios before and after.`;
+  const v = $("pd-verdict"); v.dataset.v = r.verdict;
+  const charge = `Charge the client ${usd(Math.max(r.inc, 0))} (${Math.max(r.bps, 0).toFixed(1)} bp) for credit.`;
+  const T = { approve: "Approve", approve_with_csa: "Approve only with a CSA", refer_to_credit: "Refer to credit" };
+  $("pd-vt").textContent = T[r.verdict];
+  $("pd-reason").textContent = r.verdict === "approve" ? `Within the credit limit (${Math.round(r.util * 100)}% used). ${r.inc > 0 ? charge : "No credit charge is needed."}`
+    : r.verdict === "approve_with_csa" ? `Peak PFE is ${short(r.pfeAfterU)} without a CSA, over the ${short(limit)} limit. With a CSA on the current terms it is ${short(r.pfeAfterC)}, inside the limit.`
+    : `Exceeds the limit by ${usd(r.excess)} even with collateral.`;
+  $("pd-rr").hidden = !r.riskReducing;
+  if (r.riskReducing) $("pd-rr").textContent = `Risk-reducing trade: this trade offsets existing exposure; it lowers CVA by ${usd(-r.inc)}.`;
+  $("pd-cva").textContent = (r.inc < 0 ? "-" : "") + usd(Math.abs(r.inc)); $("pd-bp").textContent = r.bps.toFixed(1) + " bp";
+  $("pd-pfe").textContent = short(r.pfeBefore) + " \u2192 " + short(r.pfeAfter);
+  $("pd-util").textContent = Math.round(r.util * 100) + "% of " + short(limit) + (p.csa ? " (collateralized)" : " (uncollateralized)");
+  const bar = $("pd-bar"); bar.style.width = Math.min(r.util * 100, 100) + "%"; bar.className = r.util > 1 ? "bad" : r.util > 0.8 ? "warn" : "";
+  const body = pdBody(p, nt, limit);
+  $("pd-curl").textContent = "curl -s -X POST http://localhost:8080/risk/predeal \\\n  -H 'Content-Type: application/json' \\\n  -d '" + JSON.stringify(body, null, 2).replace(/'/g, "") + "'";
+  const n2 = x => Math.round(x * 100) / 100;
+  $("pd-resp").textContent = JSON.stringify({ verdict: r.verdict, reason: $("pd-reason").textContent, incremental_cva: n2(r.inc), incremental_cva_csa: n2(r.incC),
+    cva_charge_bps: n2(r.bps), peak_pfe_before: Math.round(r.pfeBefore), peak_pfe_after: Math.round(r.pfeAfter), peak_pfe_after_csa: Math.round(r.pfeAfterC),
+    limit_utilisation: n2(r.util), risk_reducing: r.riskReducing, baseline_cached: false, n_scenarios: XVA.predeal_endpoint.n_scenarios, elapsed_ms: XVA.predeal_endpoint.first_quote_ms }, null, 2);
+}
+let pdPending = false;
+const pdSchedule = () => { if (!pdPending) { pdPending = true; requestAnimationFrame(() => { pdPending = false; pdRender(); }); } };
+$("pdctl").addEventListener("input", pdSchedule);
+$("ctl").addEventListener("input", pdSchedule);
+document.querySelectorAll("[data-pd]").forEach(b => b.addEventListener("click", () => {
+  const t = PD_TRY[b.dataset.pd];
+  $("pd-preset").value = t.preset; $("pd-kind").value = t.kind; $("pd-dir").value = t.dir; $("pd-size").value = t.size; $("pd-strike").value = t.strike;
+  $("pd-mat").value = t.mat; $("pd-limit").value = t.limit; $("pd-csa").checked = t.csa; $("pd-cds").value = 150;
+  $("vol").value = 25; $("tr").value = 0; $("tp").value = 0; $("mta").value = 2; $("mpor").value = 3;   // the page's default CSA terms
+  render(); pdRender();
+}));
+$("pd-copy").addEventListener("click", async () => {
+  const txt = $("pd-curl").textContent, msg = $("pd-copied");
+  try { await navigator.clipboard.writeText(txt); msg.textContent = "Copied."; }
+  catch (e) {
+    try { const ta = document.createElement("textarea"); ta.value = txt; ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select();
+      const ok = document.execCommand("copy"); ta.remove(); msg.textContent = ok ? "Copied." : "Select the text above and copy it."; }
+    catch (e2) { msg.textContent = "Select the text above and copy it."; }
+  }
+});
+
 /* ---------- Boot ---------- */
-render(); drawMeasured(); drawSteps();
+render(); pdRender(); drawMeasured(); drawSteps();
 let rt; const redraw = () => { clearTimeout(rt); rt = setTimeout(() => { drawSim(); drawMeasured(); }, 120); };
 addEventListener("resize", redraw);
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", redraw);
