@@ -84,3 +84,14 @@ def test_end_to_end_replays_a_real_siege_test(tmp_path):
     e = rows(led)[0]
     assert rc == 0 and e["outcome"] == "verified" and e["evidence"]["passed"]
     assert remediate.verify_ledger(led) is None
+
+
+def test_process_enforces_segregation_of_duties(tmp_path):
+    """The approval rule holds for any caller, not only the CLI."""
+    from tools import remediate
+    finding = next(f for f in remediate.analyze(remediate._demo_snapshot("reset")) if remediate.kind_of(f))
+    ledger = tmp_path / "ledger.jsonl"
+    never = lambda test: (_ for _ in ()).throw(AssertionError("must not run evidence"))  # noqa: E731
+    for by in (None, "op"):
+        entry = remediate.process(finding, ledger=ledger, who="op", approve=True, by=by, evidence_fn=never)
+        assert entry["outcome"] == "refused" and entry["evidence"] is None

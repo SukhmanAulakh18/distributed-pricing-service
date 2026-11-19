@@ -120,6 +120,11 @@ def process(f: Finding, *, ledger: Path, who: str, approve: bool = False, by: st
         entry["outcome"] = "refused"  # not on the allowlist: do nothing
     elif policy["mutates"] and not approve:
         entry["outcome"] = "proposed"  # dry-run default: awaiting approval
+    elif policy["mutates"] and (not by or by == who):
+        # Segregation of duties is enforced here, not only by the CLI, so no
+        # caller can approve its own mutating action.
+        entry["outcome"] = "refused"
+        entry["detail"] = "a mutating action needs an approver other than the operator"
     else:
         if policy["mutates"]:
             entry["approved_by"] = by
