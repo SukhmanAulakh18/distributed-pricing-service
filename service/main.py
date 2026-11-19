@@ -12,6 +12,7 @@ from contextlib import asynccontextmanager
 import anyio
 import redis
 from fastapi import FastAPI, Header, HTTPException, Query, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
 
@@ -72,6 +73,19 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Distributed Pricing Service", lifespan=lifespan)
+
+
+def add_cors(target: FastAPI, origins: str | None) -> bool:
+    """Opt-in CORS: lets the static demo pages call a locally running API.
+    Off unless CORS_ORIGINS lists origins (comma-separated)."""
+    allowed = [o.strip() for o in (origins or "").split(",") if o.strip()]
+    if allowed:
+        target.add_middleware(CORSMiddleware, allow_origins=allowed, allow_methods=["GET", "POST"],
+                              allow_headers=["Content-Type", "Idempotency-Key", "Prefer"], allow_credentials=False)
+    return bool(allowed)
+
+
+add_cors(app, os.getenv("CORS_ORIGINS"))
 tracing.setup("pricing-api", app)
 
 
