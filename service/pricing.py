@@ -55,6 +55,31 @@ def admission():
         _slots.release()
 
 
+# Risk quotes (/risk/predeal, /risk/cva-sensitivities) run several engine
+# passes each, so they get their own budget instead of sharing the pricing
+# slots: a burst of quotes cannot starve /price. They are checked on the event
+# loop before any thread is taken and shed at once when full. Waiting in the
+# web server's thread pool first would hide the queue from admission control
+# (measured: 300 concurrent quotes, 0 shed, 36 s worst case, readiness timing out).
+RISK_SLOTS = int(os.getenv("RISK_SLOTS", "1"))
+_risk_slots = threading.BoundedSemaphore(RISK_SLOTS)
+RISK_REJECTED = Counter("risk_rejected_total", "Risk quotes shed because every risk slot was busy")
+
+
+def try_risk_slot() -> bool:
+    """Non-blocking: safe to call on the event loop."""
+    if _risk_slots.acquire(blocking=False):
+        IN_FLIGHT.inc()
+        return True
+    RISK_REJECTED.inc()
+    return False
+
+
+def release_risk_slot() -> None:
+    IN_FLIGHT.dec()
+    _risk_slots.release()
+
+
 def _finite(x: float) -> float | None:
     return x if math.isfinite(x) else None
 

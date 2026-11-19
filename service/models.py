@@ -228,7 +228,7 @@ class ExposureRequest(Strict):
         grid = self.grid
         if self.csa is None:
             return grid, [], list(range(len(grid)))
-        delta = self.csa.mpor_days / 365.0
+        delta = self.csa.mpor_days / 252.0  # business days, on a 252-day year (10 days is about 14.5 calendar days)
         # Reporting dates stay exact; a lag node within 1e-9 of an existing
         # node is that node (t - 0 must not become a second node an ulp away).
         nodes = list(grid)
@@ -352,10 +352,12 @@ class PredealRequest(Strict):
 class PredealResult(BaseModel):
     verdict: Literal["approve", "approve_with_csa", "refer_to_credit", "no_limit"]
     reason: str
-    incremental_cva: float  # on the limit's basis: collateralized if the netting set has a CSA
+    incremental_cva: float  # the charge, on the terms the trade would be done on (see charge_basis)
     incremental_cva_uncollateralized: float
-    incremental_cva_csa: float | None = None
-    cva_charge_bps: float  # incremental CVA over the new trade's notional (|quantity| x spot)
+    incremental_cva_csa: float | None = None  # under the netting set's own CSA
+    charge_basis: Literal["uncollateralized", "collateralized", "proposed_csa"]
+    cva_charge_bps: float  # upfront, in bp of the new trade's underlying notional (|quantity| x spot)
+    cva_charge_running_bps: float  # the same charge as a spread a year over the trade's risky annuity
     peak_pfe_before: float
     peak_pfe_after: float
     peak_pfe_after_csa: float | None = None  # under the netting set's CSA, or fallback_csa if the limit was breached
@@ -363,5 +365,42 @@ class PredealResult(BaseModel):
     limit_utilisation: float | None = None
     risk_reducing: bool
     baseline_cached: bool  # the book's own run came from the cache
+    n_scenarios: int
+    elapsed_ms: float
+
+
+class SensitivityRequest(Strict):
+    """CVA sensitivities by bump and revalue on shared scenarios."""
+
+    netting_set: ExposureRequest
+    spot_bump: float = Field(default=0.01, gt=0, le=0.1)  # relative: 0.01 is a 1% move each way
+    vol_bump: float = Field(default=0.01, gt=0, le=0.1)  # absolute: 0.01 is one vol point each way
+
+    @model_validator(mode="after")
+    def capped(self):
+        ns = self.netting_set
+        if ns.n_scenarios > MAX_PREDEAL_SCENARIOS:
+            raise ValueError(f"sensitivities run synchronously: n_scenarios <= {MAX_PREDEAL_SCENARIOS:,}")
+        if len(ns.underlyings) > 10:
+            raise ValueError("at most 10 underlyings: each costs four revaluations")
+        if any(u.vol <= self.vol_bump for u in ns.underlyings):
+            raise ValueError("vol_bump must be below every underlying's vol")
+        return self
+
+
+class UnderlyingSensitivity(BaseModel):
+    name: str
+    delta: float  # CVA change for a spot_bump move up (central difference)
+    vega: float  # CVA change for a vol_bump move up (central difference)
+
+
+class SensitivityResult(BaseModel):
+    cva: float
+    basis: Literal["collateralized", "uncollateralized"]
+    underlyings: list[UnderlyingSensitivity]
+    cs01: float  # CVA change for +1 bp of counterparty CDS spread
+    spot_bump: float
+    vol_bump: float
+    n_runs: int
     n_scenarios: int
     elapsed_ms: float

@@ -41,8 +41,10 @@ spec:
           ports: [{containerPort: 8000, name: http}]
           envFrom:
             - configMapRef: {name: pricer-config}
-          # Concurrency sized to the CPU limit: COMPUTE_SLOTS x PRICER_THREADS
-          # = 2 = limits.cpu. With 4 x 2 = 8 threads on 2 CPUs the kernel's CFS
+          # Concurrency sized to the CPU limit: (COMPUTE_SLOTS + RISK_SLOTS) x
+          # PRICER_THREADS = 3 = limits.cpu. Risk quotes (/risk/predeal and
+          # /risk/cva-sensitivities) get their own slot, shed at once when busy,
+          # so a burst of quotes cannot starve /price. With 4 x 2 = 8 threads on 2 CPUs the kernel's CFS
           # quota throttled the pod (all threads stalled until the next 100 ms
           # period), which showed up as tail latency. The API mostly serves
           # many small requests, so one thread each; workers keep 2 for big
@@ -50,9 +52,10 @@ spec:
           env:
             - {name: PRICER_THREADS, value: "1"}
             - {name: COMPUTE_SLOTS, value: "2"}
+            - {name: RISK_SLOTS, value: "1"}
           resources:
             requests: {cpu: 500m, memory: 256Mi}
-            limits: {cpu: "2", memory: 512Mi}
+            limits: {cpu: "3", memory: 512Mi}
           startupProbe:
             httpGet: {path: /health/live, port: http}
             periodSeconds: 2

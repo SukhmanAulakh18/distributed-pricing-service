@@ -9,6 +9,7 @@ from collections import Counter as Tally
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 
+import anyio
 import redis
 from fastapi import FastAPI, Header, HTTPException, Query, Request, Response
 from fastapi.responses import JSONResponse
@@ -17,8 +18,10 @@ from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_
 from . import exposure, logging_setup, taskqueue, tracing
 from .cache import PriceCache
 from .models import (ExposureJob, ExposureRequest, ExposureResult, PortfolioRequest,
-                     PortfolioResponse, PredealRequest, PredealResult, PriceRequest, PriceResponse)
-from .pricing import HOSTNAME, PRICER_THREADS, Overloaded, admission, price_task, price_with_cache
+                     PortfolioResponse, PredealRequest, PredealResult, PriceRequest, PriceResponse,
+                     SensitivityRequest, SensitivityResult, UnderlyingSensitivity)
+from .pricing import (HOSTNAME, PRICER_THREADS, RISK_SLOTS, Overloaded, price_task, price_with_cache,
+                      release_risk_slot, try_risk_slot)
 from .store import Store, build_store
 
 logging_setup.configure()
@@ -384,8 +387,28 @@ def _exposure_inline(req: ExposureRequest) -> ExposureResult:
     return _exposure_result("predeal", exposure_meta(req, payload), [block], {}, 0.0)
 
 
+# Risk quotes run on their own thread limiter (sized to the risk slots), never
+# in the web server's shared pool, and readiness pings get one too: neither
+# can wait behind a queue of blocked requests.
+_RISK_THREADS = anyio.CapacityLimiter(RISK_SLOTS)
+_PROBE_THREADS = anyio.CapacityLimiter(2)
+
+
+async def _risk_quote(fn, body):
+    if not try_risk_slot():
+        raise Overloaded("all risk slots busy")
+    try:
+        return await anyio.to_thread.run_sync(fn, body, limiter=_RISK_THREADS)
+    finally:
+        release_risk_slot()
+
+
 @app.post("/risk/predeal", response_model=PredealResult)
-def predeal(body: PredealRequest) -> PredealResult:
+async def predeal(body: PredealRequest) -> PredealResult:
+    return await _risk_quote(_predeal, body)
+
+
+def _predeal(body: PredealRequest) -> PredealResult:
     """Should we do this trade? Runs the netting set with and without it on
     the same scenarios (the seed ignores trades), so the incremental CVA is a
     clean difference, then checks peak PFE against the credit limit.
@@ -394,7 +417,7 @@ def predeal(body: PredealRequest) -> PredealResult:
     ns = body.netting_set
     # Rebuild rather than copy, so the work caps are checked with the new trade in.
     after_req = ExposureRequest(**{**ns.model_dump(), "trades": [*ns.model_dump()["trades"], body.new_trade.model_dump()]})
-    with admission(), tracing.tracer.start_as_current_span("risk.predeal", attributes={"trades": len(ns.trades) + 1}):
+    with tracing.tracer.start_as_current_span("risk.predeal", attributes={"trades": len(ns.trades) + 1}):
         # A trader re-quoting against one book reruns the same "before" each
         # time: cache it (the price cache's short TTL, keyed by the whole
         # netting set, so any change to the book or market data misses).
@@ -409,39 +432,115 @@ def predeal(body: PredealRequest) -> PredealResult:
         fallback = None
         # The collateralized run costs the most (extra MPoR nodes): only pay
         # for it when the answer depends on it.
+        before_fb = None
         if body.fallback_csa is not None and breached:
-            fallback = _exposure_inline(ExposureRequest(**{**after_req.model_dump(), "csa": body.fallback_csa.model_dump()}))
+            # The trade would be done under the proposed CSA, so price it under
+            # that CSA too: before and after both carry its MPoR nodes, hence
+            # the same scenarios, and the charge is a clean difference.
+            fb = body.fallback_csa.model_dump()
+            fallback = _exposure_inline(ExposureRequest(**{**after_req.model_dump(), "csa": fb}))
+            before_fb = _exposure_inline(ExposureRequest(**{**ns.model_dump(), "csa": fb}))
 
     inc_unc = after.cva - before.cva
     inc_csa = after.cva_csa - before.cva_csa if has_csa else None
-    inc = inc_csa if has_csa else inc_unc
-    spot = next(u.spot for u in ns.underlyings if u.name == body.new_trade.underlying)
-    notional = abs(body.new_trade.quantity) * spot
     peak_after = after.peak_pfe_csa if has_csa else after.peak_pfe
     peak_csa = after.peak_pfe_csa if has_csa else (fallback.peak_pfe_csa if fallback else None)
     limit = body.credit_limit
-    charge = f"Charge the client ${inc:,.0f} ({inc / notional * 1e4:,.1f} bp) for credit." if notional else ""
-
     if limit is None:
-        verdict, reason = "no_limit", f"No credit limit given. {charge}".strip()
+        verdict = "no_limit"
     elif peak_after <= limit:
-        verdict, reason = "approve", f"Within the credit limit ({peak_after / limit:.0%} used). {charge}".strip()
+        verdict = "approve"
     elif not has_csa and peak_csa is not None and peak_csa <= limit:
         verdict = "approve_with_csa"
+    else:
+        verdict = "refer_to_credit"
+    # The charge follows the terms the trade would actually be done on.
+    if verdict == "approve_with_csa":
+        inc, basis = fallback.cva_csa - before_fb.cva_csa, "proposed_csa"
+    else:
+        inc, basis = (inc_csa, "collateralized") if has_csa else (inc_unc, "uncollateralized")
+
+    t = body.new_trade
+    spot = next(u.spot for u in ns.underlyings if u.name == t.underlying)
+    notional = abs(t.quantity) * spot
+    # Desks quote credit as a running spread: upfront CVA over the risky
+    # annuity, sum of DF * Q_counterparty * dt across the trade's life.
+    steps = max(1, math.ceil(t.maturity * 12))
+    dt = t.maturity / steps
+    annuity = sum(math.exp(-ns.rate * (i * dt)) * exposure._survival(ns.cds_spread_bps, ns.recovery, i * dt) * dt
+                  for i in range(1, steps + 1))
+    upfront_bps = inc / notional * 1e4 if notional else 0.0
+    running_bps = upfront_bps / annuity if notional else 0.0
+    if inc < 0:
+        charge = f"Credit benefit of ${-inc:,.0f} ({-running_bps:,.1f} bp a year): no charge."
+    else:
+        charge = f"Charge ${inc:,.0f} upfront, or {running_bps:,.1f} bp a year over the trade's life."
+    if verdict == "no_limit":
+        reason = f"No credit limit given. {charge}"
+    elif verdict == "approve":
+        reason = f"Within the credit limit ({peak_after / limit:.0%} used). {charge}"
+    elif verdict == "approve_with_csa":
         reason = (f"Peak PFE ${peak_after:,.0f} exceeds the ${limit:,.0f} limit; under the proposed CSA it is "
-                  f"${peak_csa:,.0f}, within the limit.")
+                  f"${peak_csa:,.0f}, within the limit. Under that CSA: {charge[0].lower()}{charge[1:]}")
     else:
         over = (peak_csa if peak_csa is not None else peak_after) - limit
         reason = f"Exceeds the limit by ${over:,.0f}" + (" even with collateral." if peak_csa is not None else ".")
-        verdict = "refer_to_credit"
 
     return PredealResult(
         verdict=verdict, reason=reason, incremental_cva=inc, incremental_cva_uncollateralized=inc_unc,
-        incremental_cva_csa=inc_csa, cva_charge_bps=inc / notional * 1e4 if notional else 0.0,
+        incremental_cva_csa=inc_csa, charge_basis=basis, cva_charge_bps=upfront_bps,
+        cva_charge_running_bps=running_bps,
         peak_pfe_before=before.peak_pfe_csa if has_csa else before.peak_pfe, peak_pfe_after=peak_after,
         peak_pfe_after_csa=peak_csa, limit_basis="collateralized" if has_csa else "uncollateralized",
         limit_utilisation=peak_after / limit if limit else None, risk_reducing=inc < 0,
         baseline_cached=bool(hit), n_scenarios=ns.n_scenarios, elapsed_ms=round((time.perf_counter() - t0) * 1e3, 2))
+
+
+def _cva_of(res: ExposureResult, req: ExposureRequest, spread_bps: float | None = None) -> float:
+    """CVA on the request's basis (collateralized under its CSA), optionally
+    at another counterparty spread: the spread does not move the scenarios,
+    so a CS01 needs no new simulation."""
+    spread = req.cds_spread_bps if spread_bps is None else spread_bps
+    if req.csa is not None:
+        ee0 = _exposure_today(res.v0, req.csa.model_dump())[0]
+        return exposure.cva(res.grid, res.ee_csa, req.rate, req.recovery, spread, ee0=ee0)
+    return exposure.cva(res.grid, res.ee, req.rate, req.recovery, spread, ee0=max(res.v0, 0.0))
+
+
+@app.post("/risk/cva-sensitivities", response_model=SensitivityResult)
+async def cva_sensitivities(body: SensitivityRequest) -> SensitivityResult:
+    return await _risk_quote(_cva_sensitivities, body)
+
+
+def _cva_sensitivities(body: SensitivityRequest) -> SensitivityResult:
+    """Delta and vega of CVA per underlying, and CS01, by central bump and
+    revalue. The seed ignores spots and vols, so every bumped run reuses the
+    base run's random numbers: the differences carry almost none of the
+    Monte Carlo noise two independent runs would."""
+    t0 = time.perf_counter()
+    ns = body.netting_set
+    base_dump = ns.model_dump()
+
+    def bumped(i: int, field: str, value: float) -> float:
+        und = [dict(u) for u in base_dump["underlyings"]]
+        und[i][field] = value
+        req = ExposureRequest(**{**base_dump, "underlyings": und})
+        return _cva_of(_exposure_inline(req), req)
+
+    with tracing.tracer.start_as_current_span("risk.cva_sensitivities",
+                                                            attributes={"underlyings": len(ns.underlyings)}):
+        base = _exposure_inline(ns)
+        cva = _cva_of(base, ns)
+        rows = []
+        for i, u in enumerate(ns.underlyings):
+            up, dn = bumped(i, "spot", u.spot * (1 + body.spot_bump)), bumped(i, "spot", u.spot * (1 - body.spot_bump))
+            vu, vd = bumped(i, "vol", u.vol + body.vol_bump), bumped(i, "vol", u.vol - body.vol_bump)
+            rows.append(UnderlyingSensitivity(name=u.name, delta=(up - dn) / 2, vega=(vu - vd) / 2))
+    return SensitivityResult(
+        cva=cva, basis="collateralized" if ns.csa else "uncollateralized", underlyings=rows,
+        cs01=_cva_of(base, ns, ns.cds_spread_bps + 1) - cva, spot_bump=body.spot_bump, vol_bump=body.vol_bump,
+        n_runs=1 + 4 * len(ns.underlyings), n_scenarios=ns.n_scenarios,
+        elapsed_ms=round((time.perf_counter() - t0) * 1e3, 2))
 
 
 @app.get("/risk/exposure/latest/{netting_set_id}")
@@ -513,7 +612,7 @@ async def live():
 
 
 @app.get("/health/ready")
-def ready():
+async def ready():
     """Readiness reflects only this pod: startup finished, so it can price.
 
     Shared dependencies are reported but deliberately do not gate readiness.
@@ -523,8 +622,11 @@ def ready():
     """
     cache: PriceCache = app.state.cache
     store: Store = app.state.store
-    checks = {"redis": "disabled" if not cache.enabled else ("ok" if cache.ping() else "down"),
-              "cassandra": "ok" if store.ping() else "down"}
+
+    def probe() -> dict:
+        return {"redis": "disabled" if not cache.enabled else ("ok" if cache.ping() else "down"),
+                "cassandra": "ok" if store.ping() else "down"}
+    checks = await anyio.to_thread.run_sync(probe, limiter=_PROBE_THREADS)
     degraded = "down" in checks.values()
     return {"ready": True, "status": "degraded" if degraded else "ok", "checks": checks}
 
