@@ -31,6 +31,7 @@ services:
       QUEUE_MODE: ${QUEUE_MODE:-priority}
       PRICE_LOG_MODE: ${PRICE_LOG_MODE:-async}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      CORS_ORIGINS: "http://localhost:8001,http://127.0.0.1:8001"  # local demo only
     ports:
       - "8000:8000"
     depends_on:
