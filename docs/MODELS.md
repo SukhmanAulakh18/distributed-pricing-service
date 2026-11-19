@@ -83,7 +83,7 @@ $$\text{target}(V) = \max(V - H_{recv}, 0) - \max(-V - H_{post}, 0)$$
 and the balance $B_j$ moves to the target only when the change is at least
 the minimum transfer amount (MTA), so collateral is path-dependent. On a
 default, the counterparty stops posting and the position is closed out a
-margin period of risk (MPoR, 10 business days by default) later, so the
+margin period of risk (MPoR, 10 business days by default; `mpor_days` counts business days, simulated on a 252-day year, so 10 business days is about 14.5 calendar days) later, so the
 collateral held at $t$ is the balance at $t - \text{MPoR}$:
 
 $$E^{C}(t) = \max\big(V(t) - B(t - \text{MPoR}) - IA,\ 0\big),\qquad NE^{C}(t) = \max\big(B(t - \text{MPoR}) - V(t),\ 0\big)$$
@@ -109,20 +109,58 @@ and the service reports $\mathrm{CVA}_{bil} - \mathrm{DVA}$.
 
 ## Common random numbers for what-if runs
 
-The scenario seed is a hash of the market state and the simulated nodes
-only: market data version, rate, underlyings, correlation and nodes. It
-does not include the trades, credit spreads, recovery or the CSA's
-thresholds, MTA and independent amount. Adding a trade, changing a spread
-or a threshold therefore re-runs the *same* scenarios, and the difference
-(an incremental CVA for a pre-deal check, or a sensitivity) does not pick
-up two runs' independent noise. Changing the margin period, or switching
-the CSA on, adds nodes and so changes the paths: for "with vs without
-collateral", use the uncollateralized figures the same run reports. On the
-benchmark book this makes the incremental CVA of a new trade about 10×
-tighter at the same cost (`bench/bench_xva.py`, `bench/results/xva.json`).
+The scenario seed is a hash of four things only: the market data version,
+the underlying names, the correlation matrix and the simulation nodes. It
+does not include spots, vols, the rate, the trades, credit spreads,
+recovery or the CSA's thresholds, MTA and independent amount. So these all
+re-run the *same* scenarios, and the difference between two runs does not
+pick up independent noise:
+
+- bump-and-revalue sensitivities (a bumped spot, vol or rate);
+- an added trade (incremental CVA for a pre-deal check);
+- a change in credit spread or in a CSA threshold.
+
+Changing the MPoR, or switching the CSA on, adds nodes to the grid and so
+changes the paths. For "with vs without collateral", compare against the
+uncollateralized figures the same run reports, not against a separate run.
+
+**Measured** (`bench/bench_xva.py`, `bench/results/xva.json`, section
+`pre_deal`): one 5-year forward added to the 200-trade book, 10,000
+scenarios, 30 repetitions. The standard deviation of the incremental CVA is
+$328 with shared scenarios and $1,809 with independent seeds. That is a
+ratio of 5.5×, so shared scenarios give the precision of about 30× more
+independent scenarios (the ratio squared). This is for one trade on this
+book. The ratio shrinks as the new trade grows relative to the book.
+
+**MTA granularity.** The minimum transfer amount is tested node to node
+(the monthly grid plus the lag nodes), not on a daily grid. A daily MTA
+test would call collateral slightly differently.
 
 **Simplifications, stated plainly:** flat rate and hazard curves,
 independent defaults, Black-Scholes revaluation, constant volatility,
-risk-neutral (not real-world) PFE, and no wrong-way risk. A production XVA engine handles all of these; the
+risk-neutral (not real-world) PFE, no wrong-way risk, no standard error
+reported on CVA, and no validation yet against an established XVA library.
+A production XVA engine handles all of these; the
 point here is the distributed computation pattern (scenario blocks, exact
 merge, reproducible across workers), not the model.
+
+## Pre-deal charge and CVA sensitivities
+
+**Pre-deal charge.** `cva_charge_bps` is an upfront charge, in basis points
+of the new trade's underlying notional (|quantity| x spot).
+`cva_charge_running_bps` is the same charge expressed as a spread per year
+over the trade's risky annuity, the sum of DF x Q_counterparty x dt over its
+life. A hedge that lowers CVA is reported as a credit benefit, never as a
+negative charge. When the verdict is `approve_with_csa`, the charge is priced
+under the proposed CSA (`charge_basis: proposed_csa`), with the before and
+after runs on the same scenarios.
+
+**CVA sensitivities** (`POST /risk/cva-sensitivities`). Delta per 1% move in
+spot and vega per volatility point, both central, per underlying, by
+bump-and-revalue on shared scenarios. CS01 is the CVA change for +1 bp on
+the counterparty spread, and needs no new simulation because the exposure
+profile does not depend on the spread. For a single forward the results are
+checked against an independent closed form (`tests/test_sensitivities.py`):
+delta within 0.1% and vega within 1% of the closed form, tighter than the CVA
+level itself. They are not pathwise: each bump is a full re-run. Pathwise or
+AAD sensitivities in the C++ engine are the next step.

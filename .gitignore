@@ -22,3 +22,6 @@ deploy/rancher/.cluster-id
 bench/results/tracing-load.json
 .coverage
 coverage.xml
+.hallmark/
+# Private, addressed material: never published
+local/

@@ -14,6 +14,23 @@ them live.
 | **Price latency** | Share of `/price` requests completing within 250 ms (`price_latency_seconds` histogram) | 99% | 1% of requests may be slower |
 | **Book completeness** | Share of books that complete with no failed trades (`jobs_total{kind="portfolio"}`) | 99% | 1 in 100 books may need a retry |
 
+The risk endpoints have operational targets, not SLOs, because quote latency
+depends on book size and the pod's thread count:
+
+| Endpoint | SLI | Alert threshold |
+| --- | --- | --- |
+| `POST /risk/predeal`, `POST /risk/cva-sensitivities` | p99 latency (`sli:predeal_latency_p99:rate5m`, `sli:cva_sensitivities_latency_p99:rate5m`) | over 3 s for 10 m: `PredealLatencyHigh` (ticket) |
+| Same | 5xx ratio | over 5% for 5 m: `PredealErrorsHigh` (page) |
+| Same | 503 rate (shedding, `sli:risk_shed_rate:rate5m`) | over 0.5/s for 5 m: `RiskEndpointShedding` (ticket) |
+
+Risk quotes have their own slot (`RISK_SLOTS`, default 1) checked before any
+thread is taken, so a burst is shed with 503 and does not delay `/price` or
+`/health/ready`. Measured with 300 concurrent quotes: 299 shed, worst 0.2 s,
+readiness 3 ms, `/price` 2.7 ms. `tests/test_shedding.py` keeps this true.
+`/risk/cva-sensitivities` takes 15.2 s for 21 runs on 200 trades and 10,000
+scenarios (2 threads), so it is an end-of-day or on-demand call and its p99
+is expected to exceed 3 s on large books.
+
 Why these: a trader cares that a price comes back, quickly, and that a book
 revaluation is whole. Exposure runs are batch: their timeliness is
 watched through queue alerts, not an SLO.
@@ -35,8 +52,10 @@ still happening, so the alert also clears quickly once fixed.
 
 ## Component alerts and who gets them
 
-Every alert carries an `owner` label. Alertmanager routes on it, and every
-alert links to its runbook section. It's the same ownership table as
+Every alert carries an `owner` and a `severity` label. Alertmanager routes
+on both: a page goes to `<owner>-page` and a ticket to `<owner>-ticket`
+(for example `platform-page`, `database-ticket`), and every alert links to
+its runbook section. It's the same ownership table as
 [RUNBOOK.md](../RUNBOOK.md) and `tools/triage.py`.
 
 | Alert | Owner | Why it exists |
@@ -44,6 +63,8 @@ alert links to its runbook section. It's the same ownership table as
 | `IntradayBacklog` | core | intraday tasks are waiting for a worker |
 | `TasksStuckPending` | core | delivered tasks not acked for 2 minutes: no live worker to reclaim them |
 | `AdmissionRejecting` | core | API pods shedding load with 503s: a capacity question |
+| `PredealLatencyHigh`, `PredealErrorsHigh` | core | `/risk/predeal` or `/risk/cva-sensitivities` slow, or failing with 5xx |
+| `RiskEndpointShedding` | platform | the risk slot is full and quotes are being refused with 503: capacity |
 | `ApiReplicasUnavailable`, `PodRestarting` | core | fewer API pods available than desired, or crash loops |
 | `RedisCircuitOpen`, `NodeNotReady` | platform | infrastructure under the service is down |
 | `CassandraCircuitOpen`, `CassandraReplicaDown`, `PriceLogDropping` | database | the price log has a gap, or quorum is at risk |

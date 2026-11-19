@@ -37,12 +37,14 @@ SLOs. Chaos tests then kill its pods, its databases and a whole node.
 | **Autoscaling on queue lag** | KEDA scales the batch pool 0 → 6 on stream lag; a cold start costs 10 s to the first worker (38 s run vs 9 s warm) |
 | **Intraday protected from batch** | An intraday book during a big exposure run: **5.17 s → 0.32 s** after splitting intraday and batch streams |
 | **Book pricing** | 50,000-trade book in **6.9 s** on 8 workers; 2,295 → 7,335 trades/s from 1 to 8 workers |
-| **Collateral (CSA) and own credit** | A zero-threshold CSA at a 10-day margin period cuts a 200-trade book's CVA **72%** and peak PFE **43%** (same scenarios); CVA rises from $0.4k to $49.7k as the margin period goes from 0 to 20 days. DVA and bilateral CVA from the same pass |
-| **Pre-deal checks** | `POST /risk/predeal` returns *approve*, *approve only with a CSA* or *refer to credit*, with the credit charge in $ and bp: **1.39 s** first quote, **0.70 s** re-quote on a 201-trade book (2 threads). Incremental CVA is **10× tighter** at the same cost because what-if runs share scenarios |
+| **Collateral (CSA) and own credit** | On one synthetic 200-trade book, 50,000 scenarios, a zero-threshold CSA at a 10-business-day margin period cuts CVA **60%** ($102.1k to $40.5k) and peak PFE **18%** ($12.5M to $10.2M), against the uncollateralized run on the same scenarios. CVA rises from $0.4k to $57.7k as the margin period goes from 0 to 20 business days. DVA and bilateral CVA come from the same pass |
+| **Pre-deal checks** | `POST /risk/predeal` returns *approve*, *approve only with a CSA* or *refer to credit*. The CVA charge is upfront, in bp of the new trade's notional (29.7 bp upfront, 6.81 bp a year running on the benchmark forward), with the same charge as a running spread. On a 201-trade book, 10,000 scenarios, 2 threads: **1.43 s** first quote, **0.70 s** re-quote, **4.18 s** when a limit breach also prices a fallback CSA (4 passes). Deployed pods use 1 thread per quote, so expect longer. Shared scenarios make incremental CVA **5.5× less noisy** (30 repetitions, one 5-year forward), about 30× fewer scenarios for equal precision |
+| **CVA sensitivities** | `POST /risk/cva-sensitivities`: per-underlying delta and vega by bump-and-revalue on shared scenarios, plus CS01. Delta is within 0.1% and vega within 1% of an independent closed form for a single forward. 21 runs on 200 trades and 10,000 scenarios take **15.2 s** (2 threads): an end-of-day or on-demand calculation, not a quote-time one |
+| **Load shedding** | 300 concurrent pre-deal quotes on a real uvicorn with deployed settings. Before: 0 shed, worst 36.4 s, `/health/ready` timed out. After (risk quotes get their own slot): 299 of 300 shed with 503 in about 0 ms, worst 0.2 s, `/health/ready` 3 ms, `/price` 2.7 ms. `tests/test_shedding.py` locks it in: with the risk slot held, a burst of 20 quotes is all 503 with `Retry-After` in under 2 s and readiness stays 200 |
 | **Exposure and CVA** | 604 million option revaluations in **2.7 s**; PFE and CVA identical on 1, 2, 4 and 8 workers |
 | **pybind11 and the GIL** | 8 Python threads: **175 pricings/s** with the GIL released vs 46 with it held; **147M** Black-Scholes prices/s through one zero-copy NumPy call |
 | **Memory and threads** | ASan + UBSan, ThreadSanitizer and Valgrind clean, including Valgrind on the Python extension |
-| **Tests** | 41 C++ (GoogleTest) and 107 Python (pytest), 84% line coverage with a 75% gate. CI also lints (ruff), checks the manifests (kubeconform), alert rules (promtool) and Alertmanager routing (amtool); CD pushes a signed image with an SBOM after a Trivy scan |
+| **Tests** | 41 C++ (GoogleTest) and 123 Python (pytest). CI also lints (ruff), checks the manifests (kubeconform), alert rules (promtool) and Alertmanager routing (amtool). Release runs only after CI succeeds on main, or on a `v*` tag: it builds the image locally, Trivy-scans it, then pushes with an SBOM and provenance and signs it with cosign by digest. Third-party actions are pinned by commit SHA |
 
 ## How this maps to the role
 
@@ -63,7 +65,7 @@ distributed analytics library for front-office pricing.
 
 ```mermaid
 flowchart LR
-  C[Traders, e-trading, risk] -->|/price · /portfolio/price · /risk/exposure| API[API pods<br/>FastAPI + Pydantic<br/>C++ via pybind11]
+  C[Traders, e-trading, risk] -->|/price · /portfolio/price · /risk/exposure · /risk/predeal · /risk/cva-sensitivities| API[API pods<br/>FastAPI + Pydantic<br/>C++ via pybind11]
   API <-->|cache, locks| R[(Redis<br/>AOF on a volume)]
   API -->|intraday / batch streams| R
   R -->|lag drives KEDA| WI[Intraday pool 2-8]
@@ -74,7 +76,8 @@ flowchart LR
   API & WI & WB -. metrics, traces .-> O[Prometheus · Alertmanager<br/>Grafana · Jaeger]
 ```
 
-Prices are deterministic. The seed comes from the request's hash, and the
+Prices are deterministic. The seed comes from the request's hash (for
+exposure runs, from market state only, see [docs/MODELS.md](docs/MODELS.md)), and the
 RNG is counter-based, so path *i* gets the same numbers on any thread,
 worker or node. That one property makes caching safe, makes any split
 across workers exact, and makes re-running a dead worker's task harmless.
@@ -209,7 +212,7 @@ Requirements: Docker (12 GB of memory for the full cluster with Rancher),
 
 ```bash
 make install     # Python deps + build the C++ extension (scikit-build-core)
-make test        # 35 C++ + 74 Python tests
+make test        # 41 C++ + 123 Python tests
 make cpp-checks  # ASan/UBSan, TSan, Valgrind in the Linux tools image
 make cluster     # 4-node kind cluster, KEDA, the app, Prometheus, Alertmanager, Grafana, Jaeger
 make rancher     # Rancher in Docker, with the kind cluster imported
@@ -263,11 +266,12 @@ docs/          site (index.html), system design, operations, architecture, SLOs,
 - One laptop: every node is a container sharing the same 10 vCPUs. Scaling
   numbers show the mechanics, not cluster capacity, and the latency SLO
   suffers when Rancher and the cluster compete for CPU.
-- Textbook models: GBM, constant volatility, flat curves. The exposure run
-  has no collateral, margin period of risk or wrong-way risk.
+- Textbook models: GBM, constant volatility, flat curves. No wrong-way
+  risk, and PFE is risk-neutral, not real-world. MTA is tested node to node
+  (monthly plus lag nodes), not daily.
 - Redis is a single instance (persistent, but not replicated). The prod
   overlay is validated but has not run on a production cluster.
-- No authentication or rate limiting.
+- No authentication, TLS between services or rate limiting; egress is not default-deny.
 
 ## License
 

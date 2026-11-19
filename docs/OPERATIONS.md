@@ -125,12 +125,12 @@ for the proposed resubmit-by-job-id change.
 flowchart LR
   pods["every pod<br/>/metrics"] -->|scrape 5 s| prom
   ksm["kube-state-metrics"] -->|scrape| prom
-  prom["Prometheus<br/>7 SLI recording rules<br/>14 alerts"] --> am["Alertmanager<br/>route on owner"]
+  prom["Prometheus<br/>15 SLI recording rules<br/>20 alerts"] --> am["Alertmanager<br/>route on severity and owner"]
   prom --> graf["Grafana<br/>3 dashboards as code"]
-  am --> core[core-engineering]
-  am --> db[database-team]
-  am --> plat[platform]
-  am --> quant[quant-analytics]
+  am --> core["core-page / core-ticket"]
+  am --> db["database-page / database-ticket"]
+  am --> plat["platform-page / platform-ticket"]
+  am --> quant["quant-page / quant-ticket"]
   apps["API + workers<br/>OpenTelemetry"] -->|OTLP/HTTP| jaeger["Jaeger"]
   am -. "inhibit: NodeNotReady / RedisCircuitOpen<br/>silence IntradayBacklog, TasksStuckPending" .- am
 ```
@@ -153,7 +153,13 @@ flowchart LR
 | `CassandraReplicaDown` | 1 m | ticket | database |
 | `PriceLogDropping` | immediate | ticket | database |
 | `PoisonTrade` | immediate | ticket | quant |
+| `PredealLatencyHigh` | 10 m | ticket | core |
+| `PredealErrorsHigh` | 5 m | page | core |
+| `RiskEndpointShedding` | 5 m | ticket | platform |
 
+Alertmanager sends a page to `<owner>-page` and a ticket to `<owner>-ticket`.
+The pricing-rules file also holds `BookFailureFastBurn`,
+`IntradayBacklogMetricAbsent` and `Watchdog`, which the table omits.
 Every alert links to a runbook section, and `make triage` names the same
 owner. The alert rules, the runbook and the triage tool share one
 ownership table, so they can't disagree.
@@ -194,6 +200,37 @@ flowchart TD
   E -->|yes| F[incident note in RUNBOOK past incidents]
   E -->|no| G[hand-off to owning team with trace id, time window, findings]
 ```
+
+## Risk endpoints and load shedding
+
+`POST /risk/predeal` and `POST /risk/cva-sensitivities` are CPU heavy.
+Each pod gives them their own slot (`RISK_SLOTS`, default 1), checked on the
+event loop before any thread is taken, so a burst is refused with 503 and
+`Retry-After` immediately. Readiness pings run on their own thread limiter.
+The deployed settings in `deploy/k8s/base/api.yaml` are `PRICER_THREADS=1`,
+`COMPUTE_SLOTS=2`, `RISK_SLOTS=1` and `limits.cpu` 3. Benchmark latencies
+were measured at 2 threads, and deployed pods use 1 thread per quote, so
+expect longer quotes there.
+
+Measured with 300 concurrent pre-deal quotes on a real uvicorn with the
+deployed settings:
+
+| | Before | After |
+| --- | --- | --- |
+| Shed with 503 | 0 | 299 of 300, in about 0 ms |
+| Worst latency | 36.4 s | 0.2 s |
+| `/health/ready` | timed out (over 30 s) | 3 ms |
+| `/price` | 4.4 to 5.4 s | 2.7 ms |
+
+`tests/test_shedding.py` holds the risk slot, sends 20 quotes, and requires
+all 20 to be 503 with `Retry-After` in under 2 s and readiness to stay 200.
+
+## Release
+
+Release runs only after CI succeeds on main (`workflow_run`) or on a `v*`
+tag. It builds the image locally, Trivy-scans the local image, and only then
+pushes it with an SBOM and provenance and signs it with cosign by digest.
+Third-party actions are pinned by commit SHA.
 
 ## Chaos testing
 
