@@ -1,0 +1,145 @@
+{
+ "cells": {
+  "10000000|1.0": {
+   "forward_rate": 1.3629,
+   "off_bps": 2.7049,
+   "on_bps": 0.7582,
+   "peak_pfe": 1633514.3486,
+   "utilisation": 0.8168,
+   "verdict": "approve"
+  },
+  "10000000|2.0": {
+   "forward_rate": 1.3459,
+   "off_bps": 3.7378,
+   "on_bps": 0.7603,
+   "peak_pfe": 2306112.6602,
+   "utilisation": 1.1531,
+   "verdict": "approve_with_csa"
+  },
+  "10000000|5.0": {
+   "forward_rate": 1.2964,
+   "off_bps": 5.4576,
+   "on_bps": 0.7195,
+   "peak_pfe": 3599893.8426,
+   "utilisation": 1.7999,
+   "verdict": "approve_with_csa"
+  },
+  "1000000|1.0": {
+   "forward_rate": 1.3629,
+   "off_bps": 2.7049,
+   "on_bps": 0.9249,
+   "peak_pfe": 169632.7448,
+   "utilisation": 0.0848,
+   "verdict": "approve"
+  },
+  "1000000|2.0": {
+   "forward_rate": 1.3459,
+   "off_bps": 3.7378,
+   "on_bps": 1.0698,
+   "peak_pfe": 230611.266,
+   "utilisation": 0.1153,
+   "verdict": "approve"
+  },
+  "1000000|5.0": {
+   "forward_rate": 1.2964,
+   "off_bps": 5.4576,
+   "on_bps": 1.1329,
+   "peak_pfe": 359989.3843,
+   "utilisation": 0.18,
+   "verdict": "approve"
+  },
+  "25000000|1.0": {
+   "forward_rate": 1.3629,
+   "off_bps": 2.7049,
+   "on_bps": 0.7716,
+   "peak_pfe": 4083785.8714,
+   "utilisation": 2.0419,
+   "verdict": "approve_with_csa"
+  },
+  "25000000|2.0": {
+   "forward_rate": 1.3459,
+   "off_bps": 3.7378,
+   "on_bps": 0.7664,
+   "peak_pfe": 5765281.6506,
+   "utilisation": 2.8826,
+   "verdict": "approve_with_csa"
+  },
+  "25000000|5.0": {
+   "forward_rate": 1.2964,
+   "off_bps": 5.4576,
+   "on_bps": 0.7207,
+   "peak_pfe": 8999734.6066,
+   "utilisation": 4.4999,
+   "verdict": "approve_with_csa"
+  },
+  "5000000|1.0": {
+   "forward_rate": 1.3629,
+   "off_bps": 2.7049,
+   "on_bps": 0.7452,
+   "peak_pfe": 816757.1743,
+   "utilisation": 0.4084,
+   "verdict": "approve"
+  },
+  "5000000|2.0": {
+   "forward_rate": 1.3459,
+   "off_bps": 3.7378,
+   "on_bps": 0.7585,
+   "peak_pfe": 1153056.3301,
+   "utilisation": 0.5765,
+   "verdict": "approve"
+  },
+  "5000000|5.0": {
+   "forward_rate": 1.2964,
+   "off_bps": 5.4576,
+   "on_bps": 0.7279,
+   "peak_pfe": 1799946.9213,
+   "utilisation": 0.9,
+   "verdict": "approve"
+  }
+ },
+ "faults": {
+  "client_reset": {
+   "alert": "BookFailureFastBurn",
+   "expected": "one job, one set of tasks, one record; the retry returns the baseline result",
+   "metric": "jobs_total",
+   "owner": "core",
+   "recovered_s": 2.172
+  },
+  "redis_outage": {
+   "alert": "RedisCircuitOpen",
+   "expected": "API answers 503 + Retry-After, breaker opens then closes, retry with the same key completes the same job once",
+   "metric": "worker_tasks_total",
+   "owner": "platform",
+   "recovered_s": 2.156
+  },
+  "worker_killed": {
+   "alert": "TasksStuckPending",
+   "expected": "another worker reclaims it; book prices identical to the clean run",
+   "metric": "worker_reclaimed_total",
+   "owner": "core",
+   "recovered_s": 0.982
+  }
+ },
+ "limit_cad": 2000000,
+ "notionals": [
+  1000000,
+  5000000,
+  10000000,
+  25000000
+ ],
+ "predeal": {
+  "first_quote_ms": 1434.1,
+  "requote_ms": 696.9,
+  "threads": 2,
+  "trades": 201
+ },
+ "siege": {
+  "passed": 6,
+  "total": 6
+ },
+ "tenors": [
+  1.0,
+  2.0,
+  5.0
+ ]
+}
