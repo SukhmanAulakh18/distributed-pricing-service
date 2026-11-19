@@ -32,6 +32,8 @@ SLOs. Chaos tests then kill its pods, its databases and a whole node.
 | | Result |
 | --- | --- |
 | **Chaos, 10 minutes, 11 faults** | API pods, workers, a Cassandra node and Redis SIGKILLed, and one Kubernetes node stopped for 2 minutes: **99.992%** of 76,481 single prices served; **29 of 30 books** complete with **0 failed trades** out of 58,000; 4 of 4 exposure runs **bit-identical** |
+| **Incident replay (siege suite)** | `make siege` replays 6 real incidents in-process (worker killed mid-task, duplicate delivery, poisoned messages, Redis outage, client reset with a retried Idempotency-Key, exposure run with a worker killed) and proves each is **recovered** (results read back and diffed against a clean run), **detected** (the matching Prometheus metric moved) and **routed** (its alert exists with the right owner): 6 of 6 pass, in CI on every commit |
+| **Guarded remediation runner** | `python -m tools.remediate` maps triage findings to an allowlisted action, gates mutating ones behind a named approver, proves each by replaying the matching siege test, and records it in a hash-chained ledger. Rules table, no LLM, no cluster access ([docs/REMEDIATION.md](docs/REMEDIATION.md)) |
 | **Alerts routed to owners** | During the chaos run: `NodeNotReady` and `RedisCircuitOpen` → platform, `CassandraReplicaDown` → database, `PodRestarting` → core engineering |
 | **One book, one trace** | A 2,000-trade book is one Jaeger trace across the API and 2 worker pods (206 spans). Tracing every request costs about 11%, so prod samples 5% |
 | **Autoscaling on queue lag** | KEDA scales the batch pool 0 → 6 on stream lag; a cold start costs 10 s to the first worker (38 s run vs 9 s warm) |
@@ -45,7 +47,7 @@ SLOs. Chaos tests then kill its pods, its databases and a whole node.
 | **Exposure and CVA** | 604 million option revaluations in **2.7 s**; PFE and CVA identical on 1, 2, 4 and 8 workers |
 | **pybind11 and the GIL** | 8 Python threads: **175 pricings/s** with the GIL released vs 46 with it held; **147M** Black-Scholes prices/s through one zero-copy NumPy call |
 | **Memory and threads** | ASan + UBSan, ThreadSanitizer and Valgrind clean, including Valgrind on the Python extension |
-| **Tests** | 41 C++ (GoogleTest) and 123 Python (pytest). CI also lints (ruff), checks the manifests (kubeconform), alert rules (promtool) and Alertmanager routing (amtool). Release runs only after CI succeeds on main, or on a `v*` tag: it builds the image locally, Trivy-scans it, then pushes with an SBOM and provenance and signs it with cosign by digest. Third-party actions are pinned by commit SHA |
+| **Tests** | 41 C++ (GoogleTest) and 129 Python (pytest). CI also lints (ruff), checks the manifests (kubeconform), alert rules (promtool) and Alertmanager routing (amtool). Release runs only after CI succeeds on main, or on a `v*` tag: it builds the image locally, Trivy-scans it, then pushes with an SBOM and provenance and signs it with cosign by digest. Third-party actions are pinned by commit SHA |
 
 **White-label.** A bank customises three things: its market data and curves, its credit spreads and CSA terms, and the owners its alerts route to. The portal reads one theme file (`docs/themes/<name>.json`, chosen with `?theme=`) for colours and copy; the engine is untouched. Private themes can live in a gitignored `local/` folder.
 
