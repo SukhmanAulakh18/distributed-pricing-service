@@ -25,3 +25,6 @@ coverage.xml
 .hallmark/
 # Private, addressed material: never published
 local/
+
+# Remediation runner ledger (local audit trail)
+var/
