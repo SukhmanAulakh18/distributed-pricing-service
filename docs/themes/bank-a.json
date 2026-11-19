@@ -1,0 +1,10 @@
+{
+ "name": "Bank A",
+ "wordmark": "Bank A",
+ "tagline": "Hedge your USD receivables. See the forward rate and the credit charge.",
+ "disclaimer": "Bank A is a fictional bank used to show white-labelling. Synthetic data; not an offer.",
+ "colors": {
+  "light": {"primary": "#7a1fa2", "primary-press": "#5a1578", "accent": "#b4540a"},
+  "dark": {"primary": "#a855d4", "primary-press": "#c07be0", "accent": "#f0a060"}
+ }
+}
