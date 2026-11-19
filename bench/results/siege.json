@@ -1,0 +1,96 @@
+{
+ "scenarios": [
+  {
+   "scenario": "client_reset_then_retry_with_same_key",
+   "fault": "client abandons its book requests mid-flight, then retries with the same key",
+   "at_s": 0.56,
+   "expected": "one job, one set of tasks, one record; the retry returns the baseline result",
+   "observed": "first attempts: 202 then 206; 1 job id; retries [200, 200, 200]; recorded 1x",
+   "recovered_s": 2.172,
+   "passed": true,
+   "detected_by": [
+    "jobs_total{kind=portfolio,mode=distributed,outcome=complete}"
+   ],
+   "routed_to": "core",
+   "alert": "BookFailureFastBurn"
+  },
+  {
+   "scenario": "exposure_run_with_a_worker_killed",
+   "fault": "worker killed holding an exposure block",
+   "at_s": 0.254,
+   "expected": "block reclaimed; EE/CVA within 1e-12 and PFE bit-identical to the local run",
+   "observed": "complete, blocks by 1 worker(s), diffs []",
+   "recovered_s": 0.833,
+   "passed": true,
+   "detected_by": [
+    "jobs_total{kind=exposure,mode=distributed,outcome=complete}",
+    "worker_reclaimed_total",
+    "worker_tasks_total{kind=exposure,outcome=ok}"
+   ],
+   "routed_to": "core",
+   "alert": "TasksStuckPending"
+  },
+  {
+   "scenario": "poisoned_messages_do_not_stop_the_book",
+   "fault": "malformed message, a crash-looping task and an unpriceable task in the stream",
+   "at_s": 0.87,
+   "expected": "malformed dropped and acked; crash-looper failed after MAX_DELIVERIES; the book still prices; nothing left pending",
+   "observed": "3 worker deaths, poison: 'exceeded max deliveries', bogus: \"unknown task kind 'bogus'\", book diffs: 0",
+   "recovered_s": 0.969,
+   "passed": true,
+   "detected_by": [
+    "worker_tasks_total{kind=bogus,outcome=error}",
+    "worker_tasks_total{kind=portfolio,outcome=poison}",
+    "worker_tasks_total{kind=unknown,outcome=malformed}"
+   ],
+   "routed_to": "quant",
+   "alert": "PoisonTrade"
+  },
+  {
+   "scenario": "redis_outage_mid_book",
+   "fault": "Redis unreachable for 0.4 s with the book half done",
+   "at_s": 0.944,
+   "expected": "API answers 503 + Retry-After, breaker opens then closes, retry with the same key completes the same job once",
+   "observed": "4 tasks left at outage; during: 503/503 Retry-After=5, breaker open then closed; 0 diffs, 6 messages",
+   "recovered_s": 2.156,
+   "passed": true,
+   "detected_by": [
+    "worker_tasks_total{kind=portfolio,outcome=ok}"
+   ],
+   "routed_to": "platform",
+   "alert": "RedisCircuitOpen"
+  },
+  {
+   "scenario": "worker_killed_mid_task",
+   "fault": "worker killed while holding a claimed task",
+   "at_s": 0.853,
+   "expected": "another worker reclaims it; book prices identical to the clean run",
+   "observed": "held by ['doomed'] before recovery, 0 diffs after, reclaimed +1",
+   "recovered_s": 0.982,
+   "passed": true,
+   "detected_by": [
+    "worker_reclaimed_total"
+   ],
+   "routed_to": "core",
+   "alert": "TasksStuckPending"
+  },
+  {
+   "scenario": "duplicate_delivery_after_reclaim",
+   "fault": "original worker finishes after its task was reclaimed and redone",
+   "at_s": 0.952,
+   "expected": "late write is identical; a late error never replaces the good result",
+   "observed": "duplicate rewrote task 0 identically, late error on task 1 left it untouched; 0 diffs",
+   "recovered_s": 1.147,
+   "passed": true,
+   "detected_by": [
+    "worker_reclaimed_total",
+    "worker_tasks_total{kind=portfolio,outcome=error}"
+   ],
+   "routed_to": "core",
+   "alert": "TasksStuckPending"
+  }
+ ],
+ "passed": 6,
+ "failed": 0,
+ "generated_by": "pytest tests/siege"
+}
