@@ -282,7 +282,11 @@ var ioFired = false;
 var io = new IntersectionObserver(function (es) { ioFired = true; es.forEach(function (e) { if (e.isIntersecting) { io.unobserve(e.target); start(e.target.dataset.id); } }); }, { rootMargin: '250px' });
 /* fallback for contexts where the observer never reports (a background pane): check positions on scroll */
 function sweep() { Object.keys(charts).forEach(function (id) { var c = charts[id]; if (!c.started && c.el.getBoundingClientRect().top < innerHeight + 250) { io.unobserve(c.el); start(id); } }); }
-setTimeout(function () { if (!ioFired) { addEventListener('scroll', sweep, { passive: true }); sweep(); } }, 1500);
+/* the sweep also runs once on load and on resize, so charts render when the observer is slow or missing */
+addEventListener('scroll', sweep, { passive: true });
+addEventListener('resize', sweep);
+addEventListener('load', sweep);
+setTimeout(sweep, 400);
 var ro = new ResizeObserver(function (es) { es.forEach(function (e) { var c = charts[e.target.dataset.id]; if (c && c.inst) c.inst.resize(); }); });
 var cx = document.createElement('canvas'); cx.width = cx.height = 1; cx = cx.getContext('2d', { willReadFrequently: true });
 function rgb(v) { try { cx.clearRect(0, 0, 1, 1); cx.fillStyle = v; cx.fillRect(0, 0, 1, 1); var d = cx.getImageData(0, 0, 1, 1).data; return 'rgb(' + d[0] + ',' + d[1] + ',' + d[2] + ')'; } catch (e) { return v; } }
@@ -311,6 +315,7 @@ function mount(id, build, head, rows) {
   charts[id] = { el: $('#c-' + id), build: build, inst: null };
   if (head) table(id, head, rows);
   io.observe(charts[id].el);
+  sweep();
 }
 function start(id) {
   var c = charts[id]; if (c.started) return; c.started = true;
