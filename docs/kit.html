@@ -7,8 +7,8 @@
 <style>
 /* Hallmark · checked: 2026-11-18 · genre: modern-minimal (inferred) · theme: brand (site tokens, docs/index.html :root: Newsreader, IBM Plex, teal)
  * pre-emit critique: P4 H4 E4 S4 R5 V4 · weakest: S, the kit has no photograph; each lens shows the real thing instead (the portal bars drawn from data/portal.json, a one-tap link into the exact demo)
- * hero: Split (head and actions on the left, the QR card on the right) · nav: none · footer: two links · job: try the demo · redesign: full · built: the project · v2.0.0
- * Hallmark · dismissed 58 · the seven lens panels are tabs, one visible at a time, and the proof table is the owner's evidence */
+ * hero: Stage (head, lede and actions, the QR card moved to the walkthrough's end) · nav: none · footer: two links · job: try the demo · redesign: full · built: the project · v2.0.0
+ * Hallmark · dismissed 58 · answered: the five-step walkthrough is one step at a time with script, all stacked without it; the seven lens panels are tabs, one visible at a time, and the proof table is the owner's evidence */
 :root {
   --bg: #f5f6f3; --surface: #ffffff; --ink: #15191d; --muted: #59626b; --line: #dcdfd8;
   --accent: #0d6b62; --accent-soft: #e2efec; --warn: #a15c07; --warn-soft: #f6ead9; --on-accent: #ffffff;
@@ -41,11 +41,10 @@ a { color: var(--accent); }
 a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .kicker { font: 500 0.875rem/1.4 var(--body); color: var(--accent); }
 .hero { display: grid; gap: var(--s5); grid-template-columns: minmax(0, 1fr); align-items: start; }
-@media (min-width: 860px) { .hero { grid-template-columns: minmax(0, 1fr) minmax(0, 280px); gap: var(--s7); } }
 .hero-main { display: grid; gap: var(--s4); align-content: start; }
 .lede { font-size: 1.125rem; color: var(--muted); max-width: 56ch; }
 .btns { display: grid; gap: var(--s3); margin-top: var(--s2); }
-@media (min-width: 560px) { .btns { grid-template-columns: repeat(3, minmax(0, auto)); justify-content: start; } }
+@media (min-width: 560px) { .btns { display: flex; flex-wrap: wrap; } }
 .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: var(--s3) var(--s5); border-radius: var(--r1); background: var(--accent); color: var(--on-accent); border: 1px solid var(--accent); font: 600 1rem var(--body); text-decoration: none; text-align: center; cursor: pointer; white-space: nowrap; }
 .btn:hover { filter: brightness(1.1); }
 .btn:active { transform: translateY(1px); filter: brightness(.92); }
@@ -97,6 +96,104 @@ td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-spa
 .stats p { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r2); padding: var(--s4) var(--s5); }
 footer { font-size: 1rem; display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5); }
 footer a { display: inline-flex; align-items: center; min-height: 44px; }
+/* walkthrough: skins come from docs/themes/*.json (tests/test_kit_data.py keeps them equal) */
+:root { --sk-n-p: #0d5c63; --sk-n-pp: #094349; --sk-n-a: #0d5c63; --sk-b-p: #7a1fa2; --sk-b-pp: #5a1578; --sk-b-a: #b4540a; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --sk-n-p: #2a9aa5; --sk-n-pp: #3bb0bb; --sk-n-a: #5cc4cd; --sk-b-p: #a855d4; --sk-b-pp: #c07be0; --sk-b-a: #f0a060; }
+}
+:root[data-theme="dark"] { --sk-n-p: #2a9aa5; --sk-n-pp: #3bb0bb; --sk-n-a: #5cc4cd; --sk-b-p: #a855d4; --sk-b-pp: #c07be0; --sk-b-a: #f0a060; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.story { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r2); padding: var(--s4); display: grid; gap: var(--s5); }
+@media (min-width: 860px) { .story { padding: var(--s6); } }
+.dots { display: none; justify-content: center; }
+.js-on .dots { display: flex; }
+.dot { width: 44px; height: 44px; padding: 0; background: none; border: 0; display: grid; place-items: center; cursor: pointer; border-radius: 50%; }
+.dot::before { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--surface); border: 2px solid var(--muted); transition: transform .2s ease-out, background-color .2s ease-out; }
+.dot:hover::before { border-color: var(--accent); }
+.dot[aria-current="step"]::before { background: var(--accent); border-color: var(--accent); transform: scale(1.3); }
+.steps { display: grid; gap: var(--s6); min-width: 0; }
+.step { display: grid; gap: var(--s5); align-content: start; min-width: 0; }
+.step + .step { border-top: 1px solid var(--line); padding-top: var(--s6); }
+.js-on .step + .step { border-top: 0; padding-top: 0; }
+@media (min-width: 860px) { .step { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--s6); align-items: start; } }
+.sl, .sr2 { display: grid; gap: var(--s4); align-content: start; min-width: 0; }
+.step h3:focus { outline: none; }
+.step .lead { font-size: 1.125rem; color: var(--muted); max-width: 40ch; }
+.glabel { font-size: 0.875rem; color: var(--muted); margin-bottom: var(--s2); }
+.ctl { display: none; }
+.js-on.data-ok .ctl { display: block; }
+.js-on.data-ok .ctl.row { display: flex; }
+.row { flex-wrap: wrap; gap: var(--s2); }
+.chip-btn { min-height: 44px; min-width: 56px; padding: var(--s2) var(--s4); border-radius: 999px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: 500 1rem var(--body); cursor: pointer; }
+.chip-btn:hover { border-color: var(--accent); }
+.chip-btn:active { background: var(--accent-soft); }
+.chip-btn[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.chip-btn:focus-visible, .sw:focus-visible, .dot:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.pick { font-size: 0.9375rem; color: var(--muted); }
+.big { display: grid; gap: var(--s1); }
+.big output, .big .fig { display: block; font: 600 clamp(3.25rem, 17vw, 5.5rem)/1 var(--display); font-variant-numeric: lining-nums tabular-nums; color: var(--accent); }
+.big .u { font-size: 1rem; color: var(--muted); }
+.verdict { justify-self: start; padding: var(--s2) var(--s4); border-radius: 999px; font: 600 1rem var(--body); background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); }
+.verdict.warn { background: var(--warn-soft); color: var(--ink); border-color: var(--warn); }
+.gauge { position: relative; height: 16px; border-radius: 8px; background: var(--bg); border: 1px solid var(--line); }
+.gauge i { position: absolute; inset: 0; border-radius: 7px; background: var(--accent); transform-origin: left center; transform: scaleX(var(--v, .78)); transition: transform .5s ease-out; }
+.gauge.over i { background: var(--warn); }
+.gauge.off i { background: var(--off); }
+.gauge .tick { position: absolute; top: -6px; bottom: -6px; left: calc(var(--l, .87) * 100%); width: 2px; background: var(--ink); }
+.gl { display: flex; justify-content: space-between; gap: var(--s3); font-size: 0.875rem; color: var(--muted); }
+.gl b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.sw { position: relative; display: inline-flex; align-items: center; justify-self: start; gap: var(--s3); min-height: 48px; padding: var(--s2) var(--s4); border-radius: 999px; border: 1px solid var(--accent); background: var(--bg); color: var(--ink); font: 600 1rem var(--body); cursor: pointer; }
+.sw.ctl { display: none; }
+.js-on.data-ok .sw.ctl { display: inline-flex; }
+.sw::after { content: ""; width: 44px; height: 24px; border-radius: 999px; background: var(--off); }
+.sw[aria-checked="true"] { background: var(--accent-soft); }
+.sw[aria-checked="true"]::after { background: var(--accent); }
+.sw i { position: absolute; right: 21px; top: 50%; width: 16px; height: 16px; margin-top: -8px; border-radius: 50%; background: var(--surface); transform: translateX(-20px); transition: transform .2s ease-out; z-index: 1; }
+.sw[aria-checked="true"] i { transform: translateX(0); }
+.save { font-weight: 600; }
+.bars { display: grid; gap: var(--s3); }
+.bars .row2 { display: grid; gap: var(--s1); font-size: 0.9375rem; }
+.bars .top { display: flex; justify-content: space-between; gap: var(--s3); }
+.bars .top b { font: 500 0.9375rem var(--mono); font-variant-numeric: tabular-nums; }
+.faults { display: none; gap: var(--s2); }
+.js-on.data-ok .faults { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.faults .chip-btn { border-radius: var(--r1); text-align: left; }
+.fault { display: grid; gap: var(--s3); background: var(--bg); border: 1px solid var(--line); border-radius: var(--r1); padding: var(--s4); }
+.fault + .fault { margin-top: var(--s3); }
+.js-on.data-ok .fault .fh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.fault .fh { margin: 0; font: 600 1rem var(--body); }
+.score { display: grid; gap: var(--s2); margin: 0; font-size: 0.9375rem; }
+.score dt { color: var(--muted); font-size: 0.875rem; }
+.score dd { margin: 0; }
+.score code, .ledger code { font: 0.875rem var(--mono); overflow-wrap: anywhere; }
+.ba { display: grid; gap: var(--s3); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 420px) { .ba { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.ba div { display: grid; gap: var(--s1); font-size: 0.9375rem; }
+.ba b { font: 600 1.125rem var(--body); }
+.ba .after b { color: var(--accent); }
+.sub { display: grid; gap: var(--s3); background: var(--bg); border: 1px solid var(--line); border-radius: var(--r2); padding: var(--s4); }
+.sub h4 { margin: 0; font: 600 1.125rem var(--body); }
+.skin { --p: var(--sk-n-p); --pp: var(--sk-n-pp); --a: var(--sk-n-a); display: grid; gap: var(--s2); background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--a); border-radius: var(--r1); padding: var(--s4); }
+.skin[data-skin="bank-a"] { --p: var(--sk-b-p); --pp: var(--sk-b-pp); --a: var(--sk-b-a); }
+.skin .wm { font: 600 1.25rem var(--display); color: var(--p); }
+.skin .btn { min-height: 48px; background: var(--p); border-color: var(--p); justify-self: start; }
+.skin .btn:hover { filter: none; background: var(--pp); border-color: var(--pp); }
+.skin .btn:active { background: var(--pp); }
+.skin .fine { font-size: 0.875rem; color: var(--muted); }
+.states { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s3); }
+.ledger { display: grid; gap: var(--s2); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r1); padding: var(--s4); margin: 0; font-size: 0.9375rem; }
+.ledger div { display: flex; justify-content: space-between; gap: var(--s3); }
+.ledger dt { color: var(--muted); }
+.ledger dd { margin: 0; text-align: right; min-width: 0; }
+.ledger .head { font-weight: 600; }
+.ctas { display: grid; gap: var(--s4); grid-column: 1 / -1; }
+.ctas .btns { margin: 0; }
+.nav2 { display: none; justify-content: space-between; gap: var(--s3); }
+.js-on .nav2 { display: flex; }
+.nav2 .btn { flex: 1 1 0; }
+.nav2 .btn:disabled { opacity: .45; cursor: default; }
+.story .qr { justify-self: start; }
+@media (prefers-reduced-motion: reduce) { .gauge i, .dot::before, .sw i { transition: none; } }
 </style></head>
 <body><main class="wrap">
 <header class="hero">
@@ -105,14 +202,112 @@ footer a { display: inline-flex; align-items: center; min-height: 44px; }
     <h1>Check the credit line before the trade.</h1>
     <p class="lede">Before a trader says yes, it tells them whether the client&rsquo;s credit line can take the trade and what to charge for the risk, and it keeps answering when servers fail.</p>
     <nav class="btns" aria-label="Start here">
-      <a class="btn" href="portal.html">Try a client hedge</a>
+      <a class="btn" href="#story">Walk me through it</a>
+      <a class="btn alt" href="portal.html">Try a client hedge</a>
       <a class="btn alt" href="desk.html#predeal">Run a pre-deal decision</a>
       <a class="btn alt" href="#reliability">See the reliability proof</a>
     </nav>
   </div>
+</header>
+
+<section id="story" aria-labelledby="sth" class="stack">
+  <h2 id="sth">Walk me through it</h2>
+  <div class="story">
+    <div class="dots" id="dots" role="group" aria-label="Steps"></div>
+    <p class="sr" id="stepsay" aria-live="polite"></p>
+    <div class="steps" id="steps">
+
+    <article class="step" id="s1" aria-labelledby="h1s">
+      <div class="sl">
+        <h3 id="h1s" tabindex="-1">A client calls.</h3>
+        <p class="lead">A treasurer wants to sell USD forward, to fix what receivables are worth in CAD.</p>
+        <div><p class="glabel" id="gn">Amount in USD</p><div class="ctl row" id="cn" role="group" aria-labelledby="gn"></div></div>
+        <div><p class="glabel" id="gt">Tenor, how long</p><div class="ctl row" id="ct" role="group" aria-labelledby="gt"></div></div>
+      </div>
+      <div class="sr2 big"><p class="pick" id="pick">USD 5M for 5 years</p><output class="fig" id="fwd" for="cn ct">1.2964</output><span class="u">CAD per USD, the forward rate</span></div>
+    </article>
+
+    <article class="step" id="s2" aria-labelledby="h2s">
+      <div class="sl">
+        <h3 id="h2s" tabindex="-1">The bank decides in a second.</h3>
+        <span class="verdict" id="v2">Approve</span>
+        <p class="lead" id="v2why">Within the credit line, so no collateral is needed.</p>
+        <p class="note">Credit line: the most risk the bank accepts on this client.</p>
+      </div>
+      <div class="sr2">
+        <div class="big"><span class="fig" id="util">90%</span><span class="u">of the credit line used</span></div>
+        <div class="gauge" id="gauge" role="img" aria-label="Peak exposure C$1.8M against a C$2.0M credit line" style="--v:.783;--l:.87"><i></i><span class="tick"></span></div>
+        <div class="gl"><span>Exposure <b id="gx">C$1.8M</b></span><span>Limit <b id="gl">C$2.0M</b></span></div>
+        <p class="note" id="lat">Decision from POST /risk/predeal. Measured on a laptop, 2 threads: first quote 1.4 s, re-quote 0.7 s.</p>
+      </div>
+    </article>
+
+    <article class="step" id="s3" aria-labelledby="h3s">
+      <div class="sl">
+        <h3 id="h3s" tabindex="-1">Collateral changes the price.</h3>
+        <p class="lead">With a CSA (collateral agreement) the client posts security, so the bank charges less for default risk.</p>
+        <button type="button" class="sw ctl" id="csa" role="switch" aria-checked="false">CSA <span id="csaw">off</span><i></i></button>
+        <p class="save" id="save">With a CSA: 0.7 bp a year, saves 87%.</p>
+      </div>
+      <div class="sr2">
+        <div class="big"><output class="fig" id="b3">5.5</output><span class="u">bp a year, the credit charge (1 bp = 0.01%)</span><span class="sr" id="b3say" aria-live="polite"></span></div>
+        <div class="bars">
+          <div class="row2"><div class="top"><span>No CSA</span><b id="bo">5.5 bp</b></div><div class="gauge off" id="go" style="--v:1"><i></i></div></div>
+          <div class="row2"><div class="top"><span>With a CSA</span><b id="bn">0.7 bp</b></div><div class="gauge" id="gn2" style="--v:.133"><i></i></div></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="step" id="s4" aria-labelledby="h4s">
+      <div class="sl">
+        <h3 id="h4s" tabindex="-1">It keeps answering when things break.</h3>
+        <div class="big"><span class="fig">99.992%</span><span class="u">of 76,481 prices served in a 10-minute chaos run</span></div>
+        <div class="faults" id="faults" role="group" aria-label="Pick a fault"></div>
+      </div>
+      <div class="sr2" id="fp" aria-live="polite">
+        <div class="fault" data-f="worker_killed"><p class="fh">Worker killed mid-task</p><dl class="score"><div><dt>Proven</dt><dd>another worker reclaims it; book prices identical to the clean run</dd></div><div><dt>Recovered in</dt><dd>1.0 s</dd></div><div><dt>Detected by</dt><dd><code>worker_reclaimed_total</code></dd></div><div><dt>Routed to</dt><dd>core, alert <code>TasksStuckPending</code></dd></div></dl></div>
+        <div class="fault" data-f="redis_outage"><p class="fh">Redis outage</p><dl class="score"><div><dt>Proven</dt><dd>API answers 503 + Retry-After, breaker opens then closes, retry with the same key completes the same job once</dd></div><div><dt>Recovered in</dt><dd>2.2 s</dd></div><div><dt>Detected by</dt><dd><code>worker_tasks_total</code></dd></div><div><dt>Routed to</dt><dd>platform, alert <code>RedisCircuitOpen</code></dd></div></dl></div>
+        <div class="fault" data-f="client_reset"><p class="fh">Client connection reset</p><dl class="score"><div><dt>Proven</dt><dd>one job, one set of tasks, one record; the retry returns the baseline result</dd></div><div><dt>Recovered in</dt><dd>2.2 s</dd></div><div><dt>Detected by</dt><dd><code>jobs_total</code></dd></div><div><dt>Routed to</dt><dd>core, alert <code>BookFailureFastBurn</code></dd></div></dl></div>
+        <div class="fault" data-f="burst"><p class="fh">Burst of 300 quotes</p><div class="ba"><div><span>Before</span><b>0 of 300 shed</b><span>worst answer 36.4 s</span></div><div class="after"><span>After</span><b>299 of 300 shed in about 0 ms</b><span>readiness check 3 ms</span></div></div><p class="note">Shed means refused at once, so the rest stay fast (README, docs/SLO.md).</p></div>
+      </div>
+    </article>
+
+    <article class="step" id="s5" aria-labelledby="h5s">
+      <div class="sl">
+        <h3 id="h5s" tabindex="-1">Your brand, your controls.</h3>
+        <p class="lead">Same engine in your colors. Every fix needs a second person.</p>
+        <div class="sub">
+          <h4>Re-skin the client screen</h4>
+          <div class="ctl row" id="skins" role="group" aria-label="Theme"></div>
+          <div class="skin" id="skin" data-skin="neutral"><span class="wm" id="skwm">Hedge portal</span><p id="sktag">Sell USD forward and see what the bank charges for your credit.</p><a class="btn" href="portal.html">Get a quote</a><p class="fine" id="skfine">Independent project on synthetic data. Not a bank, not an offer, not advice.</p></div>
+        </div>
+      </div>
+      <div class="sr2">
+        <div class="sub">
+          <h4>Fix with approval</h4>
+          <p class="note">Illustration of the runner&rsquo;s ledger entry. The real runner is a command line tool (docs/REMEDIATION.md).</p>
+          <div class="ctl row" id="rstates" role="group" aria-label="Ledger state"></div>
+          <ol class="states" id="rl">
+            <li><dl class="ledger" data-s="0"><div class="head"><dt>Proposed</dt><dd>awaiting approval</dd></div><div><dt>Action</dt><dd>retry with the same key</dd></div><div><dt>Operator</dt><dd>op</dd></div><div><dt>Approver</dt><dd>none yet</dd></div><div><dt>Evidence</dt><dd>nothing run</dd></div></dl></li>
+            <li><dl class="ledger" data-s="1"><div class="head"><dt>Approved</dt><dd>by a second person</dd></div><div><dt>Operator</dt><dd>op</dd></div><div><dt>Approver</dt><dd>alice, not the operator</dd></div><div><dt>Evidence</dt><dd>replay pending</dd></div></dl></li>
+            <li><dl class="ledger" data-s="2"><div class="head"><dt>Verified</dt><dd>incident replay passed</dd></div><div><dt>Evidence</dt><dd>passed in 2.7 s</dd></div><div><dt>Hash</dt><dd><code>21684069&hellip;</code></dd></div><div><dt>Previous</dt><dd><code>ebccb0e5&hellip;</code></dd></div></dl></li>
+          </ol>
+        </div>
+      </div>
+      <div class="ctas">
+        <nav class="btns" aria-label="Next actions">
+          <a class="btn" id="cta1" href="portal.html?n=5000000&amp;t=5&amp;csa=0">Price a hedge</a>
+          <a class="btn alt" href="desk.html#predeal">See the decision API</a>
+        </nav>
   <div class="qr"><div id="qr" role="img" aria-label="QR code linking to this page"></div>
     <p class="note">Scan to open this kit on your phone</p><code>https://sukhmanaulakh18.github.io/distributed-pricing-service/kit.html</code></div>
-</header>
+      </div>
+    </article>
+
+    </div>
+    <div class="nav2"><button type="button" class="btn alt" id="back">Back</button><button type="button" class="btn" id="next">Next</button></div>
+  </div>
+</section>
 
 <section aria-labelledby="lh" class="stack">
   <h2 id="lh">Seven lenses</h2>
@@ -166,6 +361,135 @@ footer a { display: inline-flex; align-items: center; min-height: 44px; }
     });
   });
   try { if (window.QRCode) new QRCode(document.getElementById('qr'), { text: 'https://sukhmanaulakh18.github.io/distributed-pricing-service/kit.html', width: 176, height: 176, correctLevel: QRCode.CorrectLevel.M }); } catch (e) {}
+  // Walkthrough. Without script every step is stacked with the default cell's numbers; here one shows at a time.
+  (function () {
+    var steps = Array.prototype.slice.call(document.querySelectorAll('.step'));
+    var dotsEl = document.getElementById('dots'), back = document.getElementById('back'), next = document.getElementById('next');
+    var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var st = { n: 5000000, t: 5, csa: false, i: 0, f: 'worker_killed', s: 2, skin: 'neutral' };
+    var K = null, themes = {}, tw = 0, shown = null;
+    function $(id) { return document.getElementById(id); }
+    function money(v) { return 'C$' + (v / 1e6).toFixed(1) + 'M'; }
+    function key() { return st.n + '|' + st.t.toFixed(1); }
+    function pressed(box, fn) { Array.prototype.forEach.call(box.children, function (b, j) { b.setAttribute('aria-pressed', fn(j) ? 'true' : 'false'); }); }
+    function make(box, labels, onpick) {
+      box.innerHTML = '';
+      labels.forEach(function (l, j) {
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'chip-btn'; b.textContent = l;
+        b.addEventListener('click', function () { onpick(j); }); box.appendChild(b);
+      });
+    }
+    function show(i, focus) {
+      i = Math.max(0, Math.min(steps.length - 1, i)); st.i = i;
+      steps.forEach(function (s, j) { s.hidden = j !== i; });
+      Array.prototype.forEach.call(dotsEl.children, function (d, j) { if (j === i) d.setAttribute('aria-current', 'step'); else d.removeAttribute('aria-current'); });
+      back.disabled = i === 0; next.disabled = i === steps.length - 1;
+      $('stepsay').textContent = 'Step ' + (i + 1) + ' of ' + steps.length;
+      var h = steps[i].querySelector('h3');
+      if (focus) { try { h.focus({ preventScroll: true }); } catch (e) { h.focus(); } }
+      var top = document.getElementById('story').getBoundingClientRect().top;
+      if (focus && (top < 0 || top > innerHeight * 0.5)) document.getElementById('story').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    }
+    steps.forEach(function (s, j) {
+      var d = document.createElement('button'); d.type = 'button'; d.className = 'dot';
+      d.setAttribute('aria-label', 'Step ' + (j + 1) + ': ' + s.querySelector('h3').textContent);
+      d.addEventListener('click', function () { show(j, true); }); dotsEl.appendChild(d);
+    });
+    back.addEventListener('click', function () { show(st.i - 1, true); });
+    next.addEventListener('click', function () { show(st.i + 1, true); });
+    document.addEventListener('keydown', function (e) {
+      if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft')) return;
+      if (e.target.closest && e.target.closest('[role=tablist],input,select,textarea')) return;
+      e.preventDefault(); show(st.i + (e.key === 'ArrowRight' ? 1 : -1), true);
+    });
+    var x0 = 0, y0 = 0, stage = $('steps');
+    stage.addEventListener('touchstart', function (e) { x0 = e.changedTouches[0].clientX; y0 = e.changedTouches[0].clientY; }, { passive: true });
+    stage.addEventListener('touchend', function (e) {
+      var dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > 1.5 * Math.abs(dy)) show(st.i + (dx < 0 ? 1 : -1), true);
+    }, { passive: true });
+    show(0, false);
+
+    function tween(to) {
+      var el = $('b3'), id = ++tw;
+      function done() { el.textContent = to.toFixed(1); $('b3say').textContent = to.toFixed(1) + ' bp a year'; }
+      if (reduce || shown === null) { shown = to; done(); return; }
+      var from = shown, t0 = performance.now(); shown = to;
+      setTimeout(function () { if (id === tw) { tw++; done(); } }, 600);
+      (function f(now) {
+        if (id !== tw) return;
+        var p = Math.min((now - t0) / 450, 1), e = 1 - Math.pow(1 - p, 3);
+        if (p < 1) { el.textContent = (from + (to - from) * e).toFixed(1); requestAnimationFrame(f); } else done();
+      })(t0);
+    }
+    var VERDICT = {
+      approve: ['Approve', 'Within the credit line, so no collateral is needed.', false],
+      approve_with_csa: ['Approve with a CSA', 'Over the credit line unless the client posts collateral (a CSA).', true],
+      refer_to_credit: ['Refer to credit', 'Over the line even with collateral. A credit officer decides.', true]
+    };
+    function faultHtml(id, f) {
+      var rows = { worker_killed: 'Worker killed mid-task', redis_outage: 'Redis outage', client_reset: 'Client connection reset' };
+      return '<p class="fh">' + rows[id] + '</p><dl class="score"><div><dt>Proven</dt><dd>' + f.expected + '</dd></div><div><dt>Recovered in</dt><dd>' + f.recovered_s.toFixed(1) + ' s</dd></div><div><dt>Detected by</dt><dd><code>' + f.metric + '</code></dd></div><div><dt>Routed to</dt><dd>' + f.owner + ', alert <code>' + f.alert + '</code></dd></div></dl>';
+    }
+    function render() {
+      var c = K.cells[key()];
+      $('pick').textContent = 'USD ' + (st.n / 1e6) + 'M for ' + st.t + (st.t === 1 ? ' year' : ' years');
+      $('fwd').textContent = c.forward_rate.toFixed(4);
+      var v = VERDICT[c.verdict] || VERDICT.refer_to_credit;
+      $('v2').textContent = v[0]; $('v2').className = 'verdict' + (v[2] ? ' warn' : ''); $('v2why').textContent = v[1];
+      var scale = Math.max(c.peak_pfe, K.limit_cad) * 1.15, g = $('gauge');
+      g.style.setProperty('--v', (c.peak_pfe / scale).toFixed(3)); g.style.setProperty('--l', (K.limit_cad / scale).toFixed(3));
+      g.className = 'gauge' + (c.peak_pfe > K.limit_cad ? ' over' : '');
+      g.setAttribute('aria-label', 'Peak exposure ' + money(c.peak_pfe) + ' against a ' + money(K.limit_cad) + ' credit line');
+      $('util').textContent = Math.round(c.utilisation * 100) + '%'; $('gx').textContent = money(c.peak_pfe); $('gl').textContent = money(K.limit_cad);
+      var p = K.predeal;
+      $('lat').textContent = 'Decision from POST /risk/predeal. Measured on a laptop, ' + p.threads + ' threads: first quote ' + (p.first_quote_ms / 1000).toFixed(1) + ' s, re-quote ' + (p.requote_ms / 1000).toFixed(1) + ' s.';
+      var saved = Math.round((1 - c.on_bps / c.off_bps) * 100);
+      $('save').textContent = st.csa ? 'Saves ' + saved + '% a year.' : 'With a CSA: ' + c.on_bps.toFixed(1) + ' bp a year, saves ' + saved + '%.';
+      $('bo').textContent = c.off_bps.toFixed(1) + ' bp'; $('bn').textContent = c.on_bps.toFixed(1) + ' bp';
+      $('go').style.setProperty('--v', '1'); $('gn2').style.setProperty('--v', Math.max(c.on_bps / c.off_bps, 0.01).toFixed(3));
+      tween(st.csa ? c.on_bps : c.off_bps);
+      $('cta1').href = 'portal.html?n=' + st.n + '&t=' + st.t + '&csa=' + (st.csa ? 1 : 0);
+    }
+    function panel() {
+      Array.prototype.forEach.call(document.querySelectorAll('.fault'), function (p) { p.hidden = p.getAttribute('data-f') !== st.f; });
+      pressed($('faults'), function (j) { return FIDS[j] === st.f; });
+    }
+    var FIDS = ['worker_killed', 'redis_outage', 'client_reset', 'burst'];
+    function skin() {
+      var t = themes[st.skin], el = $('skin');
+      el.setAttribute('data-skin', st.skin);
+      if (t) { $('skwm').textContent = t.wordmark; $('sktag').textContent = t.tagline; $('skfine').textContent = t.disclaimer; }
+      pressed($('skins'), function (j) { return ['neutral', 'bank-a'][j] === st.skin; });
+    }
+    function ledger() {
+      Array.prototype.forEach.call(document.querySelectorAll('#rl li'), function (li, j) { li.hidden = j !== st.s; });
+      pressed($('rstates'), function (j) { return j === st.s; });
+    }
+    function wire() {
+      var NS = K.notionals, TS = K.tenors;
+      make($('cn'), NS.map(function (n) { return (n / 1e6) + 'M'; }), function (j) { st.n = NS[j]; pressed($('cn'), function (k) { return k === j; }); render(); });
+      make($('ct'), TS.map(function (t) { return t + 'y'; }), function (j) { st.t = TS[j]; pressed($('ct'), function (k) { return k === j; }); render(); });
+      pressed($('cn'), function (j) { return NS[j] === st.n; }); pressed($('ct'), function (j) { return TS[j] === st.t; });
+      var sw = $('csa'); sw.addEventListener('click', function () { st.csa = !st.csa; sw.setAttribute('aria-checked', st.csa); $('csaw').textContent = st.csa ? 'on' : 'off'; render(); });
+      ['worker_killed', 'redis_outage', 'client_reset'].forEach(function (id) {
+        document.querySelector('.fault[data-f=' + id + ']').innerHTML = faultHtml(id, K.faults[id]);
+      });
+      make($('faults'), ['Worker killed mid-task', 'Redis outage', 'Client connection reset', 'Burst of 300 quotes'], function (j) { st.f = FIDS[j]; panel(); });
+      make($('skins'), ['Neutral', 'Bank A'], function (j) { st.skin = ['neutral', 'bank-a'][j]; skin(); });
+      make($('rstates'), ['Proposed', 'Approved', 'Verified'], function (j) { st.s = j; ledger(); });
+      document.documentElement.classList.add('data-ok');
+      panel(); skin(); ledger(); render();
+    }
+    Promise.all([
+      fetch('data/kit.json').then(function (r) { return r.json(); }),
+      fetch('themes/neutral.json').then(function (r) { return r.json(); }).catch(function () { return null; }),
+      fetch('themes/bank-a.json').then(function (r) { return r.json(); }).catch(function () { return null; })
+    ]).then(function (a) {
+      K = a[0]; if (a[1]) themes.neutral = a[1]; if (a[2]) themes['bank-a'] = a[2];
+      wire();
+    }).catch(function () {});
+  })();
   // The business lens draws its proof from the same grid the portal reads, to one scale.
   fetch('data/portal.json').then(function (r) { return r.json(); }).then(function (d) {
     var off = d.cells['5000000|5.0|off'], on = d.cells['5000000|5.0|on'];
