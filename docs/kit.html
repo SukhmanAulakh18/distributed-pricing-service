@@ -3,237 +3,167 @@
 <title>Guided tour | Distributed Pricing Service</title>
 <meta name="description" content="A five-step guided tour on your phone: what the platform does for a bank, seven lenses on it, a 30-second demo and one measured proof number for each.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Sometype+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="assets/site.css">
 <style>
-/* Hallmark · checked: 2026-11-18 · genre: modern-minimal (inferred) · theme: brand (site tokens, docs/case-study.html :root: Newsreader, IBM Plex, teal)
- * pre-emit critique: P4 H4 E4 S4 R5 V4 · weakest: S, the tour has no photograph; each lens shows the real thing instead (the portal bars drawn from data/portal.json, a one-tap link into the exact demo)
- * hero: Stage (head, lede and actions, the QR card moved to the walkthrough's end) · nav: none · footer: two links · job: try the demo · redesign: full · built: the project · v2.0.0
- * Hallmark · dismissed 58 · answered: the five-step walkthrough is one step at a time with script, all stacked without it; the seven lens panels are tabs, one visible at a time, and the proof table is the owner's evidence */
-:root {
-  --bg: #f5f6f3; --surface: #ffffff; --ink: #15191d; --muted: #59626b; --line: #dcdfd8;
-  --accent: #0d6b62; --accent-soft: #e2efec; --warn: #a15c07; --warn-soft: #f6ead9; --on-accent: #ffffff;
-  --qr-bg: #fbfcfa; --off: #59626b;
-  --display: "Newsreader", "Iowan Old Style", Georgia, serif;
-  --body: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px;
-  --r1: 8px; --r2: 12px;
-  color-scheme: light;
-}
+/* Hallmark · shape: Split Ticket, the blotter half as a walkthrough (one step at a time, a ruled ticket, the rate in pips) · genre: modern-minimal · theme: custom (by request), docs/assets/DESIGN.md · signature: the pip numeral on step one, the decision cut as a ticket stub on step two · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 · weakest: S, the tour has no photograph; each lens shows the real thing instead (the portal bars drawn from data/portal.json, a one-tap link into the exact demo) */
+/* Hallmark · dismissed 58 · answered: the five-step walkthrough is one step at a time with script, all stacked without it; the seven lens panels are tabs, one visible at a time, and the proof table is the evidence a reader checks */
+/* white-label skins for the step-five preview: docs/themes/*.json, kept equal by tests/test_kit_data.py */
+:root { --sk-n-p: #f4ab00; --sk-n-pp: #dc9400; --sk-n-a: #9d4700; --sk-n-on: oklch(19% 0.035 262); --sk-b-p: #7a1fa2; --sk-b-pp: #5a1578; --sk-b-a: #b4540a; --sk-b-on: oklch(99% 0.005 250); --qr-bg: oklch(98% 0.005 250); }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) { --bg: #0e1113; --surface: #161a1d; --ink: #e7eae7; --muted: #9aa3aa; --line: #2a3035; --accent: #5cc0b4; --accent-soft: #15302d; --warn: #e3a34d; --warn-soft: #33270f; --on-accent: #0e1113; --off: #9aa3aa; color-scheme: dark; }
+  :root:not([data-theme="light"]) { --sk-n-p: #f3b01d; --sk-n-pp: #ffc64c; --sk-n-a: #f3b01d; --sk-b-p: #a855d4; --sk-b-pp: #c07be0; --sk-b-a: #f0a060; --sk-b-on: oklch(19% 0.035 262); }
 }
-:root[data-theme="dark"] { --bg: #0e1113; --surface: #161a1d; --ink: #e7eae7; --muted: #9aa3aa; --line: #2a3035; --accent: #5cc0b4; --accent-soft: #15302d; --warn: #e3a34d; --warn-soft: #33270f; --on-accent: #0e1113; --off: #9aa3aa; color-scheme: dark; }
-* { box-sizing: border-box; }
-[hidden] { display: none !important; }
-html { scroll-behavior: smooth; scroll-padding-top: var(--s4); overflow-x: clip; }
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; animation: none !important; } }
-body { margin: 0; overflow-x: clip; background: var(--bg); color: var(--ink); font: 16px/1.55 var(--body); overflow-wrap: anywhere; caret-color: var(--accent); scrollbar-color: var(--line) var(--bg); }
-::selection { background: var(--accent); color: var(--on-accent); }
-.wrap { max-width: 1040px; margin: 0 auto; padding: var(--s5) var(--s4) var(--s7); display: grid; gap: var(--s7); }
-h1, h2, h3 { font-family: var(--display); font-weight: 600; line-height: 1.15; margin: 0; text-wrap: balance; min-width: 0; overflow-wrap: break-word; }
-h1 { font-size: clamp(2.25rem, 7vw, 3.75rem); line-height: 1.05; }
-h2 { font-size: 1.75rem; }
-h3 { font-size: 1.5rem; }
-h3 small { font: 500 0.875rem var(--body); color: var(--muted); display: block; margin-top: var(--s1); }
-p { margin: 0; text-wrap: pretty; }
-a { color: var(--accent); }
-a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-.kicker { font: 500 0.875rem/1.4 var(--body); color: var(--accent); }
-.hero { display: grid; gap: var(--s5); grid-template-columns: minmax(0, 1fr); align-items: start; }
-.hero-main { display: grid; gap: var(--s4); align-content: start; }
-.lede { font-size: 1.125rem; color: var(--muted); max-width: 56ch; }
-.btns { display: grid; gap: var(--s3); margin-top: var(--s2); }
-@media (min-width: 560px) { .btns { display: flex; flex-wrap: wrap; } }
-.hero-start { display: grid; gap: var(--s3); margin-top: var(--s2); }
-.hero-start > .btn { min-height: 52px; }
-@media (min-width: 560px) { .hero-start > .btn { justify-self: start; } }
-.pills { display: flex; flex-wrap: wrap; gap: var(--s2); }
-.pill { display: inline-flex; align-items: center; min-height: 44px; padding: var(--s2) var(--s4); border-radius: 999px; border: 1px solid var(--accent); background: var(--surface); color: var(--ink); font: 500 0.9375rem var(--body); text-decoration: none; }
-.pill:hover { background: var(--accent-soft); }
-.pill:active { transform: translateY(1px); }
-.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: var(--s3) var(--s5); border-radius: var(--r1); background: var(--accent); color: var(--on-accent); border: 1px solid var(--accent); font: 600 1rem var(--body); text-decoration: none; text-align: center; cursor: pointer; white-space: nowrap; }
-.btn:hover { filter: brightness(1.1); }
-.btn:active { transform: translateY(1px); filter: brightness(.92); }
-.btn.alt { background: var(--surface); color: var(--ink); border-color: var(--accent); }
-.btn.alt:hover { background: var(--accent-soft); filter: none; }
-.btn[aria-disabled="true"] { opacity: .5; pointer-events: none; }
-.qr { display: grid; justify-items: center; gap: var(--s2); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r2); padding: var(--s4); text-align: center; }
-#qr { background: var(--qr-bg); padding: var(--s3); border-radius: var(--r1); line-height: 0; min-height: 200px; min-width: 200px; }
-#qr img, #qr canvas { max-width: 100%; height: auto; }
-.qr code { font: 0.875rem var(--mono); }
-#share { scroll-margin-top: var(--s4); }
-.note { font-size: 0.875rem; color: var(--muted); }
-.tabs { display: none; flex-wrap: wrap; gap: var(--s2); }
-.js-on .tabs { display: flex; }
-.tabs button { min-height: 44px; padding: var(--s2) var(--s4); border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: 500 0.9375rem var(--body); cursor: pointer; }
-.tabs button:hover { border-color: var(--accent); }
-.tabs button:active { background: var(--accent-soft); }
-.tabs button[aria-selected="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
-.lens { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r2); padding: var(--s5); display: grid; gap: var(--s5); margin-top: var(--s4); grid-template-columns: minmax(0, 1fr); align-items: start; }
-@media (min-width: 860px) { .lens { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--s6); padding: var(--s6); } }
-.lens .l, .lens .r { display: grid; gap: var(--s4); align-content: start; }
-.proof { background: var(--accent-soft); border-radius: var(--r1); padding: var(--s4); display: grid; gap: var(--s1); }
-.proof b { font: 500 1.25rem/1.3 var(--mono); }
-.proof span { font-size: 0.875rem; color: var(--muted); }
-.mini { display: grid; gap: var(--s2); margin-top: var(--s2); }
-.mini .row { display: grid; gap: var(--s1); font-size: 0.875rem; }
-.mini .top { display: flex; justify-content: space-between; gap: var(--s3); }
-.mini .top b { font: 500 0.875rem var(--mono); }
-svg.bar { display: block; width: 100%; height: 12px; }
-.bar .track { fill: var(--surface); }
-.bar .fill { transform-box: fill-box; transform-origin: left center; }
-.bar .fill.off { fill: var(--off); } .bar .fill.on { fill: var(--accent); }
-@keyframes grow { from { transform: scaleX(0); } }
-@media (prefers-reduced-motion: no-preference) { .bar .fill { animation: grow .5s ease-out; } }
-.demo { color: var(--muted); }
-.demo strong { color: var(--ink); }
-.acts { display: flex; flex-wrap: wrap; gap: var(--s3); align-items: center; }
-.link { display: inline-flex; align-items: center; min-height: 44px; font-weight: 600; }
-.table-wrap { border: 1px solid var(--line); border-radius: var(--r1); background: var(--surface); overflow-x: auto; }
-table { border-collapse: collapse; width: 100%; font-size: 0.875rem; }
-caption { text-align: left; padding: var(--s3) var(--s3) var(--s2); }
-th, td { text-align: left; padding: var(--s3); border-bottom: 1px solid var(--line); vertical-align: top; }
-th { font: 600 0.875rem/1.3 var(--body); color: var(--muted); }
-tr:last-child td { border-bottom: 0; }
-td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.callout { background: var(--warn-soft); border-radius: var(--r1); padding: var(--s4) var(--s5); font-size: 1rem; }
-.stack { display: grid; gap: var(--s4); }
-.stats { display: grid; gap: var(--s4); grid-template-columns: minmax(0, 1fr); }
-@media (min-width: 640px) { .stats { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
-.stats p { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r2); padding: var(--s4) var(--s5); }
-footer { font-size: 1rem; display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5); }
-footer a { display: inline-flex; align-items: center; min-height: 44px; }
-/* walkthrough: skins come from docs/themes/*.json (tests/test_kit_data.py keeps them equal) */
-:root { --sk-n-p: #0d5c63; --sk-n-pp: #094349; --sk-n-a: #0d5c63; --sk-b-p: #7a1fa2; --sk-b-pp: #5a1578; --sk-b-a: #b4540a; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) { --sk-n-p: #2a9aa5; --sk-n-pp: #3bb0bb; --sk-n-a: #5cc4cd; --sk-b-p: #a855d4; --sk-b-pp: #c07be0; --sk-b-a: #f0a060; }
-}
-:root[data-theme="dark"] { --sk-n-p: #2a9aa5; --sk-n-pp: #3bb0bb; --sk-n-a: #5cc4cd; --sk-b-p: #a855d4; --sk-b-pp: #c07be0; --sk-b-a: #f0a060; }
-.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.story { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r2); padding: var(--s4); display: grid; gap: var(--s5); scroll-margin-top: var(--s4); }
-@media (min-width: 860px) { .story { padding: var(--s6); } }
+:root[data-theme="dark"] { --sk-n-p: #f3b01d; --sk-n-pp: #ffc64c; --sk-n-a: #f3b01d; --sk-b-p: #a855d4; --sk-b-pp: #c07be0; --sk-b-a: #f0a060; --sk-b-on: oklch(19% 0.035 262); }
+.note { font-size: var(--text-sm); color: var(--color-muted); }
+.hero .lede { max-width: 40ch; }
+.hero-copy { display: grid; gap: var(--space-lg); justify-items: start; }
+.hero .btns { gap: var(--space-xs) var(--space-lg); }
+.stack { display: grid; gap: var(--space-md); }
+/* the walkthrough */
+.story { display: grid; gap: var(--space-xl); padding-top: var(--space-md); border-top: var(--rule-heavy) solid var(--color-ink); scroll-margin-top: calc(var(--nav-h) + var(--space-md)); }
+.nav2 { display: none; align-items: center; gap: var(--space-xs); min-width: 0; }
+.js-on .nav2 { display: flex; }
+.nav2 .btn { flex: none; min-height: 44px; padding: 0 var(--space-md); }
+.nav2 .btn:disabled { background: var(--color-paper-2); border-color: var(--color-rule); color: var(--color-muted); cursor: not-allowed; }
 .dots { display: none; justify-content: center; flex: 1 1 auto; min-width: 0; }
 .js-on .dots { display: flex; }
-.dot { width: 44px; height: 44px; margin: 0 -8px; padding: 0; background: none; border: 0; display: grid; place-items: center; cursor: pointer; border-radius: 50%; }
-.dot::before { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--surface); border: 2px solid var(--muted); transition: transform .2s ease-out, background-color .2s ease-out; }
-.dot:hover::before { border-color: var(--accent); }
-.dot[aria-current="step"]::before { background: var(--accent); border-color: var(--accent); transform: scale(1.3); }
-.steps { display: grid; gap: var(--s6); min-width: 0; }
-.step { display: grid; gap: var(--s5); align-content: start; min-width: 0; }
-.step + .step { border-top: 1px solid var(--line); padding-top: var(--s6); }
+.dot { width: 36px; height: 44px; padding: 0; background: none; border: 0; display: grid; place-items: center; cursor: pointer; }
+.dot::before { content: ""; width: 24px; height: 4px; background: var(--color-rule); transition: background-color var(--dur-short) var(--ease-out), transform var(--dur-short) var(--ease-out); }
+.dot:hover::before { background: var(--color-muted); }
+.dot[aria-current="step"]::before { background: var(--color-accent); transform: scaleY(2); }
+.steps { display: grid; gap: var(--space-xl); min-width: 0; }
+.step { display: grid; gap: var(--space-lg); align-content: start; min-width: 0; }
+.step + .step { border-top: var(--rule-hair) solid var(--color-rule); padding-top: var(--space-xl); }
 .js-on .step + .step { border-top: 0; padding-top: 0; }
-@media (min-width: 860px) { .step { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--s6); align-items: start; } }
-.sl, .sr2 { display: grid; gap: var(--s4); align-content: start; min-width: 0; }
+@media (min-width: 54rem) { .step { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--gap-columns); align-items: start; } }
+.sl, .sr2 { display: grid; gap: var(--space-md); align-content: start; min-width: 0; }
+.step h3 { max-width: 18ch; font-size: var(--text-section); font-weight: 600; line-height: 1.08; letter-spacing: -0.02em; }
 .step h3:focus { outline: none; }
-.step .lead { font-size: 1.125rem; color: var(--muted); max-width: 40ch; }
-.glabel { font-size: 0.875rem; color: var(--muted); margin-bottom: var(--s2); }
-.ctl { display: none; }
-.js-on.data-ok .ctl { display: block; }
-.js-on.data-ok .ctl.row { display: flex; }
-.row { flex-wrap: wrap; gap: var(--s2); }
-.chip-btn { min-height: 44px; min-width: 56px; padding: var(--s2) var(--s4); border-radius: 999px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: 500 1rem var(--body); cursor: pointer; }
-.chip-btn:hover { border-color: var(--accent); }
-.chip-btn:active { background: var(--accent-soft); }
-.chip-btn[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
-.chip-btn:focus-visible, .sw:focus-visible, .dot:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-.pick { font-size: 0.9375rem; color: var(--muted); }
-.big { display: grid; gap: var(--s1); }
-.big output, .big .fig { display: block; font: 600 clamp(3.25rem, 17vw, 5.5rem)/1 var(--display); font-variant-numeric: lining-nums tabular-nums; color: var(--accent); }
-.big .u { font-size: 1rem; color: var(--muted); }
-.verdict { justify-self: start; padding: var(--s2) var(--s4); border-radius: 999px; font: 600 1rem var(--body); background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); }
-.verdict.warn { background: var(--warn-soft); color: var(--ink); border-color: var(--warn); }
-.gauge { position: relative; height: 16px; border-radius: 8px; background: var(--bg); border: 1px solid var(--line); }
-.gauge i { position: absolute; inset: 0; border-radius: 7px; background: var(--accent); transform-origin: left center; transform: scaleX(var(--v, .78)); transition: transform .5s ease-out; }
-.gauge.over i { background: var(--warn); }
-.gauge.off i { background: var(--off); }
-.gauge .tick { position: absolute; top: -6px; bottom: -6px; left: calc(var(--l, .87) * 100%); width: 2px; background: var(--ink); }
-.gl { display: flex; justify-content: space-between; gap: var(--s3); font-size: 0.875rem; color: var(--muted); }
-.gl b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
-.sw { position: relative; display: inline-flex; align-items: center; justify-self: start; gap: var(--s3); min-height: 48px; padding: var(--s2) var(--s4); border-radius: 999px; border: 1px solid var(--accent); background: var(--bg); color: var(--ink); font: 600 1rem var(--body); cursor: pointer; }
-.sw.ctl { display: none; }
-.js-on.data-ok .sw.ctl { display: inline-flex; }
-.sw::after { content: ""; width: 44px; height: 24px; border-radius: 999px; background: var(--off); }
-.sw[aria-checked="true"] { background: var(--accent-soft); }
-.sw[aria-checked="true"]::after { background: var(--accent); }
-.sw i { position: absolute; right: 21px; top: 50%; width: 16px; height: 16px; margin-top: -8px; border-radius: 50%; background: var(--surface); transform: translateX(-20px); transition: transform .2s ease-out; z-index: 1; }
+.step .lead { font-size: var(--text-lead); color: var(--color-ink-2); max-width: 36ch; line-height: 1.4; }
+.glabel { margin-bottom: var(--space-xs); font-size: var(--text-sm); font-weight: 600; color: var(--color-muted); }
+.live { display: none; }
+.js-on.data-ok .live { display: block; }
+.js-on.data-ok .chips.live { display: flex; }
+.pick { font-size: var(--text-sm); color: var(--color-muted); font-weight: 600; }
+.big { display: grid; gap: var(--space-xs); }
+.big .fig { display: block; font: 800 clamp(3.25rem, 1.5rem + 7vw, 6rem)/1 var(--font-display); font-stretch: 118%; font-variant-numeric: tabular-nums lining-nums; letter-spacing: -0.03em; }
+.big .fig .pip { font-size: 1em; }
+.big .u { font-size: var(--text-sm); color: var(--color-muted); }
+.gauge { position: relative; height: 12px; background: var(--color-paper-3); }
+.gauge i { position: absolute; inset: 0; background: var(--color-ok); transform-origin: left center; transform: scaleX(var(--v, 0.78)); transition: transform var(--dur-long) var(--ease-out); }
+.gauge.over i { background: var(--color-signal-text); }
+.gauge.off i { background: var(--color-muted); }
+.gauge .tick { position: absolute; top: -6px; bottom: -6px; left: calc(var(--l, 0.87) * 100%); width: 2px; background: var(--color-ink); }
+.gl { display: flex; justify-content: space-between; gap: var(--space-sm); font-size: var(--text-sm); color: var(--color-muted); }
+.gl b { color: var(--color-ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.sw { position: relative; display: none; align-items: center; justify-self: start; gap: var(--space-sm); min-height: 48px; padding: var(--space-xs) var(--space-md); border: var(--rule-hair) solid var(--color-ink); border-radius: var(--radius-control); background: var(--color-paper); color: var(--color-ink); font: 600 var(--text-md)/1 var(--font-body); cursor: pointer; }
+.js-on.data-ok .sw.live { display: inline-flex; }
+.sw::after { content: ""; width: 44px; height: 24px; background: var(--color-muted); }
+.sw[aria-checked="true"]::after { background: var(--color-signal-text); }
+.sw i { position: absolute; right: 21px; top: calc(50% - var(--space-xs)); width: 16px; height: 16px; background: var(--color-paper); transform: translateX(-20px); transition: transform var(--dur-short) var(--ease-out); z-index: var(--z-base); }
 .sw[aria-checked="true"] i { transform: translateX(0); }
+.sw:hover { background: var(--color-paper-2); }
+.sw:active { transform: translateY(1px); }
 .save { font-weight: 600; }
-.bars { display: grid; gap: var(--s3); }
-.bars .row2 { display: grid; gap: var(--s1); font-size: 0.9375rem; }
-.bars .top { display: flex; justify-content: space-between; gap: var(--s3); }
-.bars .top b { font: 500 0.9375rem var(--mono); font-variant-numeric: tabular-nums; }
-.faults { display: none; gap: var(--s2); }
-.js-on.data-ok .faults { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.faults .chip-btn { border-radius: var(--r1); text-align: left; }
-.fault { display: grid; gap: var(--s3); background: var(--bg); border: 1px solid var(--line); border-radius: var(--r1); padding: var(--s4); }
-.fault + .fault { margin-top: var(--s3); }
+.bars { display: grid; gap: var(--space-sm); }
+.bars .row2 { display: grid; gap: var(--space-2xs); font-size: var(--text-sm); }
+.top { display: flex; justify-content: space-between; gap: var(--space-sm); }
+.top b { font: 600 var(--text-sm) var(--font-mono); font-variant-numeric: tabular-nums; }
+.faults.live { display: none; gap: var(--space-xs); }
+.js-on.data-ok .chips.faults { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.faults .chip-btn { text-align: left; justify-content: flex-start; }
+.fault { display: grid; gap: var(--space-sm); padding-top: var(--space-sm); border-top: var(--rule-heavy) solid var(--color-ink); }
+.fault + .fault { margin-top: var(--space-sm); }
 .js-on.data-ok .fault .fh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-.fault .fh { margin: 0; font: 600 1rem var(--body); }
-.score { display: grid; gap: var(--s2); margin: 0; font-size: 0.9375rem; }
-.score dt { color: var(--muted); font-size: 0.875rem; }
+.fault .fh { margin: 0; font-weight: 600; }
+.score { display: grid; gap: var(--space-xs); margin: 0; font-size: var(--text-sm); }
+.score dt { color: var(--color-muted); font-size: var(--text-xs); }
 .score dd { margin: 0; }
-.score code, .ledger code { font: 0.875rem var(--mono); overflow-wrap: anywhere; }
-.ba { display: grid; gap: var(--s3); grid-template-columns: minmax(0, 1fr); }
-@media (min-width: 420px) { .ba { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
-.ba div { display: grid; gap: var(--s1); font-size: 0.9375rem; }
-.ba b { font: 600 1.125rem var(--body); }
-.ba .after b { color: var(--accent); }
-.sub { display: grid; gap: var(--s3); background: var(--bg); border: 1px solid var(--line); border-radius: var(--r2); padding: var(--s4); }
-.sub h4 { margin: 0; font: 600 1.125rem var(--body); }
-.skin { --p: var(--sk-n-p); --pp: var(--sk-n-pp); --a: var(--sk-n-a); display: grid; gap: var(--s2); background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--a); border-radius: var(--r1); padding: var(--s4); }
-.skin[data-skin="bank-a"] { --p: var(--sk-b-p); --pp: var(--sk-b-pp); --a: var(--sk-b-a); }
-.skin .wm { font: 600 1.25rem var(--display); color: var(--p); }
-.skin .btn { min-height: 48px; background: var(--p); border-color: var(--p); justify-self: start; }
-.skin .btn:hover { filter: none; background: var(--pp); border-color: var(--pp); }
-.skin .btn:active { background: var(--pp); }
-.skin .fine { font-size: 0.875rem; color: var(--muted); }
-.states { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s3); }
-.ledger { display: grid; gap: var(--s2); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r1); padding: var(--s4); margin: 0; font-size: 0.9375rem; }
-.ledger div { display: flex; justify-content: space-between; gap: var(--s3); }
-.ledger dt { color: var(--muted); }
-.ledger dd { margin: 0; text-align: right; min-width: 0; }
-.ledger .head { font-weight: 600; }
-.ctas { display: grid; gap: var(--s4); grid-column: 1 / -1; }
+.ba { display: grid; gap: var(--space-sm); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 26rem) { .ba { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.ba div { display: grid; gap: var(--space-3xs); font-size: var(--text-sm); }
+.ba b { font: 600 var(--text-lg)/1.2 var(--font-mono); }
+.ba .after b { color: var(--color-signal-text); }
+.sub { display: grid; gap: var(--space-sm); padding: var(--space-md); background: var(--color-paper-2); }
+.sub h4 { font: 600 var(--text-lg)/1.2 var(--font-body); }
+.skin { --p: var(--sk-n-p); --pp: var(--sk-n-pp); --a: var(--sk-n-a); --on: var(--sk-n-on); display: grid; gap: var(--space-xs); padding: var(--space-md); background: var(--color-paper); border-top: 4px solid var(--p); }
+.skin[data-skin="bank-a"] { --p: var(--sk-b-p); --pp: var(--sk-b-pp); --a: var(--sk-b-a); --on: var(--sk-b-on); }
+.skin .wm { font: 800 var(--text-lg)/1.2 var(--font-display); font-stretch: 118%; color: var(--a); }
+.skin .btn { background: var(--p); border-color: var(--p); color: var(--on); justify-self: start; }
+.skin .btn:hover { background: var(--pp); border-color: var(--pp); }
+.skin .fine { font-size: var(--text-sm); color: var(--color-muted); }
+.states { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-sm); }
+.entry { display: grid; gap: var(--space-xs); margin: 0; padding: var(--space-md); background: var(--color-paper); font-size: var(--text-sm); border-top: var(--rule-heavy) solid var(--color-ink); }
+.entry div { display: flex; justify-content: space-between; gap: var(--space-sm); }
+.entry dt { color: var(--color-muted); }
+.entry dd { margin: 0; text-align: right; min-width: 0; }
+.entry .head { font-weight: 600; }
+.ctas { display: grid; gap: var(--space-lg); grid-column: 1 / -1; }
 .ctas .btns { margin: 0; }
-.nav2 { display: none; align-items: center; gap: var(--s2); min-width: 0; }
-.js-on .nav2 { display: flex; }
-.nav2 .btn { flex: 0 0 auto; min-height: 44px; padding: var(--s2) var(--s3); }
-.nav2 .btn:disabled { opacity: .45; cursor: default; }
-.story .qr { justify-self: start; }
-@media (prefers-reduced-motion: reduce) { .gauge i, .dot::before, .sw i { transition: none; } }
-
-/* site nav, shared by every page */
-.sitenav { position: sticky; top: 0; z-index: 20; background: var(--bg); border-bottom: 1px solid var(--line); }
-.sitenav ul { list-style: none; margin: 0 auto; padding: 0 12px; max-width: 1080px; display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
-.sitenav a { display: flex; align-items: center; min-height: 44px; padding: 0 12px; color: var(--muted); text-decoration: none; font: 500 0.9375rem/1 var(--body); white-space: nowrap; border-bottom: 2px solid transparent; }
-.sitenav a:hover { color: var(--ink); }
-.sitenav a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent, var(--primary)); }
-.sitenav a:focus-visible { outline: 3px solid var(--accent, var(--primary)); outline-offset: -3px; }
-</style></head>
-<body><nav class="sitenav" aria-label="Site"><ul><li><a href="index.html">Home</a></li><li><a href="portal.html">Client hedge</a></li><li><a href="desk.html#predeal">Decision API</a></li><li><a href="platform.html">Library &amp; platform</a></li><li><a href="kit.html" aria-current="page">Guided tour</a></li><li><a href="case-study.html">Case study</a></li></ul></nav>
-<script>(function(){var a=document.querySelector(".sitenav [aria-current]");if(a&&a.scrollIntoView)try{a.scrollIntoView({inline:"center",block:"nearest"})}catch(e){}})()</script>
-<main class="wrap">
-<header class="hero">
-  <div class="hero-main">
-    <h1>Guided tour</h1>
+.qr { display: grid; justify-items: start; gap: var(--space-xs); scroll-margin-top: var(--space-md); }
+#qr { background: var(--qr-bg); padding: var(--space-sm); line-height: 0; min-height: 200px; min-width: 200px; }
+#qr img, #qr canvas { max-width: 100%; height: auto; }
+#share { scroll-margin-top: calc(var(--nav-h) + var(--space-md)); }
+/* the seven lenses */
+.tabs { display: none; flex-wrap: wrap; gap: var(--space-xs); }
+.js-on .tabs { display: flex; }
+.tabs button { min-height: 44px; padding: 0 var(--space-md); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-control); background: transparent; color: var(--color-ink); font: 600 var(--text-sm)/1 var(--font-body); cursor: pointer; transition: border-color var(--dur-short) var(--ease-out), background-color var(--dur-short) var(--ease-out); }
+.tabs button:hover { border-color: var(--color-ink); }
+.tabs button:active { transform: translateY(1px); }
+.tabs button[aria-selected="true"] { background: var(--color-paper-3); border-color: var(--color-ink); box-shadow: inset 0 -3px 0 var(--color-accent); }
+.lens { display: grid; gap: var(--space-lg); margin-top: var(--space-md); padding-top: var(--space-md); border-top: var(--rule-heavy) solid var(--color-ink); grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 54rem) { .lens { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--gap-columns); } }
+.lens .l, .lens .r { display: grid; gap: var(--space-md); align-content: start; min-width: 0; }
+.lens h3 small { display: block; margin-top: var(--space-3xs); font: 400 var(--text-sm)/1.4 var(--font-body); letter-spacing: 0; color: var(--color-muted); }
+.proof { display: grid; gap: var(--space-2xs); padding: var(--space-md); background: var(--color-paper-2); border-top: var(--rule-heavy) solid var(--color-signal-text); }
+.proof b { font: 600 var(--text-lg)/1.3 var(--font-mono); overflow-wrap: anywhere; }
+.proof span { font-size: var(--text-sm); color: var(--color-muted); }
+.mini { display: grid; gap: var(--space-xs); margin-top: var(--space-xs); }
+.mini .row { display: grid; gap: var(--space-2xs); font-size: var(--text-sm); }
+svg.qbar { display: block; width: 100%; height: 12px; }
+.qbar .track { fill: var(--color-paper-3); }
+.qbar .fill { transform-box: fill-box; transform-origin: left center; }
+.qbar .fill.off { fill: var(--color-muted); } .qbar .fill.on { fill: var(--color-signal-text); }
+@keyframes grow { from { transform: scaleX(0); } }
+@media (prefers-reduced-motion: no-preference) { .qbar .fill { animation: grow var(--dur-long) var(--ease-out); } }
+.demo { color: var(--color-muted); }
+.demo strong { color: var(--color-ink); }
+.stats { display: grid; gap: var(--space-lg) var(--gap-columns); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 40rem) { .stats { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.stats p { max-width: 62ch; padding-top: var(--space-sm); border-top: var(--rule-heavy) solid var(--color-ink); }
+caption { text-align: left; padding: 0 0 var(--space-xs); }
+.callout { max-width: 72ch; font-size: var(--text-md); }
+@media (prefers-reduced-motion: reduce) { .gauge i, .dot::before, .sw i, .tabs button { transition: none; } }
+</style>
+<script src="assets/site.js"></script>
+</head>
+<body>
+<nav class="sitenav" aria-label="Site"><div class="sitenav-in">
+  <a class="mark" href="index.html" aria-label="Distributed Pricing Service, home"><span class="glyph" aria-hidden="true"></span><span class="wm">Pricing Service</span></a>
+  <ul><li><a href="index.html">Home</a></li><li class="g"><a href="portal.html">Client hedge</a></li><li><a href="desk.html#predeal">Decision API</a></li><li class="g"><a href="platform.html">Library &amp; platform</a></li><li class="g"><a href="kit.html" aria-current="page">Guided tour</a></li><li><a href="case-study.html">Case study</a></li></ul>
+  <button class="theme-btn" type="button">Dark</button>
+</div></nav>
+<main>
+<header class="hero"><div class="container hero-top">
+  <h1>Guided tour</h1>
+  <div class="hero-copy">
     <p class="lede">Check a client&rsquo;s credit line before the trade, in five steps.</p>
-    <div class="hero-start">
+    <div class="btns">
       <a class="btn" id="walk" href="#story">Walk me through it</a>
-      <nav class="pills" aria-label="Other ways in">
-        <a class="pill" href="portal.html">Price a hedge</a>
-        <a class="pill" href="desk.html#predeal">Decision API</a>
-        <a class="pill" href="#reliability">Reliability</a>
-        <a class="pill" href="#share" id="sharelink">Share (QR)</a>
-      </nav>
+      <a class="link" href="portal.html">Price a hedge</a>
+      <a class="link" href="desk.html#predeal">Decision API</a>
+      <a class="link" href="#reliability">Reliability</a>
+      <a class="link" href="#share" id="sharelink">Share (QR)</a>
     </div>
   </div>
-</header>
+</div></header>
 
-<section id="story" aria-labelledby="sth" class="stack">
+
+<section class="sec" id="story" aria-labelledby="sth"><div class="container">
   <h2 id="sth" tabindex="-1">Walk me through it</h2>
   <div class="story">
-    <div class="nav2"><button type="button" class="btn alt" id="back">Back</button><div class="dots" id="dots" role="group" aria-label="Steps"></div><button type="button" class="btn" id="next">Next</button></div>
+    <div class="nav2"><button type="button" class="btn ghost" id="back">Back</button><div class="dots" id="dots" role="group" aria-label="Steps"></div><button type="button" class="btn" id="next">Next</button></div>
     <p class="sr" id="stepsay" aria-live="polite"></p>
     <div class="steps" id="steps">
 
@@ -241,17 +171,16 @@ footer a { display: inline-flex; align-items: center; min-height: 44px; }
       <div class="sl">
         <h3 id="h1s" tabindex="-1">A client calls.</h3>
         <p class="lead">A treasurer wants to sell USD forward, to fix what receivables are worth in CAD.</p>
-        <div><p class="glabel" id="gn">Amount in USD</p><div class="ctl row" id="cn" role="group" aria-labelledby="gn"></div></div>
-        <div><p class="glabel" id="gt">Tenor, how long</p><div class="ctl row" id="ct" role="group" aria-labelledby="gt"></div></div>
+        <div><p class="glabel" id="gn">Amount in USD</p><div class="chips live" id="cn" role="group" aria-labelledby="gn"></div></div>
+        <div><p class="glabel" id="gt">Tenor, how long</p><div class="chips live" id="ct" role="group" aria-labelledby="gt"></div></div>
       </div>
-      <div class="sr2 big"><p class="pick" id="pick">USD 5M for 5 years</p><output class="fig" id="fwd" for="cn ct">1.2964</output><span class="u">CAD per USD, the forward rate</span></div>
+      <div class="sr2 big"><p class="pick" id="pick">USD 5M for 5 years</p><output class="fig" id="fwd" for="cn ct"><span class="pip"><span class="sr">1.2964</span><span aria-hidden="true"><span class="pf">1.29</span><span class="pp">64</span></span></span></output><span class="u">CAD per USD, the forward rate</span></div>
     </article>
 
     <article class="step" id="s2" aria-labelledby="h2s">
       <div class="sl">
         <h3 id="h2s" tabindex="-1">The bank decides in a second.</h3>
-        <span class="verdict" id="v2">Approve</span>
-        <p class="lead" id="v2why">Within the credit line, so no collateral is needed.</p>
+        <div class="decision" id="v2box" data-v="approve"><div class="stub"><h4 class="dword" id="v2">Approve</h4></div><div class="dbody"><p class="lead" id="v2why">Within the credit line, so no collateral is needed.</p></div></div>
         <p class="note">Credit line: the most risk the bank accepts on this client.</p>
       </div>
       <div class="sr2">
@@ -266,7 +195,7 @@ footer a { display: inline-flex; align-items: center; min-height: 44px; }
       <div class="sl">
         <h3 id="h3s" tabindex="-1">Collateral changes the price.</h3>
         <p class="lead">With a CSA (collateral agreement) the client posts security, so the bank charges less for default risk.</p>
-        <button type="button" class="sw ctl" id="csa" role="switch" aria-checked="false">CSA <span id="csaw">off</span><i></i></button>
+        <button type="button" class="sw live" id="csa" role="switch" aria-checked="false">CSA <span id="csaw">off</span><i></i></button>
         <p class="save" id="save">With a CSA: 0.7 bp a year, saves 87%.</p>
       </div>
       <div class="sr2">
@@ -282,7 +211,7 @@ footer a { display: inline-flex; align-items: center; min-height: 44px; }
       <div class="sl">
         <h3 id="h4s" tabindex="-1">It keeps answering when things break.</h3>
         <div class="big"><span class="fig">99.992%</span><span class="u">of 76,481 prices served in a 10-minute chaos run</span></div>
-        <div class="faults" id="faults" role="group" aria-label="Pick a fault"></div>
+        <div class="chips live faults" id="faults" role="group" aria-label="Pick a fault"></div>
       </div>
       <div class="sr2" id="fp" aria-live="polite">
         <div class="fault" data-f="worker_killed"><p class="fh">Worker killed mid-task</p><dl class="score"><div><dt>Proven</dt><dd>another worker reclaims it; book prices identical to the clean run</dd></div><div><dt>Recovered in</dt><dd>1.0 s</dd></div><div><dt>Detected by</dt><dd><code>worker_reclaimed_total</code></dd></div><div><dt>Routed to</dt><dd>core, alert <code>TasksStuckPending</code></dd></div></dl></div>
@@ -298,7 +227,7 @@ footer a { display: inline-flex; align-items: center; min-height: 44px; }
         <p class="lead">Same engine in your colors. Every fix needs a second person.</p>
         <div class="sub">
           <h4>Re-skin the client screen</h4>
-          <div class="ctl row" id="skins" role="group" aria-label="Theme"></div>
+          <div class="chips live" id="skins" role="group" aria-label="Theme"></div>
           <div class="skin" id="skin" data-skin="neutral"><span class="wm" id="skwm">Hedge portal</span><p id="sktag">Sell USD forward and see what the bank charges for your credit.</p><a class="btn" href="portal.html">Get a quote</a><p class="fine" id="skfine">Independent project on synthetic data. Not a bank, not an offer, not advice.</p></div>
         </div>
       </div>
@@ -306,18 +235,18 @@ footer a { display: inline-flex; align-items: center; min-height: 44px; }
         <div class="sub">
           <h4>Fix with approval</h4>
           <p class="note">Illustration of the runner&rsquo;s ledger entry. The real runner is a command line tool (docs/REMEDIATION.md).</p>
-          <div class="ctl row" id="rstates" role="group" aria-label="Ledger state"></div>
+          <div class="chips live" id="rstates" role="group" aria-label="Ledger state"></div>
           <ol class="states" id="rl">
-            <li><dl class="ledger" data-s="0"><div class="head"><dt>Proposed</dt><dd>awaiting approval</dd></div><div><dt>Action</dt><dd>retry with the same key</dd></div><div><dt>Operator</dt><dd>op</dd></div><div><dt>Approver</dt><dd>none yet</dd></div><div><dt>Evidence</dt><dd>nothing run</dd></div></dl></li>
-            <li><dl class="ledger" data-s="1"><div class="head"><dt>Approved</dt><dd>by a second person</dd></div><div><dt>Operator</dt><dd>op</dd></div><div><dt>Approver</dt><dd>alice, not the operator</dd></div><div><dt>Evidence</dt><dd>replay pending</dd></div></dl></li>
-            <li><dl class="ledger" data-s="2"><div class="head"><dt>Verified</dt><dd>incident replay passed</dd></div><div><dt>Evidence</dt><dd>passed in 2.7 s</dd></div><div><dt>Hash</dt><dd><code>21684069&hellip;</code></dd></div><div><dt>Previous</dt><dd><code>ebccb0e5&hellip;</code></dd></div></dl></li>
+            <li><dl class="entry" data-s="0"><div class="head"><dt>Proposed</dt><dd>awaiting approval</dd></div><div><dt>Action</dt><dd>retry with the same key</dd></div><div><dt>Operator</dt><dd>op</dd></div><div><dt>Approver</dt><dd>none yet</dd></div><div><dt>Evidence</dt><dd>nothing run</dd></div></dl></li>
+            <li><dl class="entry" data-s="1"><div class="head"><dt>Approved</dt><dd>by a second person</dd></div><div><dt>Operator</dt><dd>op</dd></div><div><dt>Approver</dt><dd>alice, not the operator</dd></div><div><dt>Evidence</dt><dd>replay pending</dd></div></dl></li>
+            <li><dl class="entry" data-s="2"><div class="head"><dt>Verified</dt><dd>incident replay passed</dd></div><div><dt>Evidence</dt><dd>passed in 2.7 s</dd></div><div><dt>Hash</dt><dd><code>21684069&hellip;</code></dd></div><div><dt>Previous</dt><dd><code>ebccb0e5&hellip;</code></dd></div></dl></li>
           </ol>
         </div>
       </div>
       <div class="ctas">
         <nav class="btns" aria-label="Next actions">
           <a class="btn" id="cta1" href="portal.html?n=5000000&amp;t=5&amp;csa=0">Price a hedge</a>
-          <a class="btn alt" href="desk.html#predeal">See the decision API</a>
+          <a class="btn ghost" href="desk.html#predeal">See the decision API</a>
         </nav>
   <div class="qr" id="share"><div id="qr" role="img" aria-label="QR code linking to the site front door"></div>
     <p class="note">Scan to open the site on your phone</p><code>https://sukhmanaulakh18.github.io/distributed-pricing-service/</code></div>
@@ -326,9 +255,9 @@ footer a { display: inline-flex; align-items: center; min-height: 44px; }
 
     </div>
   </div>
-</section>
+</div></section>
 
-<section aria-labelledby="lh" class="stack">
+<section class="sec" aria-labelledby="lh"><div class="container">
   <h2 id="lh">Seven lenses</h2>
   <p class="note">Pick the one that matches who you are talking to. Each has a Show me button that opens the exact demo.</p>
   <div class="tabs" role="tablist" aria-label="Audience lenses"><button type=button role=tab id=t-business aria-controls=p-business aria-selected=false tabindex=-1>Business</button><button type=button role=tab id=t-quant aria-controls=p-quant aria-selected=false tabindex=-1>Quant</button><button type=button role=tab id=t-developer aria-controls=p-developer aria-selected=false tabindex=-1>Developer</button><button type=button role=tab id=t-sre aria-controls=p-sre aria-selected=false tabindex=-1>Infrastructure &amp; SRE</button><button type=button role=tab id=t-data aria-controls=p-data aria-selected=false tabindex=-1>Data</button><button type=button role=tab id=t-cyber aria-controls=p-cyber aria-selected=false tabindex=-1>Cyber &amp; controls</button><button type=button role=tab id=t-ai aria-controls=p-ai aria-selected=false tabindex=-1>AI &amp; agentic</button></div>
@@ -341,9 +270,9 @@ footer a { display: inline-flex; align-items: center; min-height: 44px; }
   <section class=lens id=p-cyber role=tabpanel aria-labelledby=t-cyber><div class=l><h3>Cyber &amp; controls <small>Supply chain and platform</small></h3><p>Images are scanned before they are pushed, signed, and run with least privilege.</p><p class=demo><strong>30-second demo.</strong> Open the repo and read the operations guide on release and network policy.</p></div><div class=r><div class=proof><b>Scan before push</b><span>SBOM and cosign signatures, default-deny NetworkPolicies, non-root pods (README, docs/OPERATIONS.md)</span></div><div class=acts><a class=btn href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/OPERATIONS.md#release">Show me</a><a class=link href="https://github.com/SukhmanAulakh18/distributed-pricing-service">Open repo</a></div></div></section>
   <section class=lens id=p-ai role=tabpanel aria-labelledby=t-ai><div class=l><h3>AI &amp; agentic <small>Guarded automation</small></h3><p>A guarded remediation runner: allowlisted actions, human approval, evidence by replaying the incident, a hash-chained audit ledger. No LLM decisions.</p><p class=demo><strong>30-second demo.</strong> Open the runner&rsquo;s page: a proposed fix waits for a second person&rsquo;s approval, then is proven by replaying the incident.</p></div><div class=r><div class=proof><b>Approved by a second person, proven by replay</b><span>allowlisted actions only; the approver cannot be the operator; hash-chained audit ledger (docs/REMEDIATION.md)</span></div><div class=acts><a class=btn href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/REMEDIATION.md">Show me</a></div></div></section>
   </div>
-</section>
+</div></section>
 
-<section id="reliability" aria-labelledby="rh" class="stack">
+<section class="sec" id="reliability" aria-labelledby="rh"><div class="container">
   <h2 id="rh">Reliability proof</h2>
   <div class="stats">
     <p><strong>Chaos run:</strong> 10 minutes, 11 faults (API pods, workers, a database node, Redis, a whole node): <strong>99.992%</strong> of 76,481 single prices served; 29 of 30 books complete with 0 failed trades out of 58,000.</p>
@@ -351,12 +280,13 @@ footer a { display: inline-flex; align-items: center; min-height: 44px; }
   </div>
   <div class="table-wrap"><table><caption class="note">Scenario, recovered, detected by, routed to</caption>
   <thead><tr><th scope="col">Scenario</th><th scope="col">Recovered</th><th scope="col">Detected</th><th scope="col">Owner</th></tr></thead><tbody><tr><td>Client retries after a reset</td><td class=num>yes, 2.2 s</td><td>jobs_total</td><td>core</td></tr><tr><td>Worker killed mid exposure run</td><td class=num>yes, 0.8 s</td><td>jobs_total</td><td>core</td></tr><tr><td>Poisoned messages in the stream</td><td class=num>yes, 1.0 s</td><td>worker_tasks_total</td><td>quant</td></tr><tr><td>Redis outage mid book</td><td class=num>yes, 2.2 s</td><td>worker_tasks_total</td><td>platform</td></tr><tr><td>Worker killed holding a task</td><td class=num>yes, 1.0 s</td><td>worker_reclaimed_total</td><td>core</td></tr><tr><td>Duplicate delivery after reclaim</td><td class=num>yes, 1.1 s</td><td>worker_reclaimed_total</td><td>core</td></tr></tbody></table></div>
-</section>
-
 <p class="callout"><strong>Honest limits.</strong> Synthetic data, textbook models, laptop measurements. Not production.</p>
+</div></section>
 
-<footer><a href="case-study.html">Read the case study</a><a href="https://github.com/SukhmanAulakh18/distributed-pricing-service">Source repository</a></footer>
 </main>
+<footer class="foot"><div class="container">
+  <nav aria-label="Links"><a href="case-study.html">Read the case study</a><a href="https://github.com/SukhmanAulakh18/distributed-pricing-service">Source repository</a></nav>
+</div></footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 (function () {
@@ -466,9 +396,10 @@ footer a { display: inline-flex; align-items: center; min-height: 44px; }
     function render() {
       var c = K.cells[key()];
       $('pick').textContent = 'USD ' + (st.n / 1e6) + 'M for ' + st.t + (st.t === 1 ? ' year' : ' years');
-      $('fwd').textContent = c.forward_rate.toFixed(4);
+      var fs = c.forward_rate.toFixed(4), fk = fs.length - 2;
+      $('fwd').innerHTML = '<span class="pip"><span class="sr">' + fs + '</span><span aria-hidden="true"><span class="pf">' + fs.slice(0, fk) + '</span><span class="pp">' + fs.slice(fk) + '</span></span></span>';
       var v = VERDICT[c.verdict] || VERDICT.refer_to_credit;
-      $('v2').textContent = v[0]; $('v2').className = 'verdict' + (v[2] ? ' warn' : ''); $('v2why').textContent = v[1];
+      $('v2').textContent = v[0]; $('v2box').setAttribute('data-v', VERDICT[c.verdict] ? c.verdict : 'refer_to_credit'); $('v2why').textContent = v[1];
       var scale = Math.max(c.peak_pfe, K.limit_cad) * 1.15, g = $('gauge');
       g.style.setProperty('--v', (c.peak_pfe / scale).toFixed(3)); g.style.setProperty('--l', (K.limit_cad / scale).toFixed(3));
       g.className = 'gauge' + (c.peak_pfe > K.limit_cad ? ' over' : '');
@@ -527,7 +458,7 @@ footer a { display: inline-flex; align-items: center; min-height: 44px; }
     var off = d.cells['5000000|5.0|off'], on = d.cells['5000000|5.0|on'];
     var a = off.uncollateralized_running_bps, b = on.cva_charge_running_bps;
     function row(name, v, cls) {
-      return '<div class="row"><div class="top"><span>' + name + '</span><b>' + v.toFixed(1) + ' bp</b></div><svg class="bar" focusable="false"><rect class="track" width="100%" height="12" rx="3"/><rect class="fill ' + cls + '" width="100%" height="12" rx="3" style="transform:scaleX(' + Math.max(v / a, 0.01).toFixed(3) + ')"/></svg></div>';
+      return '<div class="row"><div class="top"><span>' + name + '</span><b>' + v.toFixed(1) + ' bp</b></div><svg class="qbar" focusable="false"><rect class="track" width="100%" height="12"/><rect class="fill ' + cls + '" width="100%" height="12" style="transform:scaleX(' + Math.max(v / a, 0.01).toFixed(3) + ')"/></svg></div>';
     }
     document.getElementById('mini').innerHTML = row('No CSA', a, 'off') + row('With a CSA', b, 'on');
   }).catch(function () {});

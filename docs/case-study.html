@@ -14,170 +14,104 @@
 <title>Distributed Pricing Service</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Sometype+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="assets/site.css">
 <style>
-/* Layout: an engineering case study. Sticky section nav; one reading column for
-   the argument, full-width diagrams and charts for the mechanism and evidence. */
-:root {
-  --bg: #f5f6f3; --surface: #ffffff; --ink: #15191d; --muted: #59626b; --line: #dcdfd8;
-  --accent: #0d6b62; --accent-soft: #e2efec; --warn: #a15c07; --warn-soft: #f6ead9; --bad: #c0392b; --good: #1d7340; --code-bg: #eef0eb;
-  --s1: #2a78d6; --s2: #eb6834;
-  --display: "Newsreader", "Iowan Old Style", Georgia, serif;
-  --body: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  color-scheme: light;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0e1113; --surface: #161a1d; --ink: #e7eae7; --muted: #9aa3aa; --line: #2a3035;
-    --accent: #5cc0b4; --accent-soft: #15302d; --warn: #e3a34d; --warn-soft: #33270f; --bad: #f07167; --good: #6cc48c; --code-bg: #1d2226;
-    --s1: #3987e5; --s2: #d95926; color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #0e1113; --surface: #161a1d; --ink: #e7eae7; --muted: #9aa3aa; --line: #2a3035;
-  --accent: #5cc0b4; --accent-soft: #15302d; --warn: #e3a34d; --warn-soft: #33270f; --bad: #f07167; --good: #6cc48c; --code-bg: #1d2226;
-  --s1: #3987e5; --s2: #d95926; color-scheme: dark;
-}
-* { box-sizing: border-box; }
-[hidden] { display: none !important; }
-html { scroll-behavior: smooth; scroll-padding-top: 112px; }
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
-body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 var(--body); }
-.wrap { max-width: 1080px; margin: 0 auto; padding-inline: 20px; padding-block: 36px 64px; }
-nav.top { position: sticky; top: 44px; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
-nav.top .in { max-width: 1080px; margin: 0 auto; padding-inline: 20px; display: flex; gap: 18px; align-items: center; overflow-x: auto; white-space: nowrap; height: 48px; font-size: 0.88rem; }
-nav.top b { font-family: var(--display); font-size: 1.05rem; margin-right: 6px; }
-nav.top a { color: var(--muted); text-decoration: none; }
-nav.top a:hover { color: var(--accent); }
-h1, h2, h3 { font-family: var(--display); font-weight: 600; line-height: 1.15; text-wrap: balance; margin: 0; }
-h1 { font-size: clamp(2.2rem, 5vw, 3.4rem); letter-spacing: -0.01em; }
-h2 { font-size: 1.9rem; margin-bottom: 6px; }
-h3 { font-size: 1.25rem; }
-section h3 { margin: 22px 0 0; }
-p { margin: 0; max-width: 70ch; }
-a { color: var(--accent); }
-code { font-family: var(--mono); font-size: 0.86em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
-.eyebrow { font: 500 0.78rem/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
-.lede { font-size: 1.15rem; color: var(--muted); margin-top: 14px; max-width: 72ch; }
-.meta { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 18px; font-size: 0.92rem; color: var(--muted); }
-.meta a { font-weight: 500; }
-header { display: grid; gap: 4px; padding-bottom: 28px; border-bottom: 1px solid var(--line); }
-section { padding-block: 44px; border-bottom: 1px solid var(--line); display: grid; gap: 18px; }
-section:last-of-type { border-bottom: 0; }
-.ledger { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; margin-top: 28px; }
-.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; display: grid; gap: 4px; align-content: start; }
-.stat b { font: 500 1.6rem/1.1 var(--mono); font-variant-numeric: tabular-nums; color: var(--ink); }
-.stat span { font-size: 0.9rem; color: var(--muted); }
-.stat em { font-style: normal; color: var(--accent); font-weight: 600; }
-.cta { display: inline-flex; align-items: center; gap: 8px; margin-top: 20px; padding: 12px 22px; min-height: 48px; border-radius: 8px; background: var(--accent); color: #fff; font: 600 1rem var(--body); text-decoration: none; justify-self: start; }
-.cta:hover { filter: brightness(1.08); }
-:root[data-theme="dark"] .cta { color: #0e1113; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .cta { color: #0e1113; } }
-.biz { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 24px; }
-.biz .stat { border-color: var(--accent); }
-.biz .stat b { color: var(--accent); }
-.biz-label { margin-top: 24px; font: 500 0.78rem/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
-.stat .fix { font-size: 0.82rem; }
-figure { margin: 0; display: grid; gap: 8px; min-width: 0; }
-figure img { width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
-figcaption { font-size: 0.88rem; color: var(--muted); max-width: 82ch; }
-.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px; overflow-x: auto; }
-.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; align-items: start; }
+/* Hallmark · shape: Long Document on the Split Ticket system (a ruled reading column, full-width diagrams and evidence in console panels) · genre: modern-minimal · theme: custom (by request), docs/assets/DESIGN.md · signature: the pip numeral on the availability figure, ticks between sections · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 · weakest: S, a case study is words and evidence, so the diagrams and the replay carry the images; the prose holds the system's 65ch reading measure */
+/* Hallmark · dismissed 46a · 99.9% is the objective written in docs/SLO.md, not a claimed result; the measured availability is the generated figure above */
+/* Hallmark · dismissed 58 · answered: a long-form case study; the abstract, the tables and the evidence figures are the content the reader came for */
+.doc-head { padding-top: var(--space-xl); padding-bottom: var(--space-lg); }
+.doc-head > .container { display: grid; gap: var(--space-md); justify-items: start; }
+.doc-head .lede { max-width: 62ch; font-size: var(--text-lead); }
+.doc-head .btn { margin-top: var(--space-xs); }
+.meta { display: flex; flex-wrap: wrap; gap: var(--space-2xs) var(--space-lg); font-size: var(--text-sm); }
+.meta span { color: var(--color-muted); display: inline-flex; align-items: center; min-height: 44px; }
+.meta a { display: inline-flex; align-items: center; min-height: 44px; font-weight: 600; }
+h2.lab { margin-top: var(--space-lg); font: 600 var(--text-sm)/1.3 var(--font-body); letter-spacing: 0; color: var(--color-muted); max-width: none; }
+.biz, .ledger { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: var(--space-lg) var(--space-xl); width: 100%; margin: 0; padding: 0; }
+.stat { display: grid; gap: var(--space-xs); align-content: start; min-width: 0; padding-top: var(--space-md); border-top: var(--rule-heavy) solid var(--color-ink); }
+.biz .stat { border-top-color: var(--color-accent); }
+.stat b { font: 800 var(--text-2xl)/1.05 var(--font-display); font-stretch: 118%; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; overflow-wrap: break-word; }
+.stat b .pip { font-size: 1em; }
+.stat span { font-size: var(--text-sm); color: var(--color-muted); }
+.stat em { font-style: normal; color: var(--color-ink); font-weight: 600; }
+.stat .fix { font-size: var(--text-xs); }
+.doc > .container { gap: var(--space-md); }
+.doc h2 { max-width: 28ch; }
+.doc h3 { margin-top: var(--space-lg); padding-top: var(--space-md); border-top: var(--rule-heavy) solid var(--color-ink); max-width: 48ch; }
+.doc h3 + p, .doc h2 + p { margin-top: calc(var(--space-xs) * -1); }
+.doc ul, .doc ol { margin: 0; }
+figure { margin: 0; display: grid; gap: var(--space-xs); min-width: 0; }
+figure img { width: 100%; height: auto; border: var(--rule-hair) solid var(--color-rule); background: var(--color-paper-2); }
+figcaption { font-size: var(--text-sm); color: var(--color-muted); max-width: 72ch; }
+.panel { display: grid; gap: var(--space-sm); min-width: 0; padding: var(--space-md); overflow-x: auto; border-top: var(--rule-heavy) solid var(--color-accent); }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: var(--space-lg) var(--gap-columns); align-items: start; }
 .two > * { min-width: 0; }
-.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
-table { border-collapse: collapse; width: 100%; font-size: 0.93rem; }
-th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
-th { font: 500 0.76rem/1.3 var(--mono); text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
-tr:last-child td { border-bottom: 0; }
-td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
-ul.tight, ol.tight { margin: 0; padding-left: 20px; display: grid; gap: 6px; max-width: 74ch; }
-.callout { background: var(--accent-soft); border-radius: 8px; padding: 16px 18px; max-width: 82ch; display: grid; gap: 8px; }
-.callout.warn { background: var(--warn-soft); }
-pre.cmd { background: var(--code-bg); border-radius: 8px; padding: 14px 16px; overflow-x: auto; margin: 0; font: 0.88rem/1.6 var(--mono); }
-footer { padding-top: 28px; font-size: 0.9rem; color: var(--muted); display: grid; gap: 6px; }
-a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-
-/* Diagrams */
-svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(--ink); font-family: var(--body); }
-.d .box { fill: var(--surface); stroke: var(--muted); stroke-width: 1.2; }
-.d .soft { fill: var(--bg); stroke: var(--line); stroke-width: 1.2; }
-.d .hl { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.4; }
-.d .wbox { fill: var(--warn-soft); stroke: var(--warn); stroke-width: 1.2; }
-.d .ghost { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 4 3; }
-.d .frame { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 6 4; }
-.d .t { font-size: 14px; font-weight: 600; fill: var(--ink); }
-.d .s { font-size: 12px; fill: var(--muted); }
-.d .m { font: 12px var(--mono); fill: var(--ink); }
-.d .lbl { font: 11.5px var(--mono); fill: var(--muted); }
-.d .lbl.acc { fill: var(--accent); }
-.d .lbl.wrn { fill: var(--warn); }
-.d .big { font: 600 22px var(--mono); fill: var(--ink); }
-.d .w { stroke: var(--ink); stroke-width: 1.4; fill: none; }
-.d .w.acc { stroke: var(--accent); }
-.d .w.wrn { stroke: var(--warn); }
+ul.tight, ol.tight { padding-left: var(--space-lg); display: grid; gap: var(--space-xs); max-width: 70ch; }
+.callout.warn { border-top-color: var(--color-fault); }
+pre.cmd { padding: var(--space-md) var(--space-lg); background: var(--color-console); color: var(--color-console-ink); color-scheme: dark; }
+.findings { columns: 2 18rem; column-gap: var(--gap-columns); margin: 0; padding-left: var(--space-lg); font-size: var(--text-sm); }
+.findings li { break-inside: avoid; margin-bottom: var(--space-xs); }
+/* diagrams, drawn in the console's tokens */
+svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(--color-ink); font-family: var(--font-body); }
+.d .box { fill: var(--color-paper-2); stroke: var(--color-muted); stroke-width: 1.2; }
+.d .soft { fill: var(--color-paper); stroke: var(--color-rule); stroke-width: 1.2; }
+.d .hl { fill: var(--color-paper-3); stroke: var(--color-signal-text); stroke-width: 1.4; }
+.d .wbox { fill: var(--color-paper-3); stroke: var(--color-fault); stroke-width: 1.2; }
+.d .ghost { fill: none; stroke: var(--color-muted); stroke-width: 1.2; stroke-dasharray: 4 3; }
+.d .frame { fill: none; stroke: var(--color-muted); stroke-width: 1.2; stroke-dasharray: 6 4; }
+.d .t { font-size: 14px; font-weight: 600; fill: var(--color-ink); }
+.d .s { font-size: 12px; fill: var(--color-muted); }
+.d .m { font: 12px var(--font-mono); fill: var(--color-ink); }
+.d .lbl { font: 11.5px var(--font-mono); fill: var(--color-muted); }
+.d .lbl.acc { fill: var(--color-signal-text); }
+.d .lbl.wrn { fill: var(--color-fault); }
+.d .big { font: 600 22px var(--font-mono); fill: var(--color-ink); }
+.d .w { stroke: var(--color-ink); stroke-width: 1.4; fill: none; }
+.d .w.acc { stroke: var(--color-signal-text); }
+.d .w.wrn { stroke: var(--color-fault); }
 .d .w.dash { stroke-dasharray: 5 4; }
-.d .life { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 4; }
-.d .tick { stroke: var(--muted); stroke-width: 1; }
-.d .band { fill: var(--warn-soft); }
-.d .arrow { fill: var(--ink); }
-.d .arrow.acc { fill: var(--accent); }
-.d .arrow.wrn { fill: var(--warn); }
-
-/* Charts */
-.chart-head { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; justify-content: space-between; }
-.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
-.seg button { font: 500 0.82rem var(--body); padding: 6px 12px; border: 0; background: var(--surface); color: var(--muted); cursor: pointer; }
-.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
-.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.84rem; color: var(--muted); }
-.legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+.d .life { stroke: var(--color-muted); stroke-width: 1; stroke-dasharray: 3 4; }
+.d .tick { stroke: var(--color-muted); stroke-width: 1; }
+.d .band { fill: var(--color-paper-2); }
+.d .arrow { fill: var(--color-ink); }
+.d .arrow.acc { fill: var(--color-signal-text); }
+.d .arrow.wrn { fill: var(--color-fault); }
+/* charts */
+.chart-head { display: flex; flex-wrap: wrap; gap: var(--space-xs) var(--space-lg); align-items: center; justify-content: space-between; }
+.legend { display: flex; flex-wrap: wrap; gap: var(--space-2xs) var(--space-md); font-size: var(--text-sm); color: var(--color-muted); }
+.legend i { display: inline-block; width: 14px; height: 3px; vertical-align: middle; margin-right: var(--space-xs); }
 .chart { position: relative; }
-.chart svg { width: 100%; height: auto; display: block; font-family: var(--body); }
-.chart .grid { stroke: var(--line); stroke-width: 1; }
-.chart .axis { font: 11px var(--mono); fill: var(--muted); }
-.chart .fault { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
-.chart .fault-n { font: 600 10.5px var(--mono); fill: var(--ink); }
-.chart .fault-dot { fill: var(--surface); stroke: var(--muted); }
-.chart .cross { stroke: var(--ink); stroke-width: 1; opacity: 0.5; }
-.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font-size: 0.8rem; line-height: 1.45; box-shadow: 0 4px 14px rgba(0,0,0,0.12); min-width: 170px; }
-.tip b { font-family: var(--mono); font-weight: 500; }
-.faults { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 4px 18px; font-size: 0.84rem; color: var(--muted); margin: 0; padding: 0; list-style: none; }
-.faults b { font-family: var(--mono); color: var(--ink); font-weight: 500; margin-right: 6px; }
-.findings { columns: 2 300px; column-gap: 28px; margin: 0; padding-left: 22px; font-size: 0.93rem; }
-.findings li { break-inside: avoid; margin-bottom: 6px; }
+.chart svg { width: 100%; height: auto; display: block; font-family: var(--font-body); }
+.chart .grid { stroke: var(--color-rule); stroke-width: 1; }
+.chart .axis { font: 11px var(--font-mono); fill: var(--color-muted); }
+.chart .fault { stroke: var(--color-muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.chart .fault-n { font: 600 10.5px var(--font-mono); fill: var(--color-ink); }
+.chart .fault-dot { fill: var(--color-paper-2); stroke: var(--color-muted); }
+.chart .cross { stroke: var(--color-ink); stroke-width: 1; opacity: 0.5; }
+.tip { position: absolute; pointer-events: none; background: var(--color-paper-3); color: var(--color-ink); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-control); padding: var(--space-xs) var(--space-sm); font-size: var(--text-xs); line-height: 1.45; min-width: 170px; z-index: var(--z-raised); }
+.tip b { font-family: var(--font-mono); font-weight: 600; }
+.faults { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: var(--space-2xs) var(--space-lg); font-size: var(--text-sm); color: var(--color-muted); margin: 0; padding: 0; list-style: none; }
+.faults b { font-family: var(--font-mono); color: var(--color-ink); font-weight: 600; margin-right: var(--space-xs); }
 
-/* site nav, shared by every page */
-.sitenav { position: sticky; top: 0; z-index: 20; background: var(--bg); border-bottom: 1px solid var(--line); }
-.sitenav ul { list-style: none; margin: 0 auto; padding: 0 12px; max-width: 1080px; display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
-.sitenav a { display: flex; align-items: center; min-height: 44px; padding: 0 12px; color: var(--muted); text-decoration: none; font: 500 0.9375rem/1 var(--body); white-space: nowrap; border-bottom: 2px solid transparent; }
-.sitenav a:hover { color: var(--ink); }
-.sitenav a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent, var(--primary)); }
-.sitenav a:focus-visible { outline: 3px solid var(--accent, var(--primary)); outline-offset: -3px; }
 </style>
-
-<nav class="sitenav" aria-label="Site"><ul><li><a href="index.html">Home</a></li><li><a href="portal.html">Client hedge</a></li><li><a href="desk.html#predeal">Decision API</a></li><li><a href="platform.html">Library &amp; platform</a></li><li><a href="kit.html">Guided tour</a></li><li><a href="case-study.html" aria-current="page">Case study</a></li></ul></nav>
-<script>(function(){var a=document.querySelector(".sitenav [aria-current]");if(a&&a.scrollIntoView)try{a.scrollIntoView({inline:"center",block:"nearest"})}catch(e){}})()</script>
-<nav class="top" aria-label="Sections"><div class="in">
-  <b>Pricing Service</b>
-  <a href="#design">System design</a>
-  <a href="#flows">Request flows</a>
-  <a href="#quant">Financial engineering</a>
-  <a href="#kubernetes">Kubernetes &amp; Rancher</a>
-  <a href="#reliability">Reliability</a>
-  <a href="#sre">SRE &amp; observability</a>
-  <a href="#performance">Performance</a>
-  <a href="#engineering">C++ &amp; pybind11</a>
-  <a href="#run">Run it</a>
+<script src="assets/site.js"></script>
+<nav class="sitenav" aria-label="Site"><div class="sitenav-in">
+  <a class="mark" href="index.html" aria-label="Distributed Pricing Service, home"><span class="glyph" aria-hidden="true"></span><span class="wm">Pricing Service</span></a>
+  <ul><li><a href="index.html">Home</a></li><li class="g"><a href="portal.html">Client hedge</a></li><li><a href="desk.html#predeal">Decision API</a></li><li class="g"><a href="platform.html">Library &amp; platform</a></li><li class="g"><a href="kit.html">Guided tour</a></li><li><a href="case-study.html" aria-current="page">Case study</a></li></ul>
+  <button class="theme-btn" type="button">Dark</button>
 </div></nav>
-
-<div class="wrap">
-<header>
-  <span class="eyebrow">Engineering case study · distributed systems · SRE</span>
-  <h1>Distributed Pricing Service</h1>
+<nav class="subnav" aria-label="Sections"><ul>
+  <li><a href="#top">Top</a></li><li><a href="#design">System design</a></li><li><a href="#flows">Request flows</a></li><li><a href="#quant">Financial engineering</a></li><li><a href="#kubernetes">Kubernetes &amp; Rancher</a></li><li><a href="#reliability">Reliability</a></li><li><a href="#sre">SRE &amp; observability</a></li><li><a href="#performance">Performance</a></li><li><a href="#engineering">C++ &amp; pybind11</a></li><li><a href="#run">Run it</a></li>
+</ul></nav>
+<main id="top">
+<header class="doc-head"><div class="container">
+  <h1 class="h1-s">Distributed Pricing Service</h1>
   <p class="lede">I built a front-office pricing platform in miniature and then tried to break it. A C++ pricing and risk library sits behind a Python service. Books and risk runs are spread across Kubernetes worker pools, with Redis and Cassandra underneath. The cluster is managed in Rancher and observed end to end, and chaos tests kill its pods, its databases and a whole node while it is under load.</p>
-  <a class="cta" href="desk.html">Try the XVA desk &rarr;</a>
+  <a class="btn" href="desk.html">Try the XVA desk</a>
   <div class="meta">
-    <span>Sukhmanpreet Singh Aulakh · Oakville, ON</span>
+    <span>Sukhmanpreet Singh Aulakh, Oakville, ON</span>
     <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service">Source on GitHub</a>
     <a href="Distributed-Pricing-Service-Brief.pdf">Two-page brief (PDF)</a>
     <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/PERFORMANCE_REVIEW.md">Performance review</a>
@@ -185,25 +119,25 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
     <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/OPERATIONS.md">Operations</a>
     <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/RUNBOOK.md">Runbook</a>
   </div>
-  <div class="biz-label" id="biz-h">What it means for the desk (XVA bench, 50,000 scenarios)</div>
+  <h2 class="lab" id="biz-h">What it means for the desk (XVA bench, 50,000 scenarios)</h2>
   <div class="biz" role="list" aria-labelledby="biz-h">
     <div class="stat" role="listitem"><b>−60% CVA with a CSA</b><span>(10-business-day MPoR). Collateral cuts the credit charge on the book, and peak exposure by 18%, so more trades fit at a lower price.</span></div>
     <div class="stat" role="listitem"><b>0.7 to 1.4 s pre-deal check</b><span>A trader gets the credit cost and limit usage of a new trade while the client is still on the phone (4.2 s when a breach also prices a CSA). Laptop benchmark, synthetic data.</span></div>
     <div class="stat" role="listitem"><b>5.5&times; less noise in what-if pricing</b><span>Same scenarios before and after, so a small change in CVA is signal, not simulation noise.</span></div>
   </div>
-  <div class="biz-label">Reliability, from the chaos run</div>
-  <div class="ledger" style="margin-top:12px">
-    <div class="stat"><b>99.992%</b><span>of 76,481 single prices served in a 10-minute chaos run with <em>11 faults</em>, including a whole Kubernetes node stopped</span></div>
+  <h2 class="lab">Reliability, from the chaos run</h2>
+  <div class="ledger">
+    <div class="stat"><b><span class="pip"><span class="sr">99.992%</span><span aria-hidden="true"><span class="pf">99.9</span><span class="pp">92</span><span class="pu">%</span></span></span></b><span>of 76,481 single prices served in a 10-minute chaos run with <em>11 faults</em>, including a whole Kubernetes node stopped</span></div>
     <div class="stat"><b>29 of 30 books</b><span>completed in that run, with <em>0 failed trades</em> out of 58,000</span><span class="fix">The lost book was a connection reset. It is fixed with an <code>Idempotency-Key</code> and <code>GET /jobs/{id}</code> and covered by unit tests; the chaos run has not been repeated yet.</span></div>
     <div class="stat"><b>4 of 4</b><span>exposure (CVA) runs completed during the chaos, every one <em>bit-identical</em></span></div>
     <div class="stat"><b>4 owners</b><span>every alert is routed by an <em>owner</em> label: core engineering, database, platform or quant</span></div>
     <div class="stat"><b>5.17 s → 0.32 s</b><span>for an intraday book while a big batch run is queued, after splitting the streams</span></div>
     <div class="stat"><b>1 trace</b><span>follows a 2,000-trade book across <em>3 pods</em> (206 spans)</span></div>
   </div>
-</header>
+</div></header>
 
-<section>
-  <span class="eyebrow">The brief</span>
+
+<section class="sec doc"><div class="container">
   <h2>What a core engineering team needs to be able to do</h2>
   <p>The role supports a distributed analytics library used for front-office pricing. The team triages issues intraday and routes them to the right people, runs the environment together with support teams, and reviews the architecture for performance. I built the smallest system where all of that is real, and then did each of those jobs on it.</p>
   <div class="table-wrap"><table>
@@ -212,16 +146,15 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
     <tr><td>Triage intraday, route to the right team</td><td>Alerts carry an <code>owner</code> label that Alertmanager routes on; a triage CLI names the owner and the runbook section; a runbook with 14 real incidents</td></tr>
     <tr><td>Manage the environment with support teams</td><td>Kustomize base and overlays, a 4-node cluster across 3 zones imported into Rancher, SLOs and dashboards as code</td></tr>
     <tr><td>Review the architecture, propose improvements</td><td>A performance review with 14 findings, each measured before and after, including three of my own hypotheses that the measurements disproved</td></tr>
-    <tr><td>Kubernetes, Docker, Rancher · Redis, Cassandra · Python, C++</td><td>All in use, each where it fits; the diagrams below show where and why</td></tr>
+    <tr><td>Kubernetes, Docker, Rancher, Redis, Cassandra, Python, C++</td><td>All in use, each where it fits; the diagrams below show where and why</td></tr>
   </table></div>
-</section>
+</div></section>
 
-<section id="design">
-  <span class="eyebrow">System design</span>
+<section class="sec doc" id="design"><div class="container">
   <h2>Three request paths, one shared core</h2>
   <p>Single prices are answered synchronously by the API pods. Books are cut into tasks on a Redis Stream that an intraday worker pool consumes. Exposure runs go to a separate batch stream and pool. KEDA sizes both pools on queue lag. Cassandra keeps the price log behind a write-behind queue, so pricing never waits for it.</p>
   <figure>
-    <div class="panel">
+    <div class="panel console">
     <svg class="d" viewBox="0 0 1000 450" role="img" aria-label="Architecture: clients call the API pods, which use Redis as cache, two task streams and job state; intraday and batch worker pools read their streams and write results back; KEDA scales the pools on stream lag; Cassandra stores the price log via write-behind.">
       <defs>
         <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrow"/></marker>
@@ -229,26 +162,26 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
       </defs>
       <rect class="box" x="20" y="165" width="120" height="70" rx="6"/>
       <text class="t" x="80" y="196" text-anchor="middle">Clients</text>
-      <text class="s" x="80" y="215" text-anchor="middle">trading · risk</text>
+      <text class="s" x="80" y="215" text-anchor="middle">trading, risk</text>
       <line class="w" x1="140" y1="200" x2="186" y2="200" marker-end="url(#a1)"/>
       <text class="lbl" x="163" y="191" text-anchor="middle">HTTP</text>
 
       <rect class="box" x="190" y="80" width="160" height="240" rx="6"/>
       <text class="t" x="270" y="168" text-anchor="middle">API pods</text>
-      <text class="s" x="270" y="190" text-anchor="middle">3–8 replicas · HPA</text>
-      <text class="s" x="270" y="210" text-anchor="middle">FastAPI · Pydantic</text>
+      <text class="s" x="270" y="190" text-anchor="middle">3 to 8 replicas, HPA</text>
+      <text class="s" x="270" y="210" text-anchor="middle">FastAPI, Pydantic</text>
       <text class="s" x="270" y="230" text-anchor="middle">C++ via pybind11</text>
 
       <rect class="soft" x="450" y="40" width="240" height="295" rx="8"/>
       <text class="t" x="570" y="66" text-anchor="middle">Redis</text>
       <text class="s" x="570" y="82" text-anchor="middle">append-only file on a volume</text>
-      <rect class="box" x="470" y="88" width="200" height="40" rx="5"/><text class="m" x="570" y="113" text-anchor="middle">price cache · lock</text>
+      <rect class="box" x="470" y="88" width="200" height="40" rx="5"/><text class="m" x="570" y="113" text-anchor="middle">price cache, lock</text>
       <rect class="hl" x="470" y="148" width="200" height="40" rx="5"/><text class="m" x="570" y="173" text-anchor="middle">stream pricing:intraday</text>
       <rect class="box" x="470" y="220" width="200" height="40" rx="5"/><text class="m" x="570" y="245" text-anchor="middle">stream pricing:batch</text>
       <rect class="box" x="470" y="280" width="200" height="40" rx="5"/><text class="m" x="570" y="305" text-anchor="middle">job state</text>
 
       <line class="w" x1="352" y1="108" x2="468" y2="108" marker-start="url(#a1)" marker-end="url(#a1)"/>
-      <text class="lbl" x="410" y="100" text-anchor="middle">GET · SET NX</text>
+      <text class="lbl" x="410" y="100" text-anchor="middle">GET, SET NX</text>
       <line class="w acc" x1="350" y1="168" x2="468" y2="168" marker-end="url(#a1a)"/>
       <text class="lbl acc" x="410" y="160" text-anchor="middle">XADD (books)</text>
       <line class="w" x1="350" y1="240" x2="468" y2="240" marker-end="url(#a1)"/>
@@ -266,41 +199,41 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
 
       <rect class="hl" x="800" y="140" width="180" height="56" rx="6"/>
       <text class="t" x="890" y="164" text-anchor="middle">Intraday pool</text>
-      <text class="s" x="890" y="183" text-anchor="middle">2–8 workers</text>
+      <text class="s" x="890" y="183" text-anchor="middle">2 to 8 workers</text>
       <rect class="box" x="800" y="212" width="180" height="56" rx="6"/>
       <text class="t" x="890" y="236" text-anchor="middle">Batch pool</text>
-      <text class="s" x="890" y="255" text-anchor="middle">0–6 workers</text>
+      <text class="s" x="890" y="255" text-anchor="middle">0 to 6 workers</text>
       <line class="w acc" x1="670" y1="168" x2="798" y2="168" marker-end="url(#a1a)"/>
       <text class="lbl acc" x="734" y="160" text-anchor="middle">XREADGROUP</text>
       <line class="w" x1="670" y1="240" x2="798" y2="240" marker-end="url(#a1)"/>
       <text class="lbl" x="734" y="232" text-anchor="middle">XREADGROUP</text>
       <polyline class="w" points="980,168 992,168 992,300 672,300" marker-end="url(#a1)"/>
       <line class="w" x1="980" y1="240" x2="992" y2="240"/>
-      <text class="lbl" x="830" y="292" text-anchor="middle">results · XACK</text>
+      <text class="lbl" x="830" y="292" text-anchor="middle">results, XACK</text>
 
       <rect class="box" x="190" y="370" width="290" height="60" rx="6"/>
       <text class="t" x="335" y="396" text-anchor="middle">Cassandra ring</text>
-      <text class="s" x="335" y="415" text-anchor="middle">3 nodes · RF 3 · LOCAL_QUORUM</text>
+      <text class="s" x="335" y="415" text-anchor="middle">3 nodes, RF 3, LOCAL_QUORUM</text>
       <line class="w dash" x1="270" y1="320" x2="270" y2="368" marker-end="url(#a1)"/>
       <text class="lbl" x="278" y="349">write-behind (API and workers)</text>
 
       <rect class="soft" x="560" y="370" width="420" height="60" rx="6"/>
-      <text class="t" x="770" y="396" text-anchor="middle">Prometheus · Alertmanager · Grafana · Jaeger</text>
+      <text class="t" x="770" y="396" text-anchor="middle">Prometheus, Alertmanager, Grafana, Jaeger</text>
       <text class="s" x="770" y="415" text-anchor="middle">scrapes every pod, receives OTLP traces, runs on the control plane</text>
     </svg>
     </div>
-    <figcaption>The teal path is the intraday book path, the one traders wait on. Each Redis structure has one job, and the batch stream never sits in front of it.</figcaption>
+    <figcaption>The amber path is the intraday book path, the one traders wait on. Each Redis structure has one job, and the batch stream never sits in front of it.</figcaption>
   </figure>
 
   <h3>The decision everything leans on: deterministic randomness</h3>
-  <p>Each price's random numbers come from a counter-based generator (Philox) keyed by a hash of the request. Path <i>i</i> therefore gets the same numbers on any thread, any worker and any node. That one property makes caching safe and makes splitting work across workers exact. It also means re-running a crashed worker's task is harmless.</p>
+  <p>Each price’s random numbers come from a counter-based generator (Philox) keyed by a hash of the request. Path <i>i</i> therefore gets the same numbers on any thread, any worker and any node. That one property makes caching safe and makes splitting work across workers exact. It also means re-running a crashed worker’s task is harmless.</p>
   <figure>
-    <div class="panel">
+    <div class="panel console">
     <svg class="d" viewBox="0 0 1000 170" role="img" aria-label="A request hash seeds the Philox generator; scenario blocks are priced on any worker and merged exactly, giving the same result as one worker.">
       <defs><marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="arrow"/></marker></defs>
       <rect class="box" x="10" y="60" width="150" height="50" rx="6"/><text class="t" x="85" y="90" text-anchor="middle">Request</text>
       <line class="w" x1="160" y1="85" x2="208" y2="85" marker-end="url(#a2)"/>
-      <rect class="box" x="210" y="60" width="180" height="50" rx="6"/><text class="m" x="300" y="82" text-anchor="middle">seed = hash(request)</text><text class="s" x="300" y="100" text-anchor="middle">ignores the client's id</text>
+      <rect class="box" x="210" y="60" width="180" height="50" rx="6"/><text class="m" x="300" y="82" text-anchor="middle">seed = hash(request)</text><text class="s" x="300" y="100" text-anchor="middle">ignores the client’s id</text>
       <line class="w" x1="390" y1="85" x2="438" y2="85" marker-end="url(#a2)"/>
       <rect class="hl" x="440" y="60" width="200" height="50" rx="6"/><text class="m" x="540" y="82" text-anchor="middle">Philox(seed, counter = i)</text><text class="s" x="540" y="100" text-anchor="middle">path i: same numbers anywhere</text>
       <line class="w" x1="640" y1="78" x2="698" y2="40" marker-end="url(#a2)"/>
@@ -318,22 +251,21 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
   <h3>Design decisions and what they cost</h3>
   <div class="table-wrap"><table>
     <tr><th>Decision</th><th>Instead of</th><th>Why</th><th>Cost I accepted</th></tr>
-    <tr><td>Redis Streams with consumer groups for tasks</td><td>A Redis list, or Kafka</td><td>Per-message acks, reclaim of a dead consumer's work (<code>XAUTOCLAIM</code>), lag that KEDA can read; one less system to run</td><td>Redis is a single instance here; its AOF keeps queued work across restarts but not across losing its node</td></tr>
-    <tr><td>Two streams and two pools (intraday, batch)</td><td>One FIFO queue</td><td>A large risk run can never sit in front of a trader's book</td><td>Two pools to size; batch scales from zero and pays a cold start</td></tr>
+    <tr><td>Redis Streams with consumer groups for tasks</td><td>A Redis list, or Kafka</td><td>Per-message acks, reclaim of a dead consumer’s work (<code>XAUTOCLAIM</code>), lag that KEDA can read; one less system to run</td><td>Redis is a single instance here; its AOF keeps queued work across restarts but not across losing its node</td></tr>
+    <tr><td>Two streams and two pools (intraday, batch)</td><td>One FIFO queue</td><td>A large risk run can never sit in front of a trader’s book</td><td>Two pools to size; batch scales from zero and pays a cold start</td></tr>
     <tr><td>Cassandra for the price log, written behind</td><td>Postgres, or synchronous writes</td><td>Append-heavy, time-bucketed, query-first tables with TTL; RF 3 survives a node</td><td>A log row can lag the price by up to a second; a crash can drop the unwritten tail (measured, alerted)</td></tr>
     <tr><td>Results written before the ack</td><td>Ack on receipt</td><td>At-least-once delivery; a re-run task is harmless because prices are deterministic</td><td>A task can be priced twice after a crash</td></tr>
     <tr><td>KEDA on stream lag</td><td>HPA on CPU</td><td>Lag leads; CPU lags behind a queue</td><td>Another controller, and its own failure domain</td></tr>
     <tr><td>Observability on the control plane</td><td>Scheduled anywhere</td><td>Monitoring must not die with the node it is watching (found by a chaos run)</td><td>On a real cluster, dedicated infra nodes or a separate cluster</td></tr>
   </table></div>
-</section>
+</div></section>
 
-<section id="quant">
-  <span class="eyebrow">Financial engineering</span>
+<section class="sec doc" id="quant"><div class="container">
   <h2>Textbook models, each checked against an independent reference</h2>
   <p>The models are deliberately standard; the engineering is the point. Each one has a named test against something it does not share code with: a closed form, a textbook value, a parity relation or a brute-force simulation written out in the test.</p>
   <div class="table-wrap"><table>
     <tr><th>Product</th><th>Method</th><th>Validated against</th></tr>
-    <tr><td>European call/put</td><td>Black-Scholes-Merton closed form</td><td>Hull's textbook value (10.4506), put-call parity, finite-difference Greeks</td></tr>
+    <tr><td>European call/put</td><td>Black-Scholes-Merton closed form</td><td>Hull’s textbook value (10.4506), put-call parity, finite-difference Greeks</td></tr>
     <tr><td>European call/put</td><td>Monte Carlo, antithetic variates, pathwise delta and vega</td><td>Closed form within 4 standard errors</td></tr>
     <tr><td>Arithmetic Asian</td><td>Monte Carlo with a geometric-Asian control variate</td><td>Plain Monte Carlo; with one fixing it reduces exactly to Black-Scholes</td></tr>
     <tr><td>Geometric Asian</td><td>Closed form</td><td>Brute-force simulation in the test</td></tr>
@@ -343,21 +275,20 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
     <figure><img src="img/convergence.png" alt="Monte Carlo price converging to Black-Scholes as paths increase" loading="lazy"><figcaption>Convergence to the closed form (7.1281). At 10 million paths, Monte Carlo gives 7.1291 ± 0.0040, which is 0.26 standard errors away.</figcaption></figure>
     <figure><img src="img/variance_reduction.png" alt="Variance reduction for the arithmetic Asian" loading="lazy"><figcaption>Arithmetic Asian: the geometric control variate is about 99.95% correlated with the payoff, so variance falls 1,009×. 198 paths now match the precision of 200,000.</figcaption></figure>
   </div>
-  <figure><img src="img/exposure_profile.png" alt="Expected exposure and PFE profile over five years" loading="lazy"><figcaption>A synthetic netting set of 200 options and forwards on 5 correlated indices, over 100,000 scenarios and 60 monthly steps. EPE is 1,556, peak PFE (95%) is 12,524, and unilateral CVA is 69.70, from CVA = (1 − R) Σ DF(t<sub>i</sub>) · EE(t<sub>i</sub>) · [Q(t<sub>i−1</sub>) − Q(t<sub>i</sub>)] with a flat hazard rate λ = s / (1 − R).</figcaption></figure>
+  <figure><img src="img/exposure_profile.png" alt="Expected exposure and PFE profile over five years" loading="lazy"><figcaption>A synthetic netting set of 200 options and forwards on 5 correlated indices, over 100,000 scenarios and 60 monthly steps. EPE is 1,556, peak PFE (95%) is 12,524, and unilateral CVA is 69.70, from CVA = (1 − R) Σ DF(t<sub>i</sub>), EE(t<sub>i</sub>), [Q(t<sub>i−1</sub>) − Q(t<sub>i</sub>)] with a flat hazard rate λ = s / (1 − R).</figcaption></figure>
   <ul class="tight">
     <li><b>Pathwise Greeks</b> come from the same paths as the price. Where a product has none, bump-and-revalue reuses the same random numbers through the counter-based RNG (common random numbers), so the differences are smooth.</li>
     <li><b>Antithetic standard errors</b> are computed over pair averages, because the two halves of a pair are negatively correlated, not independent.</li>
-    <li><b>PFE is a quantile</b>, so it can't be averaged across workers. Each block returns its top-k exposures per step, and the merge is exact.</li>
+    <li><b>PFE is a quantile</b>, so it can’t be averaged across workers. Each block returns its top-k exposures per step, and the merge is exact.</li>
     <li><b>Stated simplifications:</b> no collateral or margin period of risk, flat curves, constant volatility, no wrong-way risk. A production XVA engine handles these. This project is about the distributed computation around the model.</li>
   </ul>
-</section>
+</div></section>
 
-<section id="flows">
-  <span class="eyebrow">Request flows</span>
-  <h2>A book's life, including the worker that dies</h2>
+<section class="sec doc" id="flows"><div class="container">
+  <h2>A book’s life, including the worker that dies</h2>
   <p>A 2,000-trade book becomes 40 tasks. Each task makes one cache read, one vectorised C++ call with the GIL released, and one pipelined write. If a worker is killed mid-task, its unacked message is claimed by another worker after 10 seconds idle and priced again, with the same answer.</p>
   <figure>
-    <div class="panel">
+    <div class="panel console">
     <svg class="d" viewBox="0 0 1000 545" role="img" aria-label="Sequence of a book: client posts to the API, the API enqueues tasks in Redis, two workers read them, worker A prices its tasks and acks, worker B is killed and its task is reclaimed by worker A, results are logged to Cassandra, the API polls job state and returns the book result.">
       <defs>
         <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="arrow"/></marker>
@@ -377,28 +308,28 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
       <line class="life" x1="935" y1="50" x2="935" y2="535"/>
 
       <line class="w" x1="70" y1="90" x2="238" y2="90" marker-end="url(#a3)"/><text class="lbl" x="155" y="82" text-anchor="middle">POST /portfolio/price</text>
-      <line class="w" x1="240" y1="130" x2="428" y2="130" marker-end="url(#a3)"/><text class="lbl" x="335" y="122" text-anchor="middle">HSET job · XADD ×40</text>
+      <line class="w" x1="240" y1="130" x2="428" y2="130" marker-end="url(#a3)"/><text class="lbl" x="335" y="122" text-anchor="middle">HSET job, XADD ×40</text>
       <line class="w" x1="430" y1="170" x2="618" y2="170" marker-end="url(#a3)"/><text class="lbl" x="525" y="162" text-anchor="middle">XREADGROUP</text>
       <line class="w" x1="430" y1="205" x2="788" y2="205" marker-end="url(#a3)"/><text class="lbl" x="525" y="197" text-anchor="middle">XREADGROUP</text>
       <line class="w" x1="620" y1="245" x2="432" y2="245" marker-end="url(#a3)"/><text class="lbl" x="525" y="237" text-anchor="middle">MGET cached prices</text>
       <rect class="hl" x="612" y="262" width="16" height="44" rx="2"/>
       <text class="lbl acc" x="636" y="281">one C++ batch call</text>
       <text class="lbl acc" x="636" y="297">GIL released</text>
-      <line class="w" x1="620" y1="335" x2="432" y2="335" marker-end="url(#a3)"/><text class="lbl" x="525" y="327" text-anchor="middle">SET results · XACK</text>
+      <line class="w" x1="620" y1="335" x2="432" y2="335" marker-end="url(#a3)"/><text class="lbl" x="525" y="327" text-anchor="middle">SET results, XACK</text>
       <line class="w wrn" x1="780" y1="360" x2="800" y2="380"/><line class="w wrn" x1="800" y1="360" x2="780" y2="380"/>
       <text class="lbl wrn" x="812" y="375">SIGKILL mid-task</text>
       <line class="w acc" x1="430" y1="415" x2="618" y2="415" marker-end="url(#a3a)"/><text class="lbl acc" x="525" y="407" text-anchor="middle">XAUTOCLAIM after 10 s</text>
       <line class="w dash" x1="620" y1="450" x2="933" y2="450" marker-end="url(#a3)"/><text class="lbl" x="777" y="442" text-anchor="middle">write-behind price log</text>
       <line class="w" x1="240" y1="485" x2="428" y2="485" marker-end="url(#a3)"/><text class="lbl" x="335" y="477" text-anchor="middle">poll job state</text>
-      <line class="w" x1="240" y1="520" x2="72" y2="520" marker-end="url(#a3)"/><text class="lbl" x="155" y="512" text-anchor="middle">200 · PV, deltas</text>
+      <line class="w" x1="240" y1="520" x2="72" y2="520" marker-end="url(#a3)"/><text class="lbl" x="155" y="512" text-anchor="middle">200, PV, deltas</text>
     </svg>
     </div>
-    <figcaption>The whole path is one distributed trace. The trace context rides inside each stream message, so Worker A's spans join the API's trace. The Jaeger screenshot under SRE shows a real one.</figcaption>
+    <figcaption>The whole path is one distributed trace. The trace context rides inside each stream message, so Worker A’s spans join the API’s trace. The Jaeger screenshot under SRE shows a real one.</figcaption>
   </figure>
 
   <h3>Why intraday and batch have separate streams</h3>
   <figure>
-    <div class="panel">
+    <div class="panel console">
     <svg class="d" viewBox="0 0 1000 230" role="img" aria-label="Before: one FIFO stream where an intraday task waits behind batch tasks, 5.17 seconds. After: separate intraday and batch streams with their own pools, 0.32 seconds.">
       <defs><marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="arrow"/></marker></defs>
       <text class="t" x="20" y="26">Before: one FIFO stream</text>
@@ -435,18 +366,17 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
     </div>
     <figcaption>Measured with Docker Compose: a 1,000-trade intraday book submitted while a 200,000-scenario exposure run is queued.</figcaption>
   </figure>
-</section>
+</div></section>
 
-<section id="kubernetes">
-  <span class="eyebrow">Kubernetes &amp; Rancher</span>
+<section class="sec doc" id="kubernetes"><div class="container">
   <h2>Where everything runs, and what a node failure takes with it</h2>
   <p>The cluster has four kind nodes: one control plane and three workers, labelled as three zones. Stateless pods spread across zones and leave an unreachable node after 30 seconds. Cassandra keeps one replica per node, so quorum survives any single node. Rancher runs outside the cluster and manages it through an agent that connects out to it.</p>
   <figure>
-    <div class="panel">
+    <div class="panel console">
     <svg class="d" viewBox="0 0 1000 500" role="img" aria-label="Cluster topology: a control-plane node runs the observability stack; three worker nodes in zones a, b and c each run API pods, an intraday worker and one Cassandra replica; Redis runs in zone a; Rancher runs outside the cluster and is reached by the cluster agent.">
       <defs><marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="arrow"/></marker></defs>
       <rect class="frame" x="10" y="10" width="980" height="370" rx="10"/>
-      <text class="lbl" x="26" y="32">kind cluster "pricing" · Kubernetes v1.36 · 4 nodes · Docker Desktop, 10 vCPU, 12 GB</text>
+      <text class="lbl" x="26" y="32">kind cluster &ldquo;pricing&rdquo;, Kubernetes v1.36, 4 nodes, Docker Desktop, 10 vCPU, 12 GB</text>
 
       <rect class="soft" x="25" y="45" width="220" height="320" rx="8"/>
       <text class="t" x="37" y="70">control-plane</text>
@@ -465,7 +395,7 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
       <rect class="box" x="272" y="104" width="211" height="26" rx="4"/><text class="m" x="282" y="121">pricer-api ×3</text>
       <rect class="box" x="272" y="138" width="211" height="26" rx="4"/><text class="m" x="282" y="155">worker-intraday</text>
       <rect class="hl" x="272" y="172" width="211" height="26" rx="4"/><text class="m" x="282" y="189">cassandra-1</text>
-      <rect class="hl" x="272" y="206" width="211" height="26" rx="4"/><text class="m" x="282" y="223">redis-0 · AOF volume</text>
+      <rect class="hl" x="272" y="206" width="211" height="26" rx="4"/><text class="m" x="282" y="223">redis-0, AOF volume</text>
 
       <rect class="soft" x="505" y="45" width="235" height="320" rx="8"/>
       <text class="t" x="517" y="70">pricing-worker2</text>
@@ -474,7 +404,7 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
       <rect class="box" x="517" y="138" width="211" height="26" rx="4"/><text class="m" x="527" y="155">worker-intraday</text>
       <rect class="hl" x="517" y="172" width="211" height="26" rx="4"/><text class="m" x="527" y="189">cassandra-0</text>
       <rect class="ghost" x="517" y="206" width="211" height="26" rx="4"/><text class="m" x="527" y="223">worker-batch (on demand)</text>
-      <rect class="box" x="517" y="240" width="211" height="26" rx="4"/><text class="m" x="527" y="257">keda · cattle-cluster-agent</text>
+      <rect class="box" x="517" y="240" width="211" height="26" rx="4"/><text class="m" x="527" y="257">keda, cattle-cluster-agent</text>
 
       <rect class="soft" x="750" y="45" width="230" height="320" rx="8"/>
       <text class="t" x="762" y="70">pricing-worker3</text>
@@ -498,7 +428,7 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
       <text class="lbl" x="632" y="405" text-anchor="end">agent connects out</text>
     </svg>
     </div>
-    <figcaption>The teal chips are stateful. They are the pods a node failure actually threatens, and the reason for anti-affinity, PDBs and RF 3. Dashed chips are the batch pool, which KEDA keeps at zero until risk work arrives. Pod counts are from the cluster at capture time.</figcaption>
+    <figcaption>The amber chips are stateful. They are the pods a node failure actually threatens, and the reason for anti-affinity, PDBs and RF 3. Dashed chips are the batch pool, which KEDA keeps at zero until risk work arrives. Pod counts are from the cluster at capture time.</figcaption>
   </figure>
   <div class="two">
     <figure><img src="img/ui/rancher-home.png" alt="Rancher home showing the imported pricing-kind cluster as Active" loading="lazy"><figcaption>Rancher managing the imported cluster.</figcaption></figure>
@@ -509,20 +439,19 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
     <li><b>Config as one hashed ConfigMap</b>, so a config change rolls the pods instead of drifting.</li>
     <li><b>Probes that mean something.</b> Readiness drops a pod whose dependencies it cannot serve without; a background Cassandra connection keeps startup probes from killing pods while the ring forms (runbook incident 9).</li>
   </ul>
-</section>
+</div></section>
 
-<section id="reliability">
-  <span class="eyebrow">Reliability</span>
+<section class="sec doc" id="reliability"><div class="container">
   <h2>Chaos: kill everything, keep pricing</h2>
   <p>This is ten minutes of realistic load: continuous single prices, a 2,000-trade book every 15 seconds and an exposure run every 150 seconds. Meanwhile a schedule of 11 faults SIGKILLs API pods, workers, a Cassandra node and Redis, and stops one whole Kubernetes node for two minutes. Hover over the chart to replay the run.</p>
   <figure>
-    <div class="panel" style="display:grid; gap:12px">
+    <div class="panel console">
       <div class="chart-head">
         <div class="seg" role="group" aria-label="Metric">
           <button type="button" id="m-rps" aria-pressed="true">Prices served per second</button>
           <button type="button" id="m-p99" aria-pressed="false">p99 latency</button>
         </div>
-        <div class="legend"><span><i style="background:var(--s1)"></i><span id="m-name">prices served / s</span></span><span><i style="background:var(--bad)"></i>errors / 5 s</span><span><i style="background:var(--good)"></i>book submitted, completed</span><span><i style="background:var(--warn)"></i>completed on retry</span><span><i style="background:var(--bad)"></i>book lost</span></div>
+        <div class="legend"><span><i style="background:var(--color-steel)"></i><span id="m-name">prices served / s</span></span><span><i style="background:var(--color-fault)"></i>errors / 5 s</span><span><i style="background:var(--color-ok)"></i>book submitted, completed</span><span><i style="background:var(--color-signal-text)"></i>completed on retry</span><span><i style="background:var(--color-fault)"></i>book lost</span></div>
       </div>
       <div class="chart" id="chaos"></div>
       <ol class="faults" id="faults"></ol>
@@ -532,15 +461,15 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
   <div class="table-wrap"><table>
     <tr><th>Result</th><th>Value</th><th>Why it holds</th></tr>
     <tr><td>Single prices served</td><td class="num">99.992% (6 errors in 76,481)</td><td>Readiness drops dead pods, pods leave a lost node after 30 s, circuit breakers skip a dead Redis</td></tr>
-    <tr><td>Books completed</td><td class="num">29 of 30 (3 retried)</td><td>A killed worker's tasks are reclaimed with <code>XAUTOCLAIM</code>; books are idempotent, so a connection failure is retried once</td></tr>
+    <tr><td>Books completed</td><td class="num">29 of 30 (3 retried)</td><td>A killed worker’s tasks are reclaimed with <code>XAUTOCLAIM</code>; books are idempotent, so a connection failure is retried once</td></tr>
     <tr><td>Trades failed in completed books</td><td class="num">0 of 58,000</td><td>Results are written before the ack; a re-run task gives the same price</td></tr>
     <tr><td>Exposure runs</td><td class="num">4 of 4, bit-identical</td><td>Counter-based RNG and an exact merge; the batch stream survives Redis restarts on its AOF</td></tr>
-    <tr><td>Latency across the run</td><td class="num">p50 28.8 ms · p99 553.0 ms</td><td>Admission control sheds load with a 503 rather than queueing without bound</td></tr>
+    <tr><td>Latency across the run</td><td class="num">p50 28.8 ms, p99 553.0 ms</td><td>Admission control sheds load with a 503 rather than queueing without bound</td></tr>
   </table></div>
 
   <h3>What happens when a node dies</h3>
   <figure>
-    <div class="panel">
+    <div class="panel console">
     <svg class="d" viewBox="0 0 1000 215" role="img" aria-label="Node loss timeline: node stops at 0 s; for about 50 s the Service still routes to its pods; NotReady and the unreachable taint at about 50 s; pods evicted and NodeNotReady alert at about 80 s; rescheduled in other zones; node returns at 120 s.">
       <rect class="band" x="60" y="118" width="300" height="34"/>
       <text class="lbl wrn" x="70" y="139">its pods still get traffic</text>
@@ -557,32 +486,31 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
       <line class="w" x1="360" y1="34" x2="360" y2="152"/><circle cx="360" cy="152" r="4" class="arrow"/>
       <text class="m" x="366" y="38">~50 s: NotReady, tainted unreachable</text>
       <line class="w acc" x1="540" y1="58" x2="540" y2="152"/><circle cx="540" cy="152" r="4" class="arrow acc"/>
-      <text class="m" x="546" y="62">~80 s: pods evicted · NodeNotReady → platform</text>
+      <text class="m" x="546" y="62">~80 s: pods evicted, NodeNotReady → platform</text>
       <line class="w" x1="620" y1="82" x2="620" y2="152"/><circle cx="620" cy="152" r="4" class="arrow"/>
       <text class="m" x="626" y="86">rescheduled in other zones</text>
       <line class="w acc" x1="780" y1="106" x2="780" y2="152"/><circle cx="780" cy="152" r="4" class="arrow acc"/>
-      <text class="m" x="786" y="110">node back · Cassandra rejoins</text>
-      <text class="s" x="60" y="204">Stateless pods are evicted after the 30 s toleration. Cassandra and Redis are not moved: their data lives on the lost node's volume.</text>
+      <text class="m" x="786" y="110">node back, Cassandra rejoins</text>
+      <text class="s" x="60" y="204">Stateless pods are evicted after the 30 s toleration. Cassandra and Redis are not moved: their data lives on the lost node’s volume.</text>
     </svg>
     </div>
-    <figcaption>The timings are approximate: kind's node-monitor grace period plus this project's tolerations and alert <code>for</code> durations. The shaded window is where the chaos runs lost books, which is what the proposed fix (resubmit by job id) targets.</figcaption>
+    <figcaption>The timings are approximate: kind’s node-monitor grace period plus this project’s tolerations and alert <code>for</code> durations. The shaded window is where the chaos runs lost books, which is what the proposed fix (resubmit by job id) targets.</figcaption>
   </figure>
   <div class="two">
     <figure><img src="img/ui/rancher-nodes.png" alt="Rancher nodes view with pricing-worker2 Unavailable and tainted unreachable" loading="lazy"><figcaption>Rancher during the outage: <code>pricing-worker2</code> is Unavailable and tainted <code>unreachable</code>.</figcaption></figure>
-    <figure><img src="img/ui/grafana-cluster.png" alt="Grafana cluster dashboard during the node failure" loading="lazy"><figcaption>Grafana at the same moment: the node's Ready line drops to 0, and API pods dip from 8 to 6 before coming back elsewhere.</figcaption></figure>
+    <figure><img src="img/ui/grafana-cluster.png" alt="Grafana cluster dashboard during the node failure" loading="lazy"><figcaption>Grafana at the same moment: the node’s Ready line drops to 0, and API pods dip from 8 to 6 before coming back elsewhere.</figcaption></figure>
   </div>
   <div class="callout warn">
     <p><b>What the chaos runs found.</b> Run 1 lost 3 books at the connection level before Kubernetes declared the node NotReady; the fix was an idempotent retry. Run 2 showed that the node alert could never fire, because kube-state-metrics was running on the node that died; the fix was moving the observability stack to the control plane.</p>
     <p><b>Fixed in code, not yet re-measured.</b> In run 3, 1 of 30 books failed on both attempts, with connection resets during the outage. A single HTTP retry is too short for a two-minute outage. The fix is now in the code: the client sends an <code>Idempotency-Key</code> and polls <code>GET /jobs/{id}</code>, covered by unit tests. The 10-minute chaos run has not been repeated since, so the figures above still show the lost book.</p>
   </div>
-</section>
+</div></section>
 
-<section id="sre">
-  <span class="eyebrow">SRE &amp; observability</span>
+<section class="sec doc" id="sre"><div class="container">
   <h2>Every alert has an owner and a runbook</h2>
   <p>The objectives are 99.9% availability and 99% of prices under 250 ms, written down in <code>docs/SLO.md</code> and alerted on multi-window burn rate rather than fixed thresholds. All fourteen alerts carry an <code>owner</code> label and a <code>runbook_url</code>. Alertmanager routes on the owner and inhibits the symptoms of a known root cause.</p>
   <figure>
-    <div class="panel">
+    <div class="panel console">
     <svg class="d" viewBox="0 0 1000 300" role="img" aria-label="Alert routing: pods and kube-state-metrics are scraped by Prometheus, which evaluates SLI recordings and alerts; Alertmanager routes each alert by owner to a page or ticket receiver for core, database, platform or quant, and inhibits backlog alerts when a node or Redis is down.">
       <defs><marker id="a6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="arrow"/></marker>
       <marker id="a6w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="arrow wrn"/></marker></defs>
@@ -606,9 +534,9 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
       <line class="w" x1="710" y1="82" x2="740" y2="96" marker-end="url(#a6)"/>
       <line class="w" x1="710" y1="96" x2="740" y2="156" marker-end="url(#a6)"/>
       <line class="w" x1="710" y1="110" x2="740" y2="216" marker-end="url(#a6)"/>
-      <rect class="box" x="742" y="12" width="248" height="48" rx="6"/><text class="t" x="754" y="32">core-page / -ticket</text><text class="lbl" x="754" y="50">IntradayBacklog · PodRestarting</text>
+      <rect class="box" x="742" y="12" width="248" height="48" rx="6"/><text class="t" x="754" y="32">core-page / -ticket</text><text class="lbl" x="754" y="50">IntradayBacklog, PodRestarting</text>
       <rect class="box" x="742" y="72" width="248" height="48" rx="6"/><text class="t" x="754" y="92">database-page / -ticket</text><text class="lbl" x="754" y="110">CassandraReplicaDown</text>
-      <rect class="box" x="742" y="132" width="248" height="48" rx="6"/><text class="t" x="754" y="152">platform-page / -ticket</text><text class="lbl" x="754" y="170">NodeNotReady · RedisCircuitOpen</text>
+      <rect class="box" x="742" y="132" width="248" height="48" rx="6"/><text class="t" x="754" y="152">platform-page / -ticket</text><text class="lbl" x="754" y="170">NodeNotReady, RedisCircuitOpen</text>
       <rect class="box" x="742" y="192" width="248" height="48" rx="6"/><text class="t" x="754" y="212">quant-page / -ticket</text><text class="lbl" x="754" y="230">PoisonTrade</text>
       <rect class="wbox" x="430" y="190" width="300" height="56" rx="6"/>
       <text class="m" x="442" y="212">NodeNotReady, RedisCircuitOpen</text>
@@ -624,15 +552,14 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
     <figcaption>The ownership table is shared by the alert rules, the runbook and the triage CLI, so all three name the same team for the same symptom.</figcaption>
   </figure>
   <figure><img src="img/ui/alertmanager.png" alt="Alertmanager with CassandraReplicaDown routed to the database receivers and NodeNotReady to the platform receivers" loading="lazy"><figcaption>Alertmanager during the node outage: <code>NodeNotReady</code> goes to <code>platform-page</code> and <code>CassandraReplicaDown</code> to <code>database-page</code>.</figcaption></figure>
-  <figure><img src="img/ui/jaeger-trace.png" alt="Jaeger trace of one book across the API and worker pods" loading="lazy"><figcaption>A 2,000-trade book in Jaeger: 206 spans across 3 pods. Each task has one span for the queue message, the cache read, each C++ batch and the result write. Tracing every request cost about 11% of throughput (278 vs 312 prices/s), so production samples 5%, and workers follow the API's sampling decision.</figcaption></figure>
+  <figure><img src="img/ui/jaeger-trace.png" alt="Jaeger trace of one book across the API and worker pods" loading="lazy"><figcaption>A 2,000-trade book in Jaeger: 206 spans across 3 pods. Each task has one span for the queue message, the cache read, each C++ batch and the result write. Tracing every request cost about 11% of throughput (278 vs 312 prices/s), so production samples 5%, and workers follow the API’s sampling decision.</figcaption></figure>
   <div class="two">
-    <figure><img src="img/ui/grafana-slo.png" alt="Grafana SLO dashboard" loading="lazy"><figcaption>SLOs as code. Availability held at 100%, but with Rancher competing for the laptop's CPU about 6% of prices took over 250 ms. That burns latency budget below the 14.4× rate that pages, so it shows on the dashboard without waking anyone.</figcaption></figure>
+    <figure><img src="img/ui/grafana-slo.png" alt="Grafana SLO dashboard" loading="lazy"><figcaption>SLOs as code. Availability held at 100%, but with Rancher competing for the laptop’s CPU about 6% of prices took over 250 ms. That burns latency budget below the 14.4× rate that pages, so it shows on the dashboard without waking anyone.</figcaption></figure>
     <figure><img src="img/ui/grafana-service.png" alt="Grafana service dashboard" loading="lazy"><figcaption>The service dashboard: throughput, latency percentiles, cache hit rate, C++ compute time by product and queue depth.</figcaption></figure>
   </div>
-</section>
+</div></section>
 
-<section id="performance">
-  <span class="eyebrow">Performance</span>
+<section class="sec doc" id="performance"><div class="container">
   <h2>Measured before and after, every time</h2>
   <div class="two">
     <figure><img src="img/scaling.png" alt="Scaling with workers" loading="lazy"><figcaption>Book pricing goes from 2,295 to 7,335 trades/s on 1 to 8 workers, and a 50,000-trade book takes 6.9 s. Exposure: 604 million option revaluations in 2.7 s, with the same answer at every worker count.</figcaption></figure>
@@ -640,8 +567,8 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
   </div>
   <h3>Autoscaling from zero</h3>
   <figure>
-    <div class="panel" style="display:grid; gap:10px">
-      <div class="legend"><span><i style="background:var(--s1)"></i>cold start (pool at 0)</span><span><i style="background:var(--s2)"></i>warm pool (6 ready)</span></div>
+    <div class="panel console">
+      <div class="legend"><span><i style="background:var(--color-steel)"></i>cold start (pool at 0)</span><span><i style="background:var(--color-signal-text)"></i>warm pool (6 ready)</span></div>
       <div class="chart" id="keda"></div>
     </div>
     <figcaption>Ready batch workers during the same exposure run. From zero, the first worker is ready after 10 s and the run takes 38 s, against 9 s warm. That is the price of keeping no idle batch capacity: fine for overnight risk, wrong for an intraday desk, which is why the intraday pool keeps a floor of 2.</figcaption>
@@ -649,13 +576,12 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
   <h3>The performance review</h3>
   <p>Each finding follows the same pattern: observation, hypothesis, change, measurement, decision. Three of the hypotheses were wrong, and those write-ups are kept too.</p>
   <ol class="findings"><li><a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/PERFORMANCE_REVIEW.md#1-where-book-pricing-stops-scaling">Where book pricing stops scaling</a></li><li><a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/PERFORMANCE_REVIEW.md#2-a-measurement-mistake-and-what-the-price-log-really-costs">A measurement mistake, and what the price log really costs</a></li><li><a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/PERFORMANCE_REVIEW.md#3-write-behind-for-the-price-log">Write-behind for the price log</a></li><li><a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/PERFORMANCE_REVIEW.md#4-batch-risk-was-blocking-intraday-pricing">Batch risk was blocking intraday pricing</a></li><li><a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/PERFORMANCE_REVIEW.md#5-task-granularity">Task granularity</a></li><li><a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/PERFORMANCE_REVIEW.md#6-kernel-cpu-throttling-and-a-fix-that-did-not-move-latency">Kernel CPU throttling, and a fix that did not move latency</a></li><li><a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/PERFORMANCE_REVIEW.md#7-releasing-the-gil-and-batch-interfaces">Releasing the GIL, and batch interfaces</a></li><li><a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/PERFORMANCE_REVIEW.md#8-variance-reduction-performance-through-maths">Variance reduction: performance through maths</a></li><li><a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/PERFORMANCE_REVIEW.md#9-circuit-breakers-measured-when-introduced">Circuit breakers (measured when introduced)</a></li><li><a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/PERFORMANCE_REVIEW.md#10-exposure-runs-scaling-and-exactness">Exposure runs: scaling and exactness</a></li><li><a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/PERFORMANCE_REVIEW.md#11-chaos-runs-what-broke-and-what-the-fixes-bought">Chaos runs: what broke, and what the fixes bought</a></li><li><a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/PERFORMANCE_REVIEW.md#12-keda-scale-from-zero-what-idle-batch-capacity-costs">KEDA scale-from-zero: what idle batch capacity costs</a></li><li><a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/PERFORMANCE_REVIEW.md#13-what-tracing-costs">What tracing costs</a></li><li><a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/PERFORMANCE_REVIEW.md#14-where-the-monitoring-runs">Where the monitoring runs</a></li></ol>
-</section>
+</div></section>
 
-<section id="engineering">
-  <span class="eyebrow">C++ &amp; pybind11</span>
+<section class="sec doc" id="engineering"><div class="container">
   <h2>The library underneath</h2>
   <figure>
-    <div class="panel">
+    <div class="panel console">
     <svg class="d" viewBox="0 0 1000 180" role="img" aria-label="A Python worker thread releases the GIL and calls one C++ batch function, which prices on several threads into a buffer that NumPy views without copying.">
       <defs><marker id="a7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="arrow"/></marker></defs>
       <rect class="box" x="15" y="55" width="190" height="70" rx="6"/><text class="t" x="110" y="84" text-anchor="middle">Python worker</text><text class="s" x="110" y="104" text-anchor="middle">NumPy arrays of trades</text>
@@ -664,10 +590,10 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
       <text class="lbl" x="252" y="108" text-anchor="middle">zero-copy in</text>
       <rect class="hl" x="300" y="20" width="400" height="140" rx="8"/>
       <text class="t" x="316" y="44">C++20: one batch call</text>
-      <rect class="box" x="316" y="58" width="368" height="18" rx="3"/><text class="lbl" x="326" y="71">thread 1 · paths 0–24,999 · aligned scratch</text>
-      <rect class="box" x="316" y="82" width="368" height="18" rx="3"/><text class="lbl" x="326" y="95">thread 2 · paths 25,000–49,999</text>
-      <rect class="box" x="316" y="106" width="368" height="18" rx="3"/><text class="lbl" x="326" y="119">thread 3 · …</text>
-      <text class="s" x="316" y="148">deterministic chunks · no allocation per path</text>
+      <rect class="box" x="316" y="58" width="368" height="18" rx="3"/><text class="lbl" x="326" y="71">thread 1, paths 0 to 24,999, aligned scratch</text>
+      <rect class="box" x="316" y="82" width="368" height="18" rx="3"/><text class="lbl" x="326" y="95">thread 2, paths 25,000 to 49,999</text>
+      <rect class="box" x="316" y="106" width="368" height="18" rx="3"/><text class="lbl" x="326" y="119">thread 3, …</text>
+      <text class="s" x="316" y="148">deterministic chunks, no allocation per path</text>
       <line class="w" x1="700" y1="90" x2="788" y2="90" marker-end="url(#a7)"/>
       <text class="lbl" x="744" y="80" text-anchor="middle">capsule owns</text>
       <text class="lbl" x="744" y="108" text-anchor="middle">the buffer</text>
@@ -686,23 +612,24 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
     <li>AddressSanitizer, UBSan, ThreadSanitizer and Valgrind run clean, including Valgrind on the Python extension, which leaks nothing per call.</li>
     <li>Variance reduction doubles as a performance tool: the Asian control variate cuts variance 1,009×, so 198 paths match 200,000.</li>
   </ul>
-</section>
+</div></section>
 
-<section id="run">
-  <span class="eyebrow">Try it</span>
+<section class="sec doc" id="run"><div class="container">
   <h2>Run the whole thing locally</h2>
   <pre class="cmd">make cluster   # 4-node kind cluster, KEDA, the app, Prometheus, Alertmanager, Grafana, Jaeger
 make rancher   # Rancher, with the cluster imported
 make demo      # guided walkthrough: prices, a 10,000-trade book, an exposure run, a failure, triage
 make chaos     # the 10-minute chaos run</pre>
   <p>The limits, plainly: everything runs on one laptop, so the scaling numbers show the mechanics rather than cluster capacity. The models are textbook (GBM, flat curves, no collateral in the exposure run). Redis is persistent but not replicated. The prod overlay is validated but has not run on a production cluster.</p>
-</section>
+</div></section>
 
-<footer>
-  <span>Every number on this page is generated from the measured results in the repository's <code>bench/results</code>.</span>
-  <span>An independent learning project on synthetic data; not affiliated with any employer's system.</span>
-</footer>
-</div>
+</main>
+<footer class="foot"><div class="container">
+  <nav aria-label="Links"><a href="index.html">Home</a><a href="https://github.com/SukhmanAulakh18/distributed-pricing-service">Source repository</a><a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/MODELS.md">Models and validation</a></nav>
+  <p>Every number on this page is generated from the measured results in the repository&rsquo;s <code>bench/results</code>.</p>
+  <p>An independent learning project on synthetic data; not affiliated with any employer&rsquo;s system.</p>
+</div></footer>
+
 
 <script>
 (function () {
@@ -752,10 +679,10 @@ make chaos     # the 10-minute chaos run</pre>
       var v = vals[i]; if (v == null) { started = false; return; }
       d += (started ? "L" : "M") + X(r[0] + 2.5).toFixed(1) + "," + Y(v).toFixed(1); started = true;
     });
-    el("path", { d: d, fill: "none", stroke: "var(--s1)", "stroke-width": 2, "stroke-linejoin": "round" }, g);
+    el("path", { d: d, fill: "none", stroke: "var(--color-steel)", "stroke-width": 2, "stroke-linejoin": "round" }, g);
     txt(g, L - 8, BOOK + 4, "books", "axis", "end");
     D.chaos.books.forEach(function (bk) {
-      var col = bk[2] === "ok" ? "var(--good)" : bk[2] === "retry" ? "var(--warn)" : "var(--bad)";
+      var col = bk[2] === "ok" ? "var(--color-ok)" : bk[2] === "retry" ? "var(--color-signal-text)" : "var(--color-fault)";
       el("rect", { x: X(bk[0]) - 1.5, y: BOOK - 7, width: 3, height: 14, rx: 1.5, fill: col }, g);
     });
     var emax = Math.max(4, Math.max.apply(null, b.map(function (r) { return r[2]; })));
@@ -764,7 +691,7 @@ make chaos     # the 10-minute chaos run</pre>
     b.forEach(function (r) {
       if (!r[2]) return;
       var h = (ERR1 - ERR0) * r[2] / emax;
-      el("rect", { x: X(r[0]) + 1, y: ERR1 - h, width: Math.max(2, X(5) - X(0) - 2), height: h, rx: 1.5, fill: "var(--bad)" }, g);
+      el("rect", { x: X(r[0]) + 1, y: ERR1 - h, width: Math.max(2, X(5) - X(0) - 2), height: h, rx: 1.5, fill: "var(--color-fault)" }, g);
     });
     var cross = el("line", { x1: 0, x2: 0, y1: T, y2: ERR1, "class": "cross", visibility: "hidden" }, g);
     var hit = el("rect", { x: L, y: T - 22, width: R - L, height: ERR1 - T + 22, fill: "transparent" }, g);
@@ -775,11 +702,11 @@ make chaos     # the 10-minute chaos run</pre>
       var idx = Math.min(b.length - 1, Math.floor(t / 5)), r = b[idx];
       cross.setAttribute("x1", X(r[0] + 2.5)); cross.setAttribute("x2", X(r[0] + 2.5)); cross.setAttribute("visibility", "visible");
       var last = null; D.chaos.faults.forEach(function (f, i) { if (f[0] <= r[0] + 5) last = (i + 1) + ". " + f[1] + " at " + Math.round(f[0]) + " s"; });
-      tip.innerHTML = "<div><b>" + r[0] + "–" + (r[0] + 5) + " s</b></div>" +
+      tip.innerHTML = "<div><b>" + r[0] + "n/a" + (r[0] + 5) + " s</b></div>" +
         "<div>" + (r[1] / 5).toFixed(0) + " prices/s served</div>" +
-        "<div>p50 " + (r[3] == null ? "–" : Math.round(r[3]) + " ms") + " · p99 " + (r[4] == null ? "–" : Math.round(r[4]) + " ms") + "</div>" +
+        "<div>p50 " + (r[3] == null ? "n/a" : Math.round(r[3]) + " ms") + ", p99 " + (r[4] == null ? "n/a" : Math.round(r[4]) + " ms") + "</div>" +
         "<div>" + r[2] + " error" + (r[2] === 1 ? "" : "s") + "</div>" +
-        "<div style='color:var(--muted)'>" + (last ? "latest fault: " + last : "no faults yet") + "</div>";
+        "<div style='color:var(--color-muted)'>" + (last ? "latest fault: " + last : "no faults yet") + "</div>";
       tip.hidden = false;
       var hx = (ev.clientX - host.getBoundingClientRect().left);
       var left = hx + 14; if (left + 200 > host.clientWidth) left = hx - 214;
@@ -794,7 +721,7 @@ make chaos     # the 10-minute chaos run</pre>
   bR.addEventListener("click", function () { set("rps"); });
   bP.addEventListener("click", function () { set("p99"); });
   var ol = document.getElementById("faults");
-  D.chaos.faults.forEach(function (f, i) { var li = document.createElement("li"); li.innerHTML = "<b>" + (i + 1) + "</b>" + f[1] + " · " + Math.round(f[0]) + " s"; ol.appendChild(li); });
+  D.chaos.faults.forEach(function (f, i) { var li = document.createElement("li"); li.innerHTML = "<b>" + (i + 1) + "</b>" + f[1] + ", " + Math.round(f[0]) + " s"; ol.appendChild(li); });
 
   /* KEDA cold vs warm */
   var kh = document.getElementById("keda");
@@ -815,11 +742,11 @@ make chaos     # the 10-minute chaos run</pre>
     var last = series[series.length - 1];
     d += "L" + KX(last[2]) + "," + KY(last[1]);
     el("path", { d: d, fill: "none", stroke: color, "stroke-width": 2.2, "stroke-linejoin": "round" }, ks);
-    el("circle", { cx: KX(last[2]), cy: KY(last[1]), r: 4, fill: color, stroke: "var(--surface)", "stroke-width": 2 }, ks);
+    el("circle", { cx: KX(last[2]), cy: KY(last[1]), r: 4, fill: color, stroke: "var(--color-paper-2)", "stroke-width": 2 }, ks);
     txt(ks, KX(last[2]) - 6, KY(last[1]) - 10, label, "axis", "end");
   }
-  step(D.keda.warm, "var(--s2)", "warm: done at " + D.keda.warm[D.keda.warm.length - 1][2] + " s");
-  step(D.keda.cold, "var(--s1)", "cold: done at " + D.keda.cold[D.keda.cold.length - 1][2] + " s");
+  step(D.keda.warm, "var(--color-signal-text)", "warm: done at " + D.keda.warm[D.keda.warm.length - 1][2] + " s");
+  step(D.keda.cold, "var(--color-steel)", "cold: done at " + D.keda.cold[D.keda.cold.length - 1][2] + " s");
 })();
 </script>
 

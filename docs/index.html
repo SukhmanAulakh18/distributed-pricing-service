@@ -8,181 +8,51 @@
 <meta property="og:image" content="https://sukhmanaulakh18.github.io/distributed-pricing-service/img/og.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<style>
-/* Hallmark · checked: 2026-11-18 · genre: modern-minimal · theme: brand (site tokens from the case study: Newsreader, IBM Plex, teal on warm grey, light and dark)
- * pre-emit critique: P5 H4 E4 S5 R5 V4 · weakest: V, one accent and no photograph by design; the signature is one request shown as a client decision and as the engine call that made it, side by side
- * hero: Stage (headline, one sentence, two actions) · nav: sticky text tabs, the shared site nav · footer: links and the honest limits · job: choose a product and try it · built: the project · v2.0.0
- * Hallmark · answered 58 · the demo and proof sections carry the figures a reader checks; the hero itself is the headline, one sentence and two actions */
-:root {
-  --bg: #f5f6f3; --surface: #ffffff; --ink: #15191d; --muted: #59626b; --line: #dcdfd8;
-  --accent: #0d6b62; --accent-soft: #e2efec; --warn: #a15c07; --warn-soft: #f6ead9; --on-accent: #ffffff; --code-bg: #eef0eb;
-  --display: "Newsreader", "Iowan Old Style", Georgia, serif;
-  --body: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px; --s8: 80px;
-  --r1: 8px; --r2: 14px;
-  color-scheme: light;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) { --bg: #0e1113; --surface: #161a1d; --ink: #e7eae7; --muted: #9aa3aa; --line: #2a3035; --accent: #5cc0b4; --accent-soft: #15302d; --warn: #e3a34d; --warn-soft: #33270f; --on-accent: #0e1113; --code-bg: #1d2226; color-scheme: dark; }
-}
-:root[data-theme="dark"] { --bg: #0e1113; --surface: #161a1d; --ink: #e7eae7; --muted: #9aa3aa; --line: #2a3035; --accent: #5cc0b4; --accent-soft: #15302d; --warn: #e3a34d; --warn-soft: #33270f; --on-accent: #0e1113; --code-bg: #1d2226; color-scheme: dark; }
-* { box-sizing: border-box; }
-[hidden] { display: none !important; }
-html { scroll-behavior: smooth; scroll-padding-top: 64px; overflow-x: clip; -webkit-text-size-adjust: 100%; }
-body { margin: 0; overflow-x: clip; background: var(--bg); color: var(--ink); font: 16px/1.55 var(--body); overflow-wrap: anywhere; caret-color: var(--accent); }
-::selection { background: var(--accent); color: var(--on-accent); }
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { transition: none !important; animation: none !important; } }
-h1, h2, h3 { font-family: var(--display); font-weight: 600; line-height: 1.12; margin: 0; text-wrap: balance; min-width: 0; overflow-wrap: break-word; }
-h1 { font-size: clamp(2.5rem, 7.2vw, 4.5rem); line-height: 1.02; }
-h2 { font-size: clamp(1.5rem, 3.4vw, 2rem); }
-h3 { font-size: 1.25rem; }
-p { margin: 0; text-wrap: pretty; }
-a { color: var(--accent); }
-a:focus-visible, button:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
-.wrap { max-width: 1120px; margin: 0 auto; padding: var(--s6) var(--s4) var(--s7); display: grid; gap: var(--s8); }
-.wrap > * { min-width: 0; }
-.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-
-/* buttons */
-.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: var(--s3) var(--s5); border-radius: var(--r1); background: var(--accent); color: var(--on-accent); border: 1px solid var(--accent); font: 600 1rem var(--body); text-decoration: none; transition: background-color .15s, transform .1s; }
-.btn:hover { background: var(--ink); border-color: var(--ink); color: var(--bg); }
-.btn:active { transform: translateY(1px); }
-.btn[aria-disabled="true"], .btn:disabled { background: var(--line); color: var(--muted); border-color: var(--line); cursor: not-allowed; }
-.btn.alt { background: var(--surface); color: var(--ink); border-color: var(--line); }
-.btn.alt:hover { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); }
-.link { display: inline-flex; align-items: center; min-height: 44px; font-weight: 500; }
-.btns { display: flex; flex-wrap: wrap; gap: var(--s3); align-items: center; }
-
-/* hero */
-.hero { display: grid; gap: var(--s5); padding-top: var(--s5); max-width: 860px; }
-.lede { font-size: clamp(1.125rem, 2.2vw, 1.375rem); color: var(--muted); max-width: 40ch; }
-
-/* the same request, two views */
-.demo { display: grid; gap: var(--s5); }
-.demo-head { display: grid; gap: var(--s2); max-width: 62ch; }
-.demo-head p { color: var(--muted); }
-.ctl { display: flex; flex-wrap: wrap; gap: var(--s4) var(--s6); }
-fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
-legend { padding: 0; margin-bottom: var(--s2); font-size: 0.875rem; color: var(--muted); }
-.chips { display: flex; flex-wrap: wrap; gap: var(--s2); }
-.chip { position: relative; display: block; }
-.chip input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
-.chip span { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 56px; padding: 0 var(--s4); border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font: 500 0.9375rem var(--body); transition: background-color .15s, border-color .15s; }
-.chip:hover span { border-color: var(--accent); }
-.chip input:checked + span { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
-.chip input:focus-visible + span { outline: 3px solid var(--accent); outline-offset: 2px; }
-.split { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; align-items: stretch; }
-.spine { display: grid; justify-items: center; align-content: center; gap: var(--s2); padding: var(--s2) 0; color: var(--muted); font-size: 0.875rem; }
-.spine i { display: block; width: 2px; height: 20px; background: var(--line); }
-.spine b { font: 500 0.8125rem var(--mono); padding: var(--s2) var(--s3); border: 1px solid var(--accent); border-radius: 999px; color: var(--accent); background: var(--surface); text-align: center; }
-.prod { display: grid; gap: var(--s4); align-content: start; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r2); padding: var(--s5); }
-.prod.dev { background: var(--code-bg); }
-.prod header { display: grid; gap: var(--s1); }
-.prod header p { color: var(--muted); }
-.big { font: 600 clamp(2.5rem, 5vw, 3.25rem)/1 var(--display); font-variant-numeric: tabular-nums; }
-.big small { font: 400 0.9375rem var(--body); color: var(--muted); margin-left: var(--s2); }
-.k { font-size: 0.875rem; color: var(--muted); }
-.bars { display: grid; gap: var(--s3); margin: 0; }
-.bar { display: grid; gap: var(--s1); }
-.bar div { display: flex; justify-content: space-between; gap: var(--s3); font-size: 0.9375rem; }
-.bar b { font-variant-numeric: tabular-nums; }
-.track { height: 10px; border-radius: 5px; background: var(--line); overflow: hidden; }
-.track i { display: block; height: 100%; width: 100%; border-radius: 5px; background: var(--muted); transform-origin: left; transition: transform .35s ease-out; }
-.track i.on { background: var(--accent); }
-.verdict { display: grid; gap: var(--s1); padding: var(--s3) var(--s4); border-radius: var(--r1); background: var(--accent-soft); border: 1px solid var(--accent); }
-.verdict[data-v="approve_with_csa"] { background: var(--warn-soft); border-color: var(--warn); }
-.verdict[data-v="refer_to_credit"] { background: var(--warn-soft); border-color: var(--warn); }
-.verdict b { font: 600 1.125rem var(--display); }
-.verdict span { font-size: 0.9375rem; }
-.saving { font-weight: 600; color: var(--accent); }
-.acts { display: flex; flex-wrap: wrap; gap: var(--s3); align-items: center; margin-top: var(--s2); }
-
-.path { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s2); margin: 0; padding: 0; list-style: none; counter-reset: p; }
-.path li { position: relative; display: grid; gap: 2px; align-content: start; padding: var(--s3); border: 1px solid var(--line); border-radius: var(--r1); background: var(--surface); font-size: 0.875rem; line-height: 1.35; }
-.path li + li::before { content: ""; position: absolute; left: calc(var(--s2) * -1 - 1px); top: 50%; width: var(--s2); height: 2px; background: var(--accent); }
-.path b { font: 600 0.9375rem var(--body); }
-.path span { color: var(--muted); }
-.run .path li { animation: lit .6s ease-out both; }
-.run .path li:nth-child(2) { animation-delay: .15s; }
-.run .path li:nth-child(3) { animation-delay: .3s; }
-@keyframes lit { from { opacity: .35; transform: translateY(3px); } to { opacity: 1; transform: none; } }
-pre:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-pre { margin: 0; padding: var(--s3) var(--s4); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r1); font: 0.8125rem/1.55 var(--mono); overflow-x: auto; white-space: pre; overflow-wrap: normal; }
-.facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); margin: 0; }
-.facts div { display: grid; gap: 2px; }
-.facts dt { font-size: 0.875rem; color: var(--muted); }
-.facts dd { margin: 0; font: 600 1.25rem var(--display); font-variant-numeric: tabular-nums; }
-.note { font-size: 0.875rem; color: var(--muted); }
-
-/* proof */
-.sec-head { display: grid; gap: var(--s2); max-width: 62ch; margin-bottom: var(--s5); }
-.sec-head p { color: var(--muted); }
-.proof { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); border-top: 1px solid var(--line); }
-.proof a { display: grid; gap: var(--s1); padding: var(--s4) var(--s2); min-height: 44px; border-bottom: 1px solid var(--line); color: var(--ink); text-decoration: none; transition: background-color .15s; }
-.proof a:hover { background: var(--accent-soft); }
-.proof a:hover .n { color: var(--accent); }
-.proof .n { font: 600 1.875rem/1.1 var(--display); font-variant-numeric: tabular-nums; }
-.proof .l { color: var(--muted); font-size: 0.9375rem; }
-.proof .ev { font-size: 0.875rem; color: var(--accent); }
-
-/* how it works */
-.how { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s4); counter-reset: h; }
-.how li { position: relative; display: grid; gap: var(--s2); align-content: start; padding: var(--s5) var(--s4) var(--s4); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r2); counter-increment: h; }
-.how li::before { content: counter(h); display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font: 600 0.9375rem var(--body); }
-.how svg { width: 100%; height: 56px; color: var(--accent); }
-.how p { color: var(--muted); font-size: 0.9375rem; }
-
-/* tour band, footer */
-.tour { display: grid; gap: var(--s4); padding: var(--s6) var(--s5); background: var(--accent-soft); border: 1px solid var(--accent); border-radius: var(--r2); }
-.tour p { max-width: 56ch; }
-footer { display: grid; gap: var(--s4); padding-top: var(--s5); border-top: 1px solid var(--line); color: var(--muted); font-size: 0.9375rem; }
-footer nav { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s5); }
-footer nav a { display: inline-flex; align-items: center; min-height: 44px; }
-footer p { max-width: 72ch; }
-
-@media (min-width: 720px) {
-  .proof { grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 0; gap: var(--s3); }
-  .proof a { border: 1px solid var(--line); border-radius: var(--r2); padding: var(--s4); background: var(--surface); align-content: start; }
-  .how { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .tour { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
-}
-@media (min-width: 1000px) { .proof { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
-@media (min-width: 960px) {
-  .split { grid-template-columns: minmax(0, 1fr) 96px minmax(0, 1fr); }
-  .spine { padding: 0; }
-  .spine { grid-template-rows: 1fr auto 1fr; justify-items: center; }
-  .spine i { width: 2px; height: 100%; min-height: 24px; }
-  .spine b { white-space: nowrap; }
-}
-@media (max-width: 420px) {
-  .path { grid-template-columns: minmax(0, 1fr); }
-  .path li + li::before { left: 50%; top: calc(var(--s2) * -1 - 1px); width: 2px; height: var(--s2); }
-  .prod { padding: var(--s4); }
-}
-.sitenav { position: sticky; top: 0; z-index: 20; background: var(--bg); border-bottom: 1px solid var(--line); }
-.sitenav ul { list-style: none; margin: 0 auto; padding: 0 12px; max-width: 1120px; display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
-.sitenav a { display: flex; align-items: center; min-height: 44px; padding: 0 12px; color: var(--muted); text-decoration: none; font: 500 0.9375rem/1 var(--body); white-space: nowrap; border-bottom: 2px solid transparent; }
-.sitenav a:hover { color: var(--ink); }
-.sitenav a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent); }
-.sitenav a:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
-</style></head>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Sometype+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/site.js"></script>
+</head>
 <body>
-<nav class="sitenav" aria-label="Site"><ul><li><a href="index.html" aria-current="page">Home</a></li><li><a href="portal.html">Client hedge</a></li><li><a href="desk.html#predeal">Decision API</a></li><li><a href="platform.html">Library &amp; platform</a></li><li><a href="kit.html">Guided tour</a></li><li><a href="case-study.html">Case study</a></li></ul></nav>
-<main class="wrap">
+<nav class="sitenav" aria-label="Site"><div class="sitenav-in">
+  <a class="mark" href="index.html" aria-label="Distributed Pricing Service, home"><span class="glyph" aria-hidden="true"></span><span class="wm">Pricing Service</span></a>
+  <ul><li><a href="index.html" aria-current="page">Home</a></li><li class="g"><a href="portal.html">Client hedge</a></li><li><a href="desk.html#predeal">Decision API</a></li><li class="g"><a href="platform.html">Library &amp; platform</a></li><li class="g"><a href="kit.html">Guided tour</a></li><li><a href="case-study.html">Case study</a></li></ul>
+  <button class="theme-btn" type="button">Dark</button>
+</div></nav>
+<main>
 
-<header class="hero">
+<header class="hero"><div class="container hero-top">
   <h1>One engine, two products.</h1>
-  <p class="lede">A credit decision for the desk, a C++ library for the quants.</p>
-  <div class="btns">
-    <a class="btn" href="kit.html">Take the guided tour</a>
-    <a class="link" href="#demo">See both sides at once</a>
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <p class="lede">A credit decision for the desk, a C++ library for the quants.</p>
+      <div class="btns">
+        <a class="btn" href="kit.html">Take the guided tour</a>
+        <a class="link" href="#demo">See both sides at once</a>
+      </div>
+    </div>
+    <div class="ticket settle" id="hticket">
+      <a class="half client" href="portal.html">
+        <strong class="half-t">For the desk and its clients</strong>
+        <span class="big-rate"><span class="pip" id="h-fwd"><span class="sr">1.3459</span><span aria-hidden="true"><span class="pf">1.34</span><span class="pp">59</span></span></span></span>
+        <span class="cap">CAD per USD, forward, with the decision beside it</span>
+        <span class="verdict" id="h-verdict" data-v="approve_with_csa"><b id="h-vt">Approve with a CSA</b></span>
+        <span class="go">Price a hedge</span>
+      </a>
+      <div class="spine" aria-hidden="true"><b>one engine</b></div>
+      <a class="half engine console" href="platform.html">
+        <strong class="half-t">For the library team</strong>
+        <span class="mono-lines" id="h-call">POST /risk/predeal
+10,000 scenarios
+201 trades, 1.4 s first quote</span>
+        <span class="cap">A pybind11 library on Kubernetes, behind one JSON answer</span>
+        <span class="go">Open the platform</span>
+      </a>
+    </div>
   </div>
-</header>
+</div></header>
 
-<section class="demo" id="demo" aria-labelledby="demo-h">
-  <div class="demo-head">
+<section class="sec" id="demo" aria-labelledby="demo-h"><div class="container">
+  <div class="sec-head">
     <h2 id="demo-h">The same request, two views</h2>
     <p>Pick a hedge. The client sees a decision; the library team sees the engine call behind it.</p>
   </div>
@@ -201,13 +71,14 @@ footer p { max-width: 72ch; }
   </form>
   <p class="sr" id="say" aria-live="polite"></p>
 
-  <div class="split" id="split">
-    <article class="prod client" aria-labelledby="pc-h">
+  <div class="ticket" id="split">
+    <article class="half client" aria-labelledby="pc-h">
       <header>
         <h3 id="pc-h">For the desk and its clients</h3>
         <p>A treasurer hedging FX gets a rate, a charge, the CSA saving and a decision.</p>
       </header>
-      <div><div class="big"><span id="fwd">1.3459</span><small>CAD per USD, forward</small></div></div>
+      <div class="big-rate"><span class="pip" id="fwd"><span class="sr">1.3459</span><span aria-hidden="true"><span class="pf">1.34</span><span class="pp">59</span></span></span></div>
+      <p class="cap">CAD per USD, forward</p>
       <div class="bars" role="group" aria-label="Credit charge, basis points a year">
         <div class="bar"><div><span>Without a CSA</span><b><span id="off">3.7</span> bp a year</b></div><div class="track"><i id="offb" style="transform: scaleX(.685)"></i></div></div>
         <div class="bar"><div><span>With the proposed CSA</span><b><span id="on">0.8</span> bp a year</b></div><div class="track"><i class="on" id="onb" style="transform: scaleX(.139)"></i></div></div>
@@ -217,9 +88,9 @@ footer p { max-width: 72ch; }
       <div class="acts"><a class="btn" href="portal.html">Price a hedge</a><a class="link" href="desk.html#predeal">The trader&rsquo;s decision API</a></div>
     </article>
 
-    <div class="spine" aria-hidden="true"><i></i><b>one engine</b><i></i></div>
+    <div class="spine" aria-hidden="true"><b>one engine</b></div>
 
-    <article class="prod dev" aria-labelledby="pd-h">
+    <article class="half engine console" aria-labelledby="pd-h">
       <header>
         <h3 id="pd-h">For the library team</h3>
         <p>A C++ pricing library behind pybind11, run as a service.</p>
@@ -244,75 +115,92 @@ footer p { max-width: 72ch; }
       <div class="acts"><a class="btn" href="platform.html">Open the platform</a><a class="link" href="case-study.html">Read the case study</a></div>
     </article>
   </div>
-  <p class="note">Precomputed by the engine through POST /risk/predeal on synthetic data. Timings come from one laptop and a 201-trade book. Indicative, not a quote.</p>
-</section>
+  <p class="cap">Precomputed by the engine through POST /risk/predeal on synthetic data. Timings come from one laptop and a 201-trade book. Indicative, not a quote.</p>
+</div></section>
 
-<section aria-labelledby="proof-h">
+<section class="sec alt" aria-labelledby="proof-h"><div class="container">
   <div class="sec-head">
     <h2 id="proof-h">Five numbers, each with its evidence</h2>
     <p>Measured on a laptop. Open one to see where it comes from.</p>
   </div>
-  <ul class="proof">
-    <li><a href="case-study.html#reliability"><span class="n" id="p-chaos">99.992%</span><span class="l" id="p-chaos-l">of 76,481 prices served through 11 faults</span><span class="ev">Chaos run</span></a></li>
-    <li><a href="case-study.html#performance"><span class="n" id="p-pfe">1 to 8</span><span class="l">workers, exposure result identical</span><span class="ev">Scaling test</span></a></li>
-    <li><a href="portal.html"><span class="n" id="p-csa">87%</span><span class="l">off the credit charge, at best, with a CSA</span><span class="ev">Client hedge</span></a></li>
-    <li><a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/SLO.md"><span class="n">299 of 300</span><span class="l">quotes shed in an overload burst</span><span class="ev">Service levels</span></a></li>
-    <li><a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/OPERATIONS.md#release"><span class="n">Signed</span><span class="l">releases, scanned then signed by digest</span><span class="ev">Release process</span></a></li>
-  </ul>
-</section>
+  <div class="rows">
+    <a href="case-study.html#reliability"><span class="v"><span class="pip" id="p-chaos"><span class="sr">99.992%</span><span aria-hidden="true"><span class="pf">99.9</span><span class="pp">92</span><span class="pu">%</span></span></span></span><span class="l" id="p-chaos-l">of 76,481 prices served through 11 faults</span><span class="e">Chaos run</span></a>
+    <a href="case-study.html#performance"><span class="v" id="p-pfe">1 to 8</span><span class="l">workers, exposure result identical</span><span class="e">Scaling test</span></a>
+    <a href="portal.html"><span class="v" id="p-csa">87%</span><span class="l">off the credit charge, at best, with a CSA</span><span class="e">Client hedge</span></a>
+    <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/SLO.md"><span class="v">299 of 300</span><span class="l">quotes shed in an overload burst</span><span class="e">Service levels</span></a>
+    <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/OPERATIONS.md#release"><span class="v">Signed</span><span class="l">releases, scanned then signed by digest</span><span class="e">Release process</span></a>
+  </div>
+</div></section>
 
-<section aria-labelledby="how-h">
+<section class="sec" aria-labelledby="how-h"><div class="container">
   <div class="sec-head">
     <h2 id="how-h">How a request becomes a decision</h2>
   </div>
   <ol class="how">
-    <li><svg viewBox="0 0 120 56" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="12" width="44" height="32" rx="6"/><path d="M18 24h24M18 32h14"/><path d="M60 28h40m-8-8 8 8-8 8"/></svg>
+    <li><svg viewBox="0 0 120 56" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="12" width="44" height="32" rx="2"/><path d="M18 24h24M18 32h14"/><path d="M60 28h40m-8-8 8 8-8 8"/></svg>
       <h3>A request arrives</h3><p>The API takes a pre-deal check or a book of trades.</p></li>
     <li><svg viewBox="0 0 120 56" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 28h36"/><path d="M44 28 76 10h30M44 28h62M44 28 76 46h30"/><circle cx="108" cy="10" r="3"/><circle cx="108" cy="28" r="3"/><circle cx="108" cy="46" r="3"/></svg>
       <h3>Work fans out</h3><p>Redis Streams feeds workers that KEDA scales.</p></li>
-    <li><svg viewBox="0 0 120 56" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="30" y="10" width="60" height="36" rx="6"/><path d="M44 24l-6 4 6 4M76 24l6 4-6 4M64 22l-8 12"/></svg>
+    <li><svg viewBox="0 0 120 56" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="30" y="10" width="60" height="36" rx="2"/><path d="M44 24l-6 4 6 4M76 24l6 4-6 4M64 22l-8 12"/></svg>
       <h3>C++ does the maths</h3><p>The same scenarios price the book before and after the trade.</p></li>
     <li><svg viewBox="0 0 120 56" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 30l12 12 28-28"/><path d="M76 14h28M76 28h28M76 42h20"/></svg>
       <h3>A decision comes back</h3><p>A rate, a charge, a verdict. Cassandra keeps the record.</p></li>
   </ol>
-</section>
+</div></section>
 
-<section class="tour" aria-labelledby="tour-h">
-  <div>
+<section class="band console tour" aria-labelledby="tour-h"><div class="container">
+  <div class="sec-head">
     <h2 id="tour-h">Five steps, two minutes, on a phone</h2>
-    <p>From a client&rsquo;s call to the decision, then the proof it survives failures.</p>
+    <div class="block"><p>From a client&rsquo;s call to the decision, then the proof it survives failures.</p>
+    <div class="btns"><a class="btn" href="kit.html">Start the guided tour</a></div></div>
   </div>
-  <a class="btn" href="kit.html">Start the guided tour</a>
-</section>
+</div></section>
 
-<footer>
+<footer class="foot"><div class="container">
   <nav aria-label="Links">
     <a href="case-study.html">Case study</a>
     <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service">Source repository</a>
     <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/MODELS.md">Models and validation</a>
   </nav>
   <p>The limits, plainly: all data is synthetic, every number was measured on one laptop, and the models are textbook. An independent learning project.</p>
-</footer>
+</div></footer>
 </main>
 
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   var D = null, st = { n: '10000000', t: '2.0' }, first = true;
   var ctl = $('ctl');
   function m(x) { return x >= 1e6 ? 'C$' + (x / 1e6).toFixed(2) + 'M' : 'C$' + Math.round(x / 1e3) + 'K'; }
   function grp(x) { return Math.round(x).toLocaleString('en-US'); }
   function maxOff() { var k, v = 0; for (k in D.cells) v = Math.max(v, D.cells[k].off_bps); return v; }
+  /* a rate the way a desk quotes it: the figure, then the last two digits as the pips */
+  function pipHtml(s, unit) {
+    return '<span class="sr">' + s + (unit || '') + '</span><span aria-hidden="true"><span class="pf">' + s.slice(0, -2) + '</span><span class="pp">' + s.slice(-2) + '</span>' + (unit ? '<span class="pu">' + unit + '</span>' : '') + '</span>';
+  }
+  function setPip(el, s, unit, animate) {
+    el.innerHTML = pipHtml(s, unit);
+    if (!animate || reduce) return;
+    var pp = el.querySelector('.pp'), n = 0, fin = s.slice(-2);
+    var iv = setInterval(function () {
+      n++;
+      if (n >= 9) { pp.textContent = fin; clearInterval(iv); return; }
+      pp.textContent = String(Math.floor(Math.random() * 100)).padStart(2, '0');
+    }, 45);
+  }
   function render() {
     var c = D.cells[st.n + '|' + st.t]; if (!c) return;
     var full = maxOff(), cut = Math.round((1 - c.on_bps / c.off_bps) * 100), util = Math.round(c.utilisation * 100);
     var csa = c.verdict === 'approve_with_csa', lim = m(D.limit_cad);
-    $('fwd').textContent = c.forward_rate.toFixed(4);
+    var rate = c.forward_rate.toFixed(4);
+    setPip($('fwd'), rate, '', true); setPip($('h-fwd'), rate, '', true);
     $('off').textContent = c.off_bps.toFixed(1); $('on').textContent = c.on_bps.toFixed(1); $('cut').textContent = cut + '%';
     $('offb').style.transform = 'scaleX(' + (c.off_bps / full).toFixed(3) + ')';
     $('onb').style.transform = 'scaleX(' + (c.on_bps / full).toFixed(3) + ')';
     var v = $('verdict'); v.setAttribute('data-v', c.verdict);
-    $('vt').textContent = csa ? 'Approve with a CSA' : c.verdict === 'approve' ? 'Approve' : 'Refer to credit';
+    var vt = csa ? 'Approve with a CSA' : c.verdict === 'approve' ? 'Approve' : 'Refer to credit';
+    $('vt').textContent = vt; $('h-vt').textContent = vt; $('h-verdict').setAttribute('data-v', c.verdict);
     $('vr').textContent = csa ? 'Peak exposure is ' + util + '% of the ' + lim + ' credit limit without one, so the desk approves only with a CSA.'
       : 'Peak exposure uses ' + util + '% of the ' + lim + ' credit limit.';
     var q = Math.round(+st.n / 1000), mat = (+st.t).toFixed(1);
@@ -320,14 +208,15 @@ footer p { max-width: 72ch; }
     $('resp').textContent = '{ "verdict": "' + c.verdict + '",\n  "peak_pfe_after": ' + Math.round(c.peak_pfe) + ',\n  "cva_charge_running_bps": ' + (csa ? c.on_bps : c.off_bps).toFixed(2) + ' }';
     $('nsc').textContent = grp(D.predeal.n_scenarios); $('ntr').textContent = D.predeal.trades + ' trades';
     $('fq').textContent = (D.predeal.first_quote_ms / 1000).toFixed(1) + ' s'; $('rq').textContent = (D.predeal.requote_ms / 1000).toFixed(1) + ' s';
-    $('say').textContent = 'Showing ' + (+st.n / 1e6) + ' million USD for ' + (+st.t) + (+st.t === 1 ? ' year: ' : ' years: ') + $('vt').textContent + '.';
+    $('h-call').textContent = 'POST /risk/predeal\n' + grp(D.predeal.n_scenarios) + ' scenarios\n' + D.predeal.trades + ' trades, ' + (D.predeal.first_quote_ms / 1000).toFixed(1) + ' s first quote';
+    $('say').textContent = 'Showing ' + (+st.n / 1e6) + ' million USD for ' + (+st.t) + (+st.t === 1 ? ' year: ' : ' years: ') + vt + '.';
     if (!first) { var s = $('split'); s.classList.remove('run'); void s.offsetWidth; s.classList.add('run'); }
     first = false;
   }
   function proof() {
     var p = D.proof, k, best = 0;
     for (k in D.cells) best = Math.max(best, 1 - D.cells[k].on_bps / D.cells[k].off_bps);
-    $('p-chaos').textContent = p.chaos_availability_pct.toFixed(3) + '%';
+    setPip($('p-chaos'), p.chaos_availability_pct.toFixed(3), '%', false);
     $('p-chaos-l').textContent = 'of ' + grp(p.chaos_price_requests) + ' prices served through ' + p.chaos_faults + ' faults';
     var w = p.pfe_identical_on_workers; $('p-pfe').textContent = w[0] + ' to ' + w[w.length - 1];
     $('p-csa').textContent = Math.round(best * 100) + '%';

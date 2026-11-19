@@ -90,26 +90,26 @@ figcaption { color: var(--muted); font-size: 0.9em; }
       </defs>
       <rect class="box" x="20" y="165" width="120" height="70" rx="6"/>
       <text class="t" x="80" y="196" text-anchor="middle">Clients</text>
-      <text class="s" x="80" y="215" text-anchor="middle">trading · risk</text>
+      <text class="s" x="80" y="215" text-anchor="middle">trading, risk</text>
       <line class="w" x1="140" y1="200" x2="186" y2="200" marker-end="url(#a1)"/>
       <text class="lbl" x="163" y="191" text-anchor="middle">HTTP</text>
 
       <rect class="box" x="190" y="80" width="160" height="240" rx="6"/>
       <text class="t" x="270" y="168" text-anchor="middle">API pods</text>
-      <text class="s" x="270" y="190" text-anchor="middle">3–8 replicas · HPA</text>
-      <text class="s" x="270" y="210" text-anchor="middle">FastAPI · Pydantic</text>
+      <text class="s" x="270" y="190" text-anchor="middle">3 to 8 replicas, HPA</text>
+      <text class="s" x="270" y="210" text-anchor="middle">FastAPI, Pydantic</text>
       <text class="s" x="270" y="230" text-anchor="middle">C++ via pybind11</text>
 
       <rect class="soft" x="450" y="40" width="240" height="295" rx="8"/>
       <text class="t" x="570" y="66" text-anchor="middle">Redis</text>
       <text class="s" x="570" y="82" text-anchor="middle">append-only file on a volume</text>
-      <rect class="box" x="470" y="88" width="200" height="40" rx="5"/><text class="m" x="570" y="113" text-anchor="middle">price cache · lock</text>
+      <rect class="box" x="470" y="88" width="200" height="40" rx="5"/><text class="m" x="570" y="113" text-anchor="middle">price cache, lock</text>
       <rect class="hl" x="470" y="148" width="200" height="40" rx="5"/><text class="m" x="570" y="173" text-anchor="middle">stream pricing:intraday</text>
       <rect class="box" x="470" y="220" width="200" height="40" rx="5"/><text class="m" x="570" y="245" text-anchor="middle">stream pricing:batch</text>
       <rect class="box" x="470" y="280" width="200" height="40" rx="5"/><text class="m" x="570" y="305" text-anchor="middle">job state</text>
 
       <line class="w" x1="352" y1="108" x2="468" y2="108" marker-start="url(#a1)" marker-end="url(#a1)"/>
-      <text class="lbl" x="410" y="100" text-anchor="middle">GET · SET NX</text>
+      <text class="lbl" x="410" y="100" text-anchor="middle">GET, SET NX</text>
       <line class="w acc" x1="350" y1="168" x2="468" y2="168" marker-end="url(#a1a)"/>
       <text class="lbl acc" x="410" y="160" text-anchor="middle">XADD (books)</text>
       <line class="w" x1="350" y1="240" x2="468" y2="240" marker-end="url(#a1)"/>
@@ -127,26 +127,26 @@ figcaption { color: var(--muted); font-size: 0.9em; }
 
       <rect class="hl" x="800" y="140" width="180" height="56" rx="6"/>
       <text class="t" x="890" y="164" text-anchor="middle">Intraday pool</text>
-      <text class="s" x="890" y="183" text-anchor="middle">2–8 workers</text>
+      <text class="s" x="890" y="183" text-anchor="middle">2 to 8 workers</text>
       <rect class="box" x="800" y="212" width="180" height="56" rx="6"/>
       <text class="t" x="890" y="236" text-anchor="middle">Batch pool</text>
-      <text class="s" x="890" y="255" text-anchor="middle">0–6 workers</text>
+      <text class="s" x="890" y="255" text-anchor="middle">0 to 6 workers</text>
       <line class="w acc" x1="670" y1="168" x2="798" y2="168" marker-end="url(#a1a)"/>
       <text class="lbl acc" x="734" y="160" text-anchor="middle">XREADGROUP</text>
       <line class="w" x1="670" y1="240" x2="798" y2="240" marker-end="url(#a1)"/>
       <text class="lbl" x="734" y="232" text-anchor="middle">XREADGROUP</text>
       <polyline class="w" points="980,168 992,168 992,300 672,300" marker-end="url(#a1)"/>
       <line class="w" x1="980" y1="240" x2="992" y2="240"/>
-      <text class="lbl" x="830" y="292" text-anchor="middle">results · XACK</text>
+      <text class="lbl" x="830" y="292" text-anchor="middle">results, XACK</text>
 
       <rect class="box" x="190" y="370" width="290" height="60" rx="6"/>
       <text class="t" x="335" y="396" text-anchor="middle">Cassandra ring</text>
-      <text class="s" x="335" y="415" text-anchor="middle">3 nodes · RF 3 · LOCAL_QUORUM</text>
+      <text class="s" x="335" y="415" text-anchor="middle">3 nodes, RF 3, LOCAL_QUORUM</text>
       <line class="w dash" x1="270" y1="320" x2="270" y2="368" marker-end="url(#a1)"/>
       <text class="lbl" x="278" y="349">write-behind (API and workers)</text>
 
       <rect class="soft" x="560" y="370" width="420" height="60" rx="6"/>
-      <text class="t" x="770" y="396" text-anchor="middle">Prometheus · Alertmanager · Grafana · Jaeger</text>
+      <text class="t" x="770" y="396" text-anchor="middle">Prometheus, Alertmanager, Grafana, Jaeger</text>
       <text class="s" x="770" y="415" text-anchor="middle">scrapes every pod, receives OTLP traces, runs on the control plane</text>
     </svg></div>
 
