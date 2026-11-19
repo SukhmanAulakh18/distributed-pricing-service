@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>USD forward hedge and credit charge</title>
+<meta name="description" content="Indicative USD forward rate and the credit charge for a corporate hedge, with and without a collateral agreement. Synthetic data.">
+<style>
+/* A theme file (docs/themes/<name>.json, chosen by ?theme=) sets any of these
+   variables and the copy strings; nothing else about the page changes. */
+:root {
+  --bg: #f4f6f7; --surface: #ffffff; --ink: #14191c; --muted: #50595f; --line: #d5dadd;
+  --primary: #0d5c63; --primary-press: #094349; --on-primary: #ffffff; --accent: #0d5c63;
+  --good: #1d6b3a; --good-bg: #e1f1e7; --warn: #8a4b00; --warn-bg: #f8ebd5; --bad: #a32a1d; --bad-bg: #f9e1dd;
+  --banner-bg: #fff3c4; --banner-ink: #3d3000;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-scheme="light"]) {
+    --bg: #101416; --surface: #181e21; --ink: #eef1f2; --muted: #a7b0b5; --line: #323b40;
+    --primary: #2a9aa5; --primary-press: #3bb0bb; --on-primary: #06191b; --accent: #5cc4cd;
+    --good: #6fd08f; --good-bg: #17301f; --warn: #f0b45a; --warn-bg: #33250d; --bad: #f19a8f; --bad-bg: #3a1a16;
+    --banner-bg: #3a3000; --banner-ink: #fff0b0;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; overflow-wrap: anywhere; }
+.banner { position: sticky; top: 0; z-index: 2; background: var(--banner-bg); color: var(--banner-ink); padding: 8px 16px; font-size: 13px; line-height: 1.4; border-bottom: 1px solid var(--line); }
+main { max-width: 640px; margin: 0 auto; padding: 16px 16px 40px; }
+header h1 { margin: 8px 0 4px; font-size: 22px; line-height: 1.2; }
+header .brand { font-weight: 700; color: var(--accent); font-size: 14px; letter-spacing: .02em; }
+header p { margin: 0; color: var(--muted); }
+fieldset { border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 12px 16px 16px; margin: 16px 0; }
+legend { padding: 0 6px; font-weight: 600; }
+.field { display: block; margin-top: 12px; }
+.field > span { display: block; font-size: 14px; color: var(--muted); margin-bottom: 4px; }
+select { width: 100%; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; min-height: 44px; }
+.check { display: flex; gap: 10px; align-items: flex-start; margin-top: 14px; min-height: 44px; }
+.check input { width: 22px; height: 22px; margin: 2px 0 0; accent-color: var(--primary); flex: none; }
+.check small { display: block; color: var(--muted); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 12px 0; }
+.card h2 { margin: 0 0 2px; font-size: 14px; font-weight: 600; color: var(--muted); }
+.big { font-size: 34px; line-height: 1.15; font-weight: 700; font-variant-numeric: tabular-nums; }
+.big small { font-size: 16px; font-weight: 500; color: var(--muted); }
+.sub { color: var(--muted); font-size: 14px; margin-top: 2px; }
+.card.hero { border-color: var(--primary); border-left-width: 6px; }
+.save { color: var(--good); font-weight: 600; }
+.chip { display: inline-block; padding: 4px 12px; border-radius: 999px; font-weight: 700; font-size: 14px; border: 1px solid currentColor; }
+.chip.approve { color: var(--good); background: var(--good-bg); }
+.chip.approve_with_csa { color: var(--warn); background: var(--warn-bg); }
+.chip.refer_to_credit { color: var(--bad); background: var(--bad-bg); }
+.meter { height: 12px; border-radius: 6px; background: var(--line); overflow: hidden; margin: 10px 0 4px; }
+.meter > div { height: 100%; background: var(--good); }
+.meter.warn > div { background: var(--warn); }
+.meter.bad > div { background: var(--bad); }
+details { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 4px 16px; margin: 12px 0; }
+summary { cursor: pointer; font-weight: 600; min-height: 44px; display: flex; align-items: center; }
+details ul { margin: 0 0 12px; padding-left: 20px; }
+footer { color: var(--muted); font-size: 13px; margin-top: 24px; }
+.err { background: var(--bad-bg); color: var(--bad); border-radius: 8px; padding: 12px; }
+@media (prefers-reduced-motion: no-preference) { .meter > div { transition: width .25s; } }
+</style></head>
+<body>
+<div class="banner" role="note">Indicative. Synthetic market data and counterparty. Precomputed by the platform's C++ engine via POST /risk/predeal; not a quote.</div>
+<main>
+<header>
+  <div class="brand" id="wordmark">Hedge portal</div>
+  <h1>Sell USD forward</h1>
+  <p id="tagline">Sell USD forward and see what the bank charges for your credit.</p>
+</header>
+
+<form id="form" onsubmit="return false">
+<fieldset>
+  <legend>Your hedge</legend>
+  <label class="field"><span>USD receivable to sell forward</span><select id="notional"></select></label>
+  <label class="field"><span>Tenor</span><select id="tenor"></select></label>
+  <label class="check"><input type="checkbox" id="csa"><span>I already have a collateral agreement (CSA)<small>Both sides post collateral as the trade moves. Zero threshold, 10 business day margin period.</small></span></label>
+</fieldset>
+</form>
+
+<div id="out" aria-live="polite" aria-atomic="true">
+  <p>Loading the precomputed grid.</p>
+</div>
+
+<details>
+  <summary>How this is priced</summary>
+  <ul>
+    <li>The forward rate is the Garman-Kohlhagen forward for USD/CAD: spot times e^((CAD rate - USD rate) x tenor). It is set at the market, so the trade starts worth about zero.</li>
+    <li>The credit charge is CVA: the bank's expected loss if you default while the trade is in its favour, from simulated exchange-rate paths, with independent defaults and no wrong-way risk. It is shown as a running spread in basis points a year, and as the equivalent upfront amount.</li>
+    <li>A CSA lowers it because collateral covers most of the exposure; only the margin period (10 business days) stays uncovered.</li>
+    <li>Flat rates and constant volatility. The credit line is checked against the 95th percentile peak exposure of your whole netting set (this trade plus one small existing forward).</li>
+    <li>Every number is looked up from a grid produced by <code>bench/bench_portal.py</code> calling <code>POST /risk/predeal</code>; the page does no pricing.</li>
+  </ul>
+</details>
+
+<details>
+  <summary>Assumptions (all synthetic)</summary>
+  <ul id="assumptions"></ul>
+</details>
+
+<footer><p id="disclaimer"></p></footer>
+</main>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const fmtCad = (x) => "CAD " + Math.round(x).toLocaleString("en-CA");
+const fmtBp = (x) => x.toFixed(x < 10 ? 2 : 1) + " bp";
+const fmtUsd = (x) => "USD " + (x / 1e6) + " million";
+const VERDICT = { approve: "Approve", approve_with_csa: "Approve with CSA", refer_to_credit: "Refer to credit" };
+let data = null;
+
+async function getJson(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(url + " " + r.status);
+  return r.json();
+}
+
+// Theme: variables and copy only. Names are restricted so ?theme= cannot
+// reach other paths. A private theme can live in a gitignored local/themes/
+// folder; it is tried only after docs/themes/ misses.
+async function loadTheme() {
+  const asked = new URLSearchParams(location.search).get("theme") || "neutral";
+  const name = /^[a-z0-9-]{1,40}$/.test(asked) ? asked : "neutral";
+  let t;
+  try { t = await getJson("themes/" + name + ".json"); }
+  catch (e) {
+    try { t = await getJson("../local/themes/" + name + ".json"); }
+    catch (e2) { t = name === "neutral" ? {} : await getJson("themes/neutral.json").catch(() => ({})); }
+  }
+  const rule = (c) => Object.entries(c || {}).map(([k, v]) => "--" + k.replace(/[^a-z-]/g, "") + ":" + String(v).replace(/[;{}]/g, "")).join(";");
+  const css = ":root{" + rule(t.colors && t.colors.light) + "}" +
+    "@media (prefers-color-scheme: dark){:root:not([data-scheme=\"light\"]){" + rule(t.colors && t.colors.dark) + "}}";
+  const s = document.createElement("style"); s.textContent = css; document.head.appendChild(s);
+  if (t.wordmark) $("wordmark").textContent = t.wordmark;
+  if (t.tagline) $("tagline").textContent = t.tagline;
+  if (t.name) document.title = t.name + ": USD forward hedge";
+  $("disclaimer").textContent = (t.disclaimer || "") + " All inputs are synthetic.";
+}
+
+function fill(sel, values, fmt, pick) {
+  sel.innerHTML = "";
+  for (const v of values) {
+    const o = document.createElement("option"); o.value = v; o.textContent = fmt(v); o.selected = v === pick; sel.appendChild(o);
+  }
+}
+
+// The grid's keys come from Python's str(float): "1.0", "0.5". JSON.parse turns
+// 1.0 into 1, so put the ".0" back.
+function key(n, t, csa) { return n + "|" + (Number.isInteger(t) ? t.toFixed(1) : t) + "|" + (csa ? "on" : "off"); }
+
+function render() {
+  const n = +$("notional").value, t = +$("tenor").value, csaOn = $("csa").checked;
+  const off = data.cells[key(n, t, false)], on = data.cells[key(n, t, true)];
+  const cur = csaOn ? on : off;
+  const unc = off.uncollateralized_running_bps, withCsa = on.cva_charge_running_bps;
+  const saving = unc > 0 ? Math.round((1 - withCsa / unc) * 100) : 0;
+  const limit = data.inputs.credit_limit_cad_on_peak_pfe;
+  const use = cur.limit_utilisation;
+  const tone = use <= 1 ? "" : (cur.verdict === "approve_with_csa" ? "warn" : "bad");
+  const line = {
+    approve: "Your credit line covers this hedge.",
+    approve_with_csa: "That is over your line without a CSA. With the CSA it uses " + Math.round(on.limit_utilisation * 100) + "%.",
+    refer_to_credit: "This hedge exceeds your credit line even with collateral, so the bank's credit team would review it."
+  }[cur.verdict];
+  const csaCard = saving > 0
+    ? '<div class="sub"><span class="save">Saving ' + saving + '%</span> against ' + fmtBp(unc) + ' without one. About ' + fmtCad(on.incremental_cva) + ' upfront.</div>'
+    : '<div class="sub">No saving against ' + fmtBp(unc) + ' without one.</div>';
+  $("out").innerHTML =
+    '<section class="card hero"><h2>Your forward rate</h2><div class="big">' + off.forward_rate.toFixed(4) + ' <small>CAD per USD</small></div>' +
+      '<div class="sub">Sell ' + fmtUsd(n) + ' in ' + t + (t === 1 ? ' year' : ' years') + ' for about ' + fmtCad(n * off.forward_rate) + '. Spot ' + data.inputs.spot_cad_per_usd.toFixed(2) + '.</div></section>' +
+    '<section class="card"><h2>Credit charge</h2><div class="big">' + fmtBp(unc) + ' <small>a year</small></div>' +
+      '<div class="sub">What the bank charges for your credit risk, with no collateral. About ' + fmtCad(off.uncollateralized_cva) + ' upfront.</div></section>' +
+    '<section class="card"><h2>With a CSA</h2><div class="big">' + fmtBp(withCsa) + ' <small>a year</small></div>' + csaCard + '</section>' +
+    '<section class="card"><h2>Fit with your credit line (' + (csaOn ? "with" : "without") + ' a CSA)</h2>' +
+      '<span class="chip ' + cur.verdict + '">' + VERDICT[cur.verdict] + '</span>' +
+      '<div class="meter ' + tone + '" role="meter" aria-label="Credit line used" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.min(100, Math.round(use * 100)) + '" aria-valuetext="' + Math.round(use * 100) + ' percent of the line"><div style="width:' + Math.min(100, use * 100).toFixed(1) + '%"></div></div>' +
+      '<div class="sub">' + Math.round(use * 100) + '% of a ' + fmtCad(limit) + ' line used (95th percentile peak exposure). ' + line + '</div></section>';
+}
+
+(async function init() {
+  try {
+    await loadTheme();
+    data = await getJson("data/portal.json");
+    fill($("notional"), data.notionals_usd, fmtUsd, 5e6);
+    fill($("tenor"), data.tenors_years, (v) => v + (v === 1 ? " year" : " years"), 1);
+    const i = data.inputs;
+    const facts = [
+      "All money in CAD. Spot " + i.spot_cad_per_usd + " CAD per USD, CAD rate " + (i.cad_rate * 100).toFixed(2) + "%, USD rate " + (i.usd_rate * 100).toFixed(2) + "%, volatility " + (i.vol * 100) + "%.",
+      "Counterparty: synthetic BBB-like corporate, CDS spread " + i.counterparty.cds_spread_bps + " bp, recovery " + (i.counterparty.recovery * 100) + "%.",
+      "Existing netting set: one forward of USD " + i.prior_forward.usd.toLocaleString("en-CA") + ", " + i.prior_forward.maturity_years + " years.",
+      "Credit line: " + fmtCad(i.credit_limit_cad_on_peak_pfe) + " on peak exposure.",
+      "CSA: zero thresholds, minimum transfer " + fmtCad(i.csa.mta) + ", " + i.csa.mpor_days + " business day margin period.",
+      i.n_scenarios.toLocaleString("en-CA") + " simulated scenarios."];
+    for (const f of facts) { const li = document.createElement("li"); li.textContent = f; $("assumptions").appendChild(li); }
+    for (const id of ["notional", "tenor", "csa"]) $(id).addEventListener("change", render);
+    render();
+  } catch (e) {
+    $("out").innerHTML = '<p class="err">Could not load the precomputed grid (' + e.message + ').</p>';
+  }
+})();
+</script>
+</body></html>
