@@ -1,4 +1,4 @@
-"""Build docs/data/kit.json for the pitch kit's guided walkthrough.
+"""Build docs/data/kit.json for the guided tour's walkthrough.
 
 Reads the three measured result files and keeps only the fields the page
 uses. Deterministic: sorted keys, no timestamps. Run with --check to fail if
@@ -11,6 +11,8 @@ import sys
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 XVA = os.path.join(ROOT, "bench", "results", "xva.json")
 SIEGE = os.path.join(ROOT, "bench", "results", "siege.json")
+CHAOS = os.path.join(ROOT, "bench", "results", "chaos-run3.json")
+EXPOSURE = os.path.join(ROOT, "bench", "results", "exposure.json")
 PORTAL = os.path.join(ROOT, "docs", "data", "portal.json")
 OUT = os.path.join(ROOT, "docs", "data", "kit.json")
 
@@ -29,6 +31,7 @@ def load(path):
 
 def build():
     xva, siege, portal = load(XVA), load(SIEGE), load(PORTAL)
+    chaos, exposure = load(CHAOS)["summary"], load(EXPOSURE)
     cells = {}
     for n in portal["notionals_usd"]:
         for t in TENORS:
@@ -63,8 +66,15 @@ def build():
         "predeal": {
             "first_quote_ms": p["first_quote_ms"],
             "requote_ms": p["requote_book_cached_ms"],
+            "n_scenarios": p["n_scenarios"],
             "threads": p["pricer_threads"],
             "trades": p["n_trades"],
+        },
+        "proof": {
+            "chaos_availability_pct": chaos["availability_pct"],
+            "chaos_faults": chaos["faults"],
+            "chaos_price_requests": chaos["price_requests"],
+            "pfe_identical_on_workers": [r["workers"] for r in exposure["scaling"] if r["identical"]],
         },
         "siege": {"passed": siege["passed"], "total": siege["passed"] + siege["failed"]},
         "tenors": TENORS,

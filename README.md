@@ -14,11 +14,15 @@ SLOs. Chaos tests then kill its pods, its databases and a whole node.
 
 | | |
 | --- | --- |
-| **Case study (live site)** | https://sukhmanaulakh18.github.io/distributed-pricing-service/ (diagrams, financial engineering, an interactive replay of the chaos run, SRE) |
+| **Front door (live site)** | https://sukhmanaulakh18.github.io/distributed-pricing-service/ : two products on one engine, with a live "same request, two views" demo |
+| **Client product** | [Client hedge](https://sukhmanaulakh18.github.io/distributed-pricing-service/portal.html) (a treasurer's forward rate, credit charge, CSA saving and decision) and the [Decision API](https://sukhmanaulakh18.github.io/distributed-pricing-service/desk.html#predeal) (the trader's pre-deal check) |
+| **Developer product** | [Library and platform](https://sukhmanaulakh18.github.io/distributed-pricing-service/platform.html): the C++ library behind pybind11, on Kubernetes with Redis Streams, Cassandra, KEDA and Rancher, observed and chaos-tested |
+| **Guided tour** | [Five steps, phone-first](https://sukhmanaulakh18.github.io/distributed-pricing-service/kit.html) |
+| **Case study** | [Diagrams, financial engineering, an interactive chaos replay, SRE](https://sukhmanaulakh18.github.io/distributed-pricing-service/case-study.html) |
 | **Two-page brief (PDF)** | [Distributed-Pricing-Service-Brief.pdf](https://sukhmanaulakh18.github.io/distributed-pricing-service/Distributed-Pricing-Service-Brief.pdf) |
 | **Interactive XVA desk** | [site/desk.html](https://sukhmanaulakh18.github.io/distributed-pricing-service/desk.html): negotiate a CSA and watch CVA and PFE move, plus the measured results |
 | **Business case** | [docs/BUSINESS_CASE.md](docs/BUSINESS_CASE.md): the decision it supports, who uses it, what the numbers are worth |
-| **Interactive chaos replay** | [site#reliability](https://sukhmanaulakh18.github.io/distributed-pricing-service/#reliability) |
+| **Interactive chaos replay** | [site#reliability](https://sukhmanaulakh18.github.io/distributed-pricing-service/case-study.html#reliability) |
 | **Grafana dashboards** | Defined as code in [`deploy/observability/grafana/`](deploy/observability/grafana/), served at `localhost:3001` by `make cluster`; screenshots below and on the site |
 
 ![Chaos run: the cluster dashboard while faults are injected, with alerts routed by owner](docs/img/demo.gif)
@@ -263,7 +267,7 @@ tests/         pytest: API, books, exposure, bindings, models, tracing, triage
 bench/         benchmarks, chaos and failure tests, chart generation
 deploy/        Kustomize base + kind/prod overlays, observability stack, kind config, Compose
 scripts/       memory checks, Rancher setup, demo, report and screenshot tooling
-docs/          site (index.html), system design, operations, architecture, SLOs, performance review, audit
+docs/          site (index.html front door, case-study.html), system design, operations, architecture, SLOs, performance review, audit
 ```
 
 ## Limitations
