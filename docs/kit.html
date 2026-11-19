@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pitch kit | Distributed Pricing Service</title>
+<meta name="description" content="A phone-first pitch kit: what the platform does for a bank, seven audience lenses, a 30-second demo and one measured proof number for each.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --bg: #f5f6f3; --surface: #ffffff; --ink: #15191d; --muted: #59626b; --line: #dcdfd8;
+  --accent: #0d6b62; --accent-soft: #e2efec; --warn: #a15c07; --warn-soft: #f6ead9; --on-accent: #fff;
+  --display: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --body: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #0e1113; --surface: #161a1d; --ink: #e7eae7; --muted: #9aa3aa; --line: #2a3035; --accent: #5cc0b4; --accent-soft: #15302d; --warn: #e3a34d; --warn-soft: #33270f; --on-accent: #0e1113; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #0e1113; --surface: #161a1d; --ink: #e7eae7; --muted: #9aa3aa; --line: #2a3035; --accent: #5cc0b4; --accent-soft: #15302d; --warn: #e3a34d; --warn-soft: #33270f; --on-accent: #0e1113; color-scheme: dark; }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { scroll-behavior: smooth; scroll-padding-top: 16px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; animation: none !important; } }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 var(--body); overflow-wrap: anywhere; }
+.wrap { max-width: 720px; margin: 0 auto; padding: 24px 16px 56px; display: grid; gap: 28px; }
+h1, h2, h3 { font-family: var(--display); font-weight: 600; line-height: 1.15; margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(1.45rem, 5.6vw, 2.1rem); }
+h2 { font-size: 1.5rem; }
+h3 { font-size: 1.25rem; }
+h3 small { font: 500 0.75rem var(--mono); color: var(--muted); letter-spacing: .04em; text-transform: uppercase; display: block; margin-top: 4px; }
+p { margin: 0; }
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.eyebrow { font: 500 0.75rem/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.hero { display: grid; gap: 14px; }
+.btns { display: grid; gap: 10px; }
+.btn { display: flex; align-items: center; justify-content: space-between; min-height: 56px; padding: 12px 18px; border-radius: 10px; background: var(--accent); color: var(--on-accent); font: 600 1.05rem var(--body); text-decoration: none; }
+.btn.alt { background: var(--surface); color: var(--ink); border: 1px solid var(--accent); }
+.btn:hover { filter: brightness(1.08); }
+.qr { display: grid; justify-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; text-align: center; }
+#qr { background: #fff; padding: 10px; border-radius: 6px; line-height: 0; }
+#qr img, #qr canvas { max-width: 100%; height: auto; }
+.qr code { font: 0.78rem var(--mono); }
+.note { font-size: .88rem; color: var(--muted); }
+.tabs { display: none; flex-wrap: wrap; gap: 8px; }
+.js-on .tabs { display: flex; }
+.tabs button { min-height: 44px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: 500 .9rem var(--body); cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.lens { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 12px; margin-top: 12px; }
+.proof { background: var(--accent-soft); border-radius: 8px; padding: 12px 14px; display: grid; gap: 4px; }
+.proof b { font: 500 1.2rem/1.25 var(--mono); }
+.proof span { font-size: .85rem; color: var(--muted); }
+.btn2 { display: inline-flex; align-items: center; min-height: 48px; padding: 10px 16px; border: 1px solid var(--accent); border-radius: 8px; font-weight: 600; text-decoration: none; justify-self: start; }
+.table-wrap { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: .8rem; }
+th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 500 .66rem/1.3 var(--mono); text-transform: uppercase; color: var(--muted); }
+tr:last-child td { border-bottom: 0; }
+td.num { font-family: var(--mono); }
+.callout { background: var(--warn-soft); border-radius: 8px; padding: 14px 16px; font-size: .92rem; }
+.stack { display: grid; gap: 12px; }
+footer { font-size: .9rem; display: grid; gap: 6px; }
+</style></head>
+<body><main class="wrap">
+<header class="hero">
+  <div class="eyebrow">Pitch kit &middot; BFUTR, Toronto, 20 Nov 2026</div>
+  <h1>Before a trader says yes, it tells them whether the client's credit line can take the trade and what to charge for the risk &mdash; and it keeps answering when servers fail.</h1>
+  <nav class="btns" aria-label="Start here">
+    <a class="btn" href="portal.html">Try a client hedge <span aria-hidden="true">&rarr;</span></a>
+    <a class="btn" href="desk.html#predeal">Run a pre-deal decision <span aria-hidden="true">&rarr;</span></a>
+    <a class="btn alt" href="#reliability">See the reliability proof <span aria-hidden="true">&darr;</span></a>
+  </nav>
+  <div class="qr"><div id="qr" role="img" aria-label="QR code linking to this page"></div>
+    <p class="note">Scan to open this kit on your phone</p><code>https://sukhmanaulakh18.github.io/distributed-pricing-service/kit.html</code></div>
+</header>
+
+<section aria-labelledby="lh" class="stack">
+  <h2 id="lh">Seven lenses</h2>
+  <p class="note">Pick the one that matches who you are talking to.</p>
+  <div class="tabs" role="tablist" aria-label="Audience lenses"><button type=button role=tab id=t-business aria-controls=p-business aria-selected=false tabindex=-1>Business</button><button type=button role=tab id=t-quant aria-controls=p-quant aria-selected=false tabindex=-1>Quant</button><button type=button role=tab id=t-developer aria-controls=p-developer aria-selected=false tabindex=-1>Developer</button><button type=button role=tab id=t-sre aria-controls=p-sre aria-selected=false tabindex=-1>Infrastructure &amp; SRE</button><button type=button role=tab id=t-data aria-controls=p-data aria-selected=false tabindex=-1>Data</button><button type=button role=tab id=t-cyber aria-controls=p-cyber aria-selected=false tabindex=-1>Cyber &amp; controls</button><button type=button role=tab id=t-ai aria-controls=p-ai aria-selected=false tabindex=-1>AI &amp; agentic</button></div>
+  <div id="panels"><section class=lens id=p-business role=tabpanel aria-labelledby=t-business><h3>Business <small>Commercial banking</small></h3><p>Tells a client treasurer, in seconds, what a hedge costs in credit terms and whether their credit line can take it.</p><div class=proof><b>5.5 bp vs 0.7 bp</b><span>running credit charge, USD 5M 5y, no CSA vs CSA (docs/data/portal.json)</span></div><p class=demo><strong>30-second demo.</strong> Open the client portal, pick USD 5M and 5 years, then toggle the CSA.</p><a class=btn2 href="portal.html">Open portal &rarr;</a></section><section class=lens id=p-quant role=tabpanel aria-labelledby=t-quant><h3>Quant <small>Models and risk</small></h3><p>Prices the credit charge and the exposure on a trade before it is done, with a what-if that does not jitter.</p><div class=proof><b>CSA cuts CVA 60%; what-if noise 5.5x lower</b><span>zero-threshold CSA vs same scenarios uncollateralized; stdev $1,809 independent seeds vs $328 shared scenarios (bench/results/xva.json)</span></div><p class=demo><strong>30-second demo.</strong> Open the desk, run a pre-deal check, then change the CSA threshold.</p><a class=btn2 href="desk.html#predeal">Run pre-deal &rarr;</a></section><section class=lens id=p-developer role=tabpanel aria-labelledby=t-developer><h3>Developer <small>C++, Python, CI</small></h3><p>A C++ core behind a Python API, with memory and thread bugs hunted by tooling rather than hope.</p><div class=proof><b>41 C++ + 123 Python tests</b><span>ASan, UBSan, TSan and Valgrind clean in CI (README)</span></div><p class=demo><strong>30-second demo.</strong> Open the repo and read the README test and CI sections.</p><a class=btn2 href="https://github.com/SukhmanAulakh18/distributed-pricing-service">Open repo &rarr;</a></section><section class=lens id=p-sre role=tabpanel aria-labelledby=t-sre><h3>Infrastructure &amp; SRE <small>Reliability</small></h3><p>Keeps answering when pods, databases and a node are killed, and refuses overload instead of falling over.</p><div class=proof><b>99.992% of 76,481 prices</b><span>served in a 10-minute, 11-fault chaos run. Load shedding: 299 of 300 shed, readiness 3 ms (README, docs/SLO.md)</span></div><p class=demo><strong>30-second demo.</strong> Jump to the reliability proof below.</p><a class=btn2 href="#reliability">See proof &rarr;</a></section><section class=lens id=p-data role=tabpanel aria-labelledby=t-data><h3>Data <small>Lineage and reproducibility</small></h3><p>Every number can be reproduced, and a distributed run gives the same answer as a local one.</p><div class=proof><b>Identical PFE and CVA on 1, 2, 4 and 8 workers</b><span>same market-data version and deterministic seed give the same answer (README, docs/BUSINESS_CASE.md)</span></div><p class=demo><strong>30-second demo.</strong> Open the desk and note the market-data version, then rerun for the same figures.</p><a class=btn2 href="desk.html">Open desk &rarr;</a></section><section class=lens id=p-cyber role=tabpanel aria-labelledby=t-cyber><h3>Cyber &amp; controls <small>Supply chain and platform</small></h3><p>Images are scanned before they are pushed, signed, and run with least privilege.</p><div class=proof><b>Scan before push</b><span>SBOM and cosign signatures, default-deny NetworkPolicies, non-root pods (README, docs/OPERATIONS.md)</span></div><p class=demo><strong>30-second demo.</strong> Open the repo and read the operations guide on release and network policy.</p><a class=btn2 href="https://github.com/SukhmanAulakh18/distributed-pricing-service">Open repo &rarr;</a></section><section class=lens id=p-ai role=tabpanel aria-labelledby=t-ai><h3>AI &amp; agentic <small>Guarded automation</small></h3><p>A guarded remediation runner: allowlisted actions, human approval, evidence by replaying the incident, a hash-chained audit ledger. No LLM decisions.</p><div class=proof><b>No LLM decisions</b><span>every action is allowlisted and human-approved (design statement)</span></div><p class=demo><strong>30-second demo.</strong> Open the repo and look for the remediation runner.</p><a class=btn2 href="https://github.com/SukhmanAulakh18/distributed-pricing-service">Open repo &rarr;</a></section></div>
+</section>
+
+<section id="reliability" aria-labelledby="rh" class="stack">
+  <h2 id="rh">Reliability proof</h2>
+  <p><strong>Chaos run:</strong> 10 minutes, 11 faults (API pods, workers, a database node, Redis, a whole node): <strong>99.992%</strong> of 76,481 single prices served; 29 of 30 books complete with 0 failed trades out of 58,000.</p>
+  <p><strong>Siege scorecard:</strong> 6 of 6 failure scenarios recovered, each detected by a metric and routed to an owner.</p>
+  <div class="table-wrap"><table><caption class="note" style="text-align:left;padding:8px">Scenario, recovered, detected by, routed to</caption>
+  <thead><tr><th scope="col">Scenario</th><th scope="col">Recovered</th><th scope="col">Detected</th><th scope="col">Owner</th></tr></thead><tbody><tr><td>Client retries after a reset</td><td class=num>yes, 2.2 s</td><td>jobs_total</td><td>core</td></tr><tr><td>Worker killed mid exposure run</td><td class=num>yes, 0.8 s</td><td>jobs_total</td><td>core</td></tr><tr><td>Poisoned messages in the stream</td><td class=num>yes, 1.0 s</td><td>worker_tasks_total</td><td>quant</td></tr><tr><td>Redis outage mid book</td><td class=num>yes, 2.2 s</td><td>worker_tasks_total</td><td>platform</td></tr><tr><td>Worker killed holding a task</td><td class=num>yes, 1.0 s</td><td>worker_reclaimed_total</td><td>core</td></tr><tr><td>Duplicate delivery after reclaim</td><td class=num>yes, 1.1 s</td><td>worker_reclaimed_total</td><td>core</td></tr></tbody></table></div>
+</section>
+
+<p class="callout"><strong>Honest limits.</strong> Synthetic data, textbook models, laptop measurements. Not production.</p>
+
+<footer><a href="index.html">Read the case study</a><a href="https://github.com/SukhmanAulakh18/distributed-pricing-service">Source repository</a></footer>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+(function () {
+  document.documentElement.classList.add('js-on');
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('[role=tab]'));
+  var panels = tabs.map(function (t) { return document.getElementById(t.getAttribute('aria-controls')); });
+  function sel(i, focus) {
+    tabs.forEach(function (t, j) { var on = i === j; t.setAttribute('aria-selected', on); t.tabIndex = on ? 0 : -1; panels[j].hidden = !on; });
+    if (focus) tabs[i].focus();
+  }
+  var ids = tabs.map(function (t) { return t.id.slice(2); });
+  sel(Math.max(0, ids.indexOf(location.hash.slice(1))), false);
+  tabs.forEach(function (t, i) {
+    t.addEventListener('click', function () { sel(i, false); });
+    t.addEventListener('keydown', function (e) {
+      var n = tabs.length, k = e.key;
+      if (k === 'ArrowRight') { e.preventDefault(); sel((i + 1) % n, true); }
+      else if (k === 'ArrowLeft') { e.preventDefault(); sel((i + n - 1) % n, true); }
+      else if (k === 'Home') { e.preventDefault(); sel(0, true); }
+      else if (k === 'End') { e.preventDefault(); sel(n - 1, true); }
+    });
+  });
+  try { if (window.QRCode) new QRCode(document.getElementById('qr'), { text: 'https://sukhmanaulakh18.github.io/distributed-pricing-service/kit.html', width: 176, height: 176, correctLevel: QRCode.CorrectLevel.M }); } catch (e) {}
+})();
+</script></body></html>
