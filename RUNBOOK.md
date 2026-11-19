@@ -172,6 +172,7 @@ Fix: circuit breaker, and later the write-behind price log.
 **4. A Redis outage stalled the API for a second.** 22 req/s and 859 ms p99
 in the worst second, from several 200 ms socket timeouts per request. Fix:
 circuit breaker on the cache. Worst second after the fix: 923 req/s, 60 ms.
+Replayed by: tests/siege/test_redis_outage.py
 
 **5. Kernel CPU throttling of the API pods.** 4 pricings × 2 threads = 8
 threads against a 2-CPU limit; one pod was throttled in 16% of its CFS
@@ -184,6 +185,7 @@ compute-bound mix still hits the quota, and there the fix is more pods
 expected fields (e.g. added with `redis-cli`) raised `KeyError` in the worker
 loop. Unacked, it would be reclaimed and crash the next worker. Fix: such
 messages are logged, acked and dropped.
+Replayed by: tests/siege/test_poison.py
 
 **7. The triage tool reported old restarts as live problems.**
 `restartCount` is cumulative, so yesterday's crash tests kept firing, and
@@ -210,6 +212,7 @@ before Kubernetes marked a stopped node NotReady; single prices lost only 1
 request in 150,101. Books are idempotent (same input, same prices), so the
 client retries a connection-level failure once. See the second chaos run in
 the performance review, finding 11.
+Replayed by: tests/siege/test_client_reset.py
 
 **11. The monitoring died with the node it was watching.** In the second
 chaos run, a stopped worker node was hosting kube-state-metrics, so
@@ -239,3 +242,4 @@ connection resets during the 2-minute node outage. A single HTTP retry is
 too short for an outage that long. Proposed fix (performance review, next
 steps): the client picks the job id and polls `/jobs/{id}` after a
 connection failure, instead of re-sending the book.
+Replayed by: tests/siege/test_client_reset.py

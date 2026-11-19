@@ -2,7 +2,7 @@ PY ?= .venv/bin/python
 PIP ?= .venv/bin/pip
 COMPOSE = docker compose -f deploy/docker-compose.yml
 
-.PHONY: install test cpp-test cpp-checks bench plots share up down cluster deploy rancher demo chaos triage
+.PHONY: install test cpp-test cpp-checks bench plots share up down cluster deploy rancher demo chaos triage siege
 
 install:
 	$(PIP) install -r requirements-dev.txt
@@ -61,6 +61,12 @@ deploy:
 
 rancher:
 	scripts/rancher.sh
+
+# Replays past incidents in-process and checks recovery by reading results back.
+# Replays incidents and proves each one is recovered, detected and routed;
+# refreshes bench/results/siege.json.
+siege:
+	SIEGE_SCORECARD=1 $(PY) -m pytest -q tests/siege
 
 chaos:
 	$(PY) bench/chaos.py --minutes 10
