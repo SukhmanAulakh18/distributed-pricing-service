@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>USD forward hedge and credit charge</title>
+<meta name="description" content="Indicative USD forward rate and the credit charge for a corporate hedge, with and without a collateral agreement. Synthetic data.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Hallmark · checked: 2026-11-18 · genre: modern-minimal (inferred) · theme: brand (site tokens, docs/index.html :root; white-label colours from docs/themes/*.json)
+ * pre-emit critique: P4 H4 E4 S4 R5 V4 · weakest: S, a tool page has no hero image; the signature is the two bars drawn to one scale (no CSA against CSA), so the saving is seen before it is read
+ * hero: none (app screen) · nav: none · footer: disclaimer only · redesign: full · built: the project · v2.0.0 */
+:root {
+  --bg: #f4f6f7; --surface: #ffffff; --ink: #14191c; --muted: #50595f; --line: #d5dadd;
+  --primary: #0d5c63; --primary-press: #094349; --on-primary: #ffffff; --accent: #0d5c63;
+  --good: #1d6b3a; --good-bg: #e1f1e7; --warn: #8a4b00; --warn-bg: #f8ebd5; --bad: #a32a1d; --bad-bg: #f9e1dd;
+  --banner-bg: #fff3c4; --banner-ink: #3d3000;
+  --display: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --body: "IBM Plex Sans", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px;
+  --r1: 8px; --r2: 12px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-scheme="light"]) {
+    --bg: #101416; --surface: #181e21; --ink: #eef1f2; --muted: #a7b0b5; --line: #323b40;
+    --primary: #2a9aa5; --primary-press: #3bb0bb; --on-primary: #06191b; --accent: #5cc4cd;
+    --good: #6fd08f; --good-bg: #17301f; --warn: #f0b45a; --warn-bg: #33250d; --bad: #f19a8f; --bad-bg: #3a1a16;
+    --banner-bg: #3a3000; --banner-ink: #fff0b0;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; overflow-x: clip; scroll-behavior: smooth; }
+body { margin: 0; overflow-x: clip; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body); overflow-wrap: anywhere; accent-color: var(--primary); caret-color: var(--primary); scrollbar-color: var(--line) var(--bg); }
+::selection { background: var(--primary); color: var(--on-primary); }
+[hidden] { display: none !important; }
+h1, h2, h3 { font-family: var(--display); font-weight: 600; margin: 0; text-wrap: balance; min-width: 0; overflow-wrap: break-word; }
+p { margin: 0; text-wrap: pretty; }
+code { font: 0.875rem var(--mono); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.banner { position: sticky; top: 0; z-index: 2; background: var(--banner-bg); color: var(--banner-ink); padding: var(--s2) var(--s4); font-size: 0.875rem; line-height: 1.4; border-bottom: 1px solid var(--line); }
+.wrap { max-width: 1040px; margin: 0 auto; padding: var(--s5) var(--s4) var(--s7); }
+header { display: grid; gap: var(--s2); margin-bottom: var(--s5); }
+.brand { font-weight: 600; color: var(--accent); font-size: 0.875rem; }
+header h1 { font-size: clamp(2rem, 7vw, 3rem); line-height: 1.1; }
+header p { color: var(--muted); max-width: 52ch; }
+.badge { justify-self: start; display: inline-flex; align-items: center; min-height: 32px; padding: var(--s1) var(--s3); border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-size: 0.875rem; font-weight: 500; }
+.badge.live { color: var(--good); background: var(--good-bg); border-color: var(--good); }
+.badge.check { color: var(--muted); }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s5); align-items: start; }
+@media (min-width: 900px) { .layout { grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: var(--s6); } .panel { position: sticky; top: 64px; } }
+.panel, .card, details { color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r2); }
+.panel { padding: var(--s4) var(--s4) var(--s5); display: grid; gap: var(--s4); }
+.panel h2 { font-size: 1.25rem; }
+.grp { display: grid; gap: var(--s4); }
+.field { display: grid; gap: var(--s1); }
+.field > span, .lab { font-size: 0.875rem; color: var(--muted); font-weight: 500; }
+.help { font-size: 0.875rem; color: var(--muted); min-height: 1lh; }
+.help.bad { color: var(--bad); }
+select, input[type="number"] { width: 100%; min-height: 48px; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: var(--r1); padding: var(--s2) var(--s3); font-variant-numeric: tabular-nums; }
+select:hover, input[type="number"]:hover { border-color: var(--muted); }
+select:disabled, input:disabled { opacity: .5; cursor: not-allowed; }
+input[aria-invalid="true"] { border-color: var(--bad); }
+input[type="range"] { width: 100%; min-height: 44px; margin: 0; cursor: pointer; }
+.pair { display: grid; grid-template-columns: minmax(0, 120px) minmax(0, 1fr); gap: var(--s3); align-items: center; }
+.check { display: flex; gap: var(--s3); align-items: flex-start; min-height: 48px; cursor: pointer; }
+.check input { width: 24px; height: 24px; margin: var(--s1) 0 0; flex: none; }
+.check small { display: block; color: var(--muted); font-size: 0.875rem; }
+
+.out { display: grid; gap: var(--s4); min-width: 0; }
+.out[aria-busy="true"] > .card { opacity: .55; }
+.pair-cards { display: grid; gap: var(--s4); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 640px) { .pair-cards { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.card { padding: var(--s4) var(--s4) var(--s5); display: grid; gap: var(--s2); align-content: start; }
+.card h2 { font-family: var(--body); font-size: 0.875rem; font-weight: 500; color: var(--muted); }
+.card.lead { border-color: var(--primary); }
+.big { font: 600 clamp(2.25rem, 8vw, 3.25rem)/1.1 var(--display); font-variant-numeric: lining-nums tabular-nums; }
+.big small { font: 500 1rem var(--body); color: var(--muted); }
+.sub { color: var(--muted); font-size: 0.875rem; }
+.save { color: var(--good); font-weight: 600; }
+.chip { justify-self: start; padding: var(--s1) var(--s3); border-radius: 999px; font-weight: 600; font-size: 0.875rem; border: 1px solid currentColor; }
+.chip.approve { color: var(--good); background: var(--good-bg); }
+.chip.approve_with_csa { color: var(--warn); background: var(--warn-bg); }
+.chip.refer_to_credit { color: var(--bad); background: var(--bad-bg); }
+
+.bars { display: grid; gap: var(--s3); margin: var(--s2) 0; }
+.row { display: grid; gap: var(--s1); }
+.row .top { display: flex; justify-content: space-between; gap: var(--s3); font-size: 0.875rem; }
+.row .top b { font-variant-numeric: tabular-nums; font-weight: 600; }
+.row.sel .top span:first-child { font-weight: 600; }
+.row:not(.sel) svg { opacity: .55; }
+svg.bar { display: block; width: 100%; height: 16px; overflow: hidden; }
+.bar .track { fill: var(--line); }
+.bar .fill { transform-box: fill-box; transform-origin: left center; }
+.bar .fill.off { fill: var(--muted); }
+.bar .fill.on { fill: var(--primary); }
+.bar .fill.good { fill: var(--good); } .bar .fill.warn { fill: var(--warn); } .bar .fill.bad { fill: var(--bad); }
+.bar .limit { stroke: var(--ink); stroke-width: 2; }
+@keyframes grow { from { transform: scaleX(0); } }
+@media (prefers-reduced-motion: no-preference) { .bar .fill { animation: grow .4s ease-out; } }
+
+.live-meta { font-size: 0.875rem; color: var(--muted); padding: var(--s3) var(--s4); border: 1px solid var(--line); border-radius: var(--r1); background: var(--surface); font-variant-numeric: tabular-nums; }
+.busy { height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.busy::after { content: ""; display: block; height: 100%; width: 40%; background: var(--primary); }
+@keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+@media (prefers-reduced-motion: no-preference) { .busy::after { animation: slide 1.1s ease-in-out infinite; } }
+.notice, .err { border-radius: var(--r1); padding: var(--s3) var(--s4); font-size: 0.875rem; }
+.notice { background: var(--warn-bg); color: var(--warn); }
+.err { background: var(--bad-bg); color: var(--bad); }
+
+details { padding: var(--s1) var(--s4); margin-top: var(--s4); }
+summary { cursor: pointer; font-weight: 600; min-height: 48px; display: flex; align-items: center; border-radius: var(--r1); }
+details > :not(summary) { margin-bottom: var(--s4); }
+details ul { margin: 0 0 var(--s3); padding-left: var(--s5); display: grid; gap: var(--s2); }
+pre { margin: 0; padding: var(--s3); background: var(--bg); border: 1px solid var(--line); border-radius: var(--r1); overflow-x: auto; font: 0.875rem/1.5 var(--mono); }
+.btn { min-height: 44px; padding: var(--s2) var(--s4); border-radius: var(--r1); border: 1px solid var(--primary); background: var(--surface); color: var(--primary); font: 600 0.875rem var(--body); cursor: pointer; }
+.btn:hover { background: var(--primary); color: var(--on-primary); }
+.btn:active { background: var(--primary-press); color: var(--on-primary); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+footer { color: var(--muted); font-size: 0.875rem; margin-top: var(--s5); max-width: 64ch; }
+.side details { margin-top: 0; }
+</style></head>
+<body>
+<div class="banner" role="note" id="banner">Indicative. Synthetic market data and counterparty. Precomputed by the platform&rsquo;s C++ engine via POST /risk/predeal; not a quote.</div>
+<main class="wrap">
+<header>
+  <div class="brand" id="wordmark">Hedge portal</div>
+  <h1>Sell USD forward</h1>
+  <p id="tagline">Sell USD forward and see what the bank charges for your credit.</p>
+  <span class="badge check" id="badge" role="status">Precomputed by the engine (synthetic)</span>
+</header>
+
+<div class="layout">
+<div class="side">
+<form id="form" class="panel" onsubmit="return false" aria-label="Your hedge">
+  <h2>Your hedge</h2>
+  <div id="pre-controls" class="grp">
+    <label class="field"><span>USD receivable to sell forward</span><select id="notional"></select></label>
+    <label class="field"><span>Tenor</span><select id="tenor"></select></label>
+  </div>
+  <div id="live-controls" class="grp" hidden>
+    <div class="field"><label for="n-live" class="lab">USD receivable to sell forward (millions, 0.1 to 25)</label>
+      <div class="pair"><input type="number" id="n-live" min="0.1" max="25" step="0.1" inputmode="decimal" aria-describedby="n-help"><input type="range" id="n-range" min="0.1" max="25" step="0.1" aria-label="Notional slider, USD millions"></div>
+      <p class="help" id="n-help"></p></div>
+    <div class="field"><label for="t-live" class="lab">Tenor (years, 0.25 to 5)</label>
+      <div class="pair"><input type="number" id="t-live" min="0.25" max="5" step="0.25" inputmode="decimal" aria-describedby="t-help"><input type="range" id="t-range" min="0.25" max="5" step="0.25" aria-label="Tenor slider, years"></div>
+      <p class="help" id="t-help"></p></div>
+  </div>
+  <label class="check"><input type="checkbox" id="csa"><span>I already have a collateral agreement (CSA)<small>Both sides post collateral as the trade moves. Zero threshold, 10 business day margin period.</small></span></label>
+  <p class="help" id="snap" aria-live="polite"></p>
+</form>
+<details id="runlive">
+  <summary>Run it live</summary>
+  <p class="sub">With the engine running, this page prices any hedge from USD 0.1M to 25M and 0.25 to 5 years, instead of looking one up.</p>
+  <pre id="cmds">make up
+.venv/bin/python -m http.server 8001 --directory docs
+# open:
+http://localhost:8001/portal.html?api=http://localhost:8000</pre>
+  <p class="sub">The API needs <code>CORS_ORIGINS=http://localhost:8001</code> in its environment. Served from localhost, the page also finds an engine on port 8000 by itself.</p>
+  <button type="button" class="btn" id="copy">Copy the commands</button>
+</details>
+</div>
+
+<section class="out" id="out" aria-live="polite" aria-atomic="true" aria-label="Quote" aria-busy="true">
+  <p class="sub">Loading the precomputed grid.</p>
+  <noscript><p class="err">This page needs JavaScript to look up the precomputed grid.</p></noscript>
+</section>
+</div>
+
+<details>
+  <summary>How this is priced</summary>
+  <ul>
+    <li>The forward rate is the Garman-Kohlhagen forward for USD/CAD: spot times e^((CAD rate - USD rate) x tenor). It is set at the market, so the trade starts worth about zero.</li>
+    <li>The credit charge is CVA: the bank&rsquo;s expected loss if you default while the trade is in its favour, from simulated exchange-rate paths, with independent defaults and no wrong-way risk. It is shown as a running spread in basis points a year, and as the equivalent upfront amount.</li>
+    <li>A CSA lowers it because collateral covers most of the exposure; only the margin period (10 business days) stays uncovered.</li>
+    <li>Flat rates and constant volatility. The credit line is checked against the 95th percentile peak exposure of your whole netting set (this trade plus one small existing forward).</li>
+    <li id="how-last">Every number is looked up from a grid produced by <code>bench/bench_portal.py</code> calling <code>POST /risk/predeal</code>; the page does no pricing.</li>
+  </ul>
+</details>
+
+<details>
+  <summary>Assumptions (all synthetic)</summary>
+  <ul id="assumptions"></ul>
+</details>
+
+<footer><p id="disclaimer"></p></footer>
+</main>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const fmtCad = (x) => "CAD " + Math.round(x).toLocaleString("en-CA");
+const fmtBp = (x) => x.toFixed(x < 10 ? 2 : 1) + " bp";
+const fmtMn = (x) => String(+(x / 1e6).toFixed(2));
+const fmtUsd = (x) => "USD " + fmtMn(x) + " million";
+const fmtYrs = (t) => t + (t === 1 ? " year" : " years");
+const VERDICT = { approve: "Approve", approve_with_csa: "Approve with CSA", refer_to_credit: "Refer to credit" };
+const BANNER_PRE = "Indicative. Synthetic market data and counterparty. Precomputed by the platform’s C++ engine via POST /risk/predeal; not a quote.";
+const BANNER_LIVE = "Indicative. Synthetic market data and counterparty. Priced live by the platform’s C++ engine via POST /risk/predeal; not a quote.";
+const LIMITS = { nMin: 0.1, nMax: 25, tMin: 0.25, tMax: 5 };
+let data = null, api = null, mode = "pre", timer = 0, ctl = null, seq = 0;
+const st = { n: 5e6, t: 1, csa: false };
+
+async function getJson(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(url + " " + r.status);
+  return r.json();
+}
+
+// Theme: variables and copy only. Names are restricted so ?theme= cannot
+// reach other paths. A private theme can live in a gitignored local/themes/
+// folder; it is tried only after docs/themes/ misses.
+async function loadTheme() {
+  const asked = new URLSearchParams(location.search).get("theme") || "neutral";
+  const name = /^[a-z0-9-]{1,40}$/.test(asked) ? asked : "neutral";
+  let t;
+  try { t = await getJson("themes/" + name + ".json"); }
+  catch (e) {
+    try { t = await getJson("../local/themes/" + name + ".json"); }
+    catch (e2) { t = name === "neutral" ? {} : await getJson("themes/neutral.json").catch(() => ({})); }
+  }
+  const rule = (c) => Object.entries(c || {}).map(([k, v]) => "--" + k.replace(/[^a-z-]/g, "") + ":" + String(v).replace(/[;{}]/g, "")).join(";");
+  const css = ":root{" + rule(t.colors && t.colors.light) + "}" +
+    "@media (prefers-color-scheme: dark){:root:not([data-scheme=\"light\"]){" + rule(t.colors && t.colors.dark) + "}}";
+  const s = document.createElement("style"); s.textContent = css; document.head.appendChild(s);
+  if (t.wordmark) $("wordmark").textContent = t.wordmark;
+  if (t.tagline) $("tagline").textContent = t.tagline;
+  if (t.name) document.title = t.name + ": USD forward hedge";
+  $("disclaimer").textContent = (t.disclaimer || "") + " All inputs are synthetic.";
+}
+
+function fill(sel, values, fmt, pick) {
+  sel.innerHTML = "";
+  for (const v of values) {
+    const o = document.createElement("option"); o.value = v; o.textContent = fmt(v); o.selected = v === pick; sel.appendChild(o);
+  }
+}
+const nearest = (arr, x) => arr.reduce((a, b) => Math.abs(b - x) < Math.abs(a - x) ? b : a);
+const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
+
+// The grid's keys come from Python's str(float): "1.0", "0.5". JSON.parse turns
+// 1.0 into 1, so put the ".0" back.
+function key(n, t, csa) { return n + "|" + (Number.isInteger(t) ? t.toFixed(1) : t) + "|" + (csa ? "on" : "off"); }
+
+/* Live engine. The request is built exactly as bench/bench_portal.py builds it:
+   the same netting set, market inputs, unit size, fallback CSA and scenario count. */
+const UNIT = 1000;
+function fwd(t) { const i = data.inputs; return i.spot_cad_per_usd * Math.exp((i.cad_rate - i.usd_rate) * t); }
+function body(n, t, csa) {
+  const i = data.inputs, spot = i.spot_cad_per_usd;
+  const csaTerms = { threshold_recv: 0, threshold_post: 0, mta: i.csa.mta, mpor_days: i.csa.mpor_days };
+  const ns = {
+    netting_set_id: "CLIENT-1", market_data_version: i.market_data_version, rate: i.cad_rate,
+    underlyings: [{ name: "USDCAD", spot: spot * UNIT, vol: i.vol, div_yield: i.usd_rate }],
+    trades: [{ trade_id: "PRIOR", underlying: "USDCAD", kind: "forward", strike: fwd(i.prior_forward.maturity_years) * UNIT,
+      maturity: i.prior_forward.maturity_years, quantity: i.prior_forward.usd / UNIT }],
+    horizon_years: t, step_months: 1, n_scenarios: i.n_scenarios, block_size: i.n_scenarios,
+    pfe_quantile: 0.95, recovery: i.counterparty.recovery, cds_spread_bps: i.counterparty.cds_spread_bps
+  };
+  if (csa) ns.csa = csaTerms;
+  const req = { netting_set: ns, new_trade: { trade_id: "HEDGE", underlying: "USDCAD", kind: "forward", strike: fwd(t) * UNIT, maturity: t, quantity: n / UNIT },
+    credit_limit: i.credit_limit_cad_on_peak_pfe };
+  if (!csa) req.fallback_csa = csaTerms;
+  return req;
+}
+function toCell(res, n, t) {
+  const keep = ["verdict", "reason", "incremental_cva", "cva_charge_bps", "cva_charge_running_bps", "peak_pfe_after", "peak_pfe_after_csa", "limit_utilisation"];
+  const c = { forward_rate: fwd(t) };
+  for (const k of keep) c[k] = res[k];
+  const uncUpfront = res.incremental_cva_uncollateralized / (n * data.inputs.spot_cad_per_usd) * 1e4;
+  const ratio = res.cva_charge_bps ? res.cva_charge_running_bps / res.cva_charge_bps : 0;
+  c.uncollateralized_cva = res.incremental_cva_uncollateralized;
+  c.uncollateralized_running_bps = uncUpfront * ratio;
+  return c;
+}
+// The API sheds risk quotes with 503 + Retry-After when its risk slot is busy:
+// a well-behaved client backs off and retries rather than calling it down.
+async function quote(n, t, csa, signal) {
+  for (let attempt = 0; ; attempt++) {
+    const r = await fetch(api + "/risk/predeal", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body(n, t, csa)), signal });
+    if (r.ok) return r.json();
+    if (r.status !== 503 || attempt >= 3) throw new Error("API " + r.status);
+    const wait = Math.min(Number(r.headers.get("Retry-After")) || 1, 2) * 1000;
+    await new Promise((res, rej) => {
+      const id = setTimeout(res, wait);
+      signal && signal.addEventListener("abort", () => { clearTimeout(id); rej(new DOMException("aborted", "AbortError")); }, { once: true });
+    });
+  }
+}
+
+const bar = (frac, cls, limitAt) =>
+  '<svg class="bar" role="presentation" focusable="false"><rect class="track" x="0" y="4" width="100%" height="8" rx="4"/>' +
+  '<rect class="fill ' + cls + '" x="0" y="4" width="100%" height="8" style="transform:scaleX(' + clamp(frac, 0.004, 1).toFixed(4) + ')"/>' +
+  (limitAt == null ? "" : '<line class="limit" x1="' + (limitAt * 100).toFixed(2) + '%" x2="' + (limitAt * 100).toFixed(2) + '%" y1="0" y2="16"/>') + '</svg>';
+
+function view(off, on, n, t, meta) {
+  const csaOn = st.csa, cur = csaOn ? on : off;
+  const unc = off.uncollateralized_running_bps, withCsa = on.cva_charge_running_bps;
+  const saving = unc > 0 ? Math.round((1 - withCsa / unc) * 100) : 0;
+  const limit = data.inputs.credit_limit_cad_on_peak_pfe;
+  const use = cur.limit_utilisation;
+  const uOff = off.limit_utilisation, uOn = on.limit_utilisation;
+  const top = Math.max(1.25, uOff * 1.05, uOn * 1.05);
+  const tone = (u, v) => u <= 1 ? "good" : (v === "approve_with_csa" ? "warn" : "bad");
+  const line = {
+    approve: "Your credit line covers this hedge.",
+    approve_with_csa: "That is over your line without a CSA. With the CSA it uses " + Math.round(uOn * 100) + "%.",
+    refer_to_credit: "This hedge exceeds your credit line even with collateral, so the bank’s credit team would review it."
+  }[cur.verdict];
+  const mx = Math.max(unc, withCsa, 1e-9);
+  const csaCard = saving > 0
+    ? '<p class="sub"><span class="save">Saving ' + saving + '%</span> against ' + fmtBp(unc) + ' without one. About ' + fmtCad(on.incremental_cva) + ' upfront.</p>'
+    : '<p class="sub">No saving against ' + fmtBp(unc) + ' without one.</p>';
+  const row = (name, val, frac, cls, sel, extra) => '<div class="row' + (sel ? ' sel' : '') + '"><div class="top"><span>' + name + (sel ? ' (selected)' : '') + '</span><b>' + val + '</b></div>' + bar(frac, cls, extra) + '</div>';
+  const livebar = meta ? '<p class="live-meta">Priced live by the engine. Round trip ' + meta.rt + ' ms for two quotes, one after the other. Engine time ' + meta.a + ' ms without a CSA, ' + meta.b + ' ms with one.</p>' : '';
+  const html =
+    '<section class="card lead"><h2>Your forward rate</h2><div class="big">' + off.forward_rate.toFixed(4) + ' <small>CAD per USD</small></div>' +
+      '<p class="sub">Sell ' + fmtUsd(n) + ' in ' + fmtYrs(t) + ' for about ' + fmtCad(n * off.forward_rate) + '. Spot ' + data.inputs.spot_cad_per_usd.toFixed(2) + '.</p></section>' +
+    '<div class="pair-cards">' +
+    '<section class="card" aria-label="Credit charge"><h2>Credit charge, a year</h2><div class="big">' + fmtBp(csaOn ? withCsa : unc) + '</div>' +
+      '<div class="bars" role="img" aria-label="Credit charge drawn to one scale: ' + fmtBp(unc) + ' without a CSA, ' + fmtBp(withCsa) + ' with a CSA.">' +
+        row("No CSA", fmtBp(unc), unc / mx, "off", !csaOn) + row("With a CSA", fmtBp(withCsa), withCsa / mx, "on", csaOn) + '</div>' +
+      csaCard + '<p class="sub">No CSA is about ' + fmtCad(off.uncollateralized_cva) + ' upfront.</p></section>' +
+    '<section class="card" aria-label="Fit with your credit line"><h2>Fit with your credit line (' + (csaOn ? "with" : "without") + ' a CSA)</h2>' +
+      '<span class="chip ' + cur.verdict + '">' + VERDICT[cur.verdict] + '</span>' +
+      '<div class="bars" role="meter" aria-label="Credit line used" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.min(100, Math.round(use * 100)) + '" aria-valuetext="' + Math.round(use * 100) + ' percent of the line">' +
+        row("No CSA", Math.round(uOff * 100) + "%", uOff / top, tone(uOff, off.verdict), !csaOn, 1 / top) +
+        row("With a CSA", Math.round(uOn * 100) + "%", uOn / top, tone(uOn, on.verdict), csaOn, 1 / top) + '</div>' +
+      '<p class="sub">The dark tick is your line, ' + fmtCad(limit) + ' on 95th percentile peak exposure. ' + line + '</p></section>' +
+    '</div>' + livebar;
+  return html;
+}
+
+function setBusy(on) { $("out").setAttribute("aria-busy", on ? "true" : "false"); }
+function badge(kind, text) { const b = $("badge"); b.className = "badge " + kind; b.textContent = text; }
+
+function renderPre() {
+  const n = nearestN(), t = nearestT();
+  const off = data.cells[key(n, t, false)], on = data.cells[key(n, t, true)];
+  $("out").innerHTML = view(off, on, n, t, null);
+  setBusy(false);
+  const snapped = n !== st.n || t !== st.t;
+  $("snap").textContent = snapped ? "Showing the nearest precomputed point: " + fmtUsd(n) + ", " + fmtYrs(t) + "." : "";
+}
+const nearestN = () => nearest(data.notionals_usd, st.n);
+const nearestT = () => nearest(data.tenors_years, st.t);
+
+async function renderLive() {
+  const my = ++seq;
+  if (ctl) ctl.abort();
+  ctl = new AbortController();
+  const timeout = setTimeout(() => ctl.abort(), 30000);
+  const n = st.n, t = st.t;
+  $("snap").textContent = "";
+  const prev = $("out").firstElementChild;
+  setBusy(true);
+  if (!prev || !prev.classList.contains("card")) $("out").innerHTML = '<p class="sub">Pricing ' + data.inputs.n_scenarios.toLocaleString("en-CA") + ' scenarios on the engine.</p><div class="busy" role="presentation"></div>';
+  else if (!$("out").querySelector(".busy")) $("out").insertAdjacentHTML("afterbegin", '<div class="busy" role="presentation"></div><p class="sub">Pricing on the engine.</p>');
+  const t0 = performance.now();
+  try {
+    // One at a time: the API has one risk slot per pod by design.
+    const a = await quote(n, t, false, ctl.signal);
+    const b = await quote(n, t, true, ctl.signal);
+    if (my !== seq) return;
+    const rt = Math.round(performance.now() - t0);
+    $("out").innerHTML = view(toCell(a, n, t), toCell(b, n, t), n, t, { rt: rt.toLocaleString("en-CA"), a: Math.round(a.elapsed_ms).toLocaleString("en-CA"), b: Math.round(b.elapsed_ms).toLocaleString("en-CA") });
+    setBusy(false);
+  } catch (e) {
+    if (my !== seq) return;
+    toPre("The live engine did not answer (" + (e.name === "AbortError" ? "timed out" : e.message) + "). Showing the precomputed grid instead.");
+  } finally { clearTimeout(timeout); }
+}
+
+function toPre(notice) {
+  mode = "pre"; applyMode();
+  if (notice) $("notice").textContent = notice;
+  if (notice) $("notice").hidden = false;
+  renderPre();
+}
+
+function applyMode() {
+  const live = mode === "live";
+  $("pre-controls").hidden = live; $("live-controls").hidden = !live;
+  $("banner").textContent = live ? BANNER_LIVE : BANNER_PRE;
+  if (live) badge("live", "Live: C++ engine at " + api); else badge("", "Precomputed by the engine (synthetic)");
+  $("how-last").innerHTML = live ? "Live mode sends the same request as <code>bench/bench_portal.py</code> to <code>POST /risk/predeal</code>; the page does no pricing." : "Every number is looked up from a grid produced by <code>bench/bench_portal.py</code> calling <code>POST /risk/predeal</code>; the page does no pricing.";
+  syncControls();
+}
+
+function syncControls() {
+  fill($("notional"), data.notionals_usd, fmtUsd, nearestN());
+  fill($("tenor"), data.tenors_years, fmtYrs, nearestT());
+  $("n-live").value = +(st.n / 1e6).toFixed(2); $("n-range").value = st.n / 1e6;
+  $("t-live").value = st.t; $("t-range").value = st.t;
+  $("csa").checked = st.csa;
+}
+
+function validLive() {
+  const nm = parseFloat($("n-live").value), tv = parseFloat($("t-live").value);
+  const nOk = nm >= LIMITS.nMin && nm <= LIMITS.nMax, tOk = tv >= LIMITS.tMin && tv <= LIMITS.tMax;
+  $("n-live").setAttribute("aria-invalid", !nOk); $("t-live").setAttribute("aria-invalid", !tOk);
+  $("n-help").textContent = nOk ? "" : "Enter a value from 0.1 to 25."; $("n-help").className = "help" + (nOk ? "" : " bad");
+  $("t-help").textContent = tOk ? "" : "Enter a value from 0.25 to 5."; $("t-help").className = "help" + (tOk ? "" : " bad");
+  if (nOk && tOk) { st.n = Math.round(nm * 1e6); st.t = tv; }
+  return nOk && tOk;
+}
+
+function pushUrl() {
+  try {
+    const p = new URLSearchParams(location.search);
+    p.set("n", Math.round(st.n)); p.set("t", st.t); if (st.csa) p.set("csa", "1"); else p.delete("csa");
+    history.replaceState(null, "", location.pathname + "?" + p.toString());
+  } catch (e) { /* a sandboxed frame may refuse */ }
+}
+
+function onInput(src) {
+  if (mode === "live") {
+    if (src === "n-range") $("n-live").value = $("n-range").value;
+    if (src === "t-range") $("t-live").value = $("t-range").value;
+    if (src === "n-live" && $("n-live").value) $("n-range").value = $("n-live").value;
+    if (src === "t-live" && $("t-live").value) $("t-range").value = $("t-live").value;
+    st.csa = $("csa").checked;
+    if (!validLive()) return;
+    pushUrl(); clearTimeout(timer); timer = setTimeout(renderLive, 350);
+  } else {
+    st.n = +$("notional").value; st.t = +$("tenor").value; st.csa = $("csa").checked;
+    pushUrl(); renderPre();
+  }
+}
+
+// An explicit ?api= is always tried; the default probe runs only when the page itself is on localhost.
+function candidateApi() {
+  const p = new URLSearchParams(location.search).get("api");
+  const local = ["localhost", "127.0.0.1", "[::1]", "::1"].indexOf(location.hostname) >= 0;
+  if (p) {
+    try {
+      const u = new URL(p);
+      if (u.protocol !== "http:" && u.protocol !== "https:") return null;
+      const apiLocal = ["localhost", "127.0.0.1", "[::1]"].indexOf(u.hostname) >= 0;
+      if (location.protocol === "https:" && u.protocol === "http:" && !apiLocal) return null; // mixed content
+      return u.origin;
+    } catch (e) { return null; }
+  }
+  return local ? "http://localhost:8000" : null;
+}
+async function probe(base) {
+  const c = new AbortController(), to = setTimeout(() => c.abort(), 1500);
+  try { const r = await fetch(base + "/health/live", { signal: c.signal }); return r.ok; }
+  catch (e) { return false; } finally { clearTimeout(to); }
+}
+
+(async function init() {
+  try {
+    await loadTheme();
+    data = await getJson("data/portal.json");
+    const q = new URLSearchParams(location.search);
+    const qn = parseFloat(q.get("n")), qt = parseFloat(q.get("t"));
+    if (qn > 0) st.n = qn;
+    if (qt > 0) st.t = qt;
+    st.csa = q.get("csa") === "1";
+    const i = data.inputs;
+    const facts = [
+      "All money in CAD. Spot " + i.spot_cad_per_usd + " CAD per USD, CAD rate " + (i.cad_rate * 100).toFixed(2) + "%, USD rate " + (i.usd_rate * 100).toFixed(2) + "%, volatility " + (i.vol * 100) + "%.",
+      "Counterparty: synthetic BBB-like corporate, CDS spread " + i.counterparty.cds_spread_bps + " bp, recovery " + (i.counterparty.recovery * 100) + "%.",
+      "Existing netting set: one forward of USD " + i.prior_forward.usd.toLocaleString("en-CA") + ", " + i.prior_forward.maturity_years + " years.",
+      "Credit line: " + fmtCad(i.credit_limit_cad_on_peak_pfe) + " on peak exposure.",
+      "CSA: zero thresholds, minimum transfer " + fmtCad(i.csa.mta) + ", " + i.csa.mpor_days + " business day margin period.",
+      i.n_scenarios.toLocaleString("en-CA") + " simulated scenarios."];
+    for (const f of facts) { const li = document.createElement("li"); li.textContent = f; $("assumptions").appendChild(li); }
+    const notice = document.createElement("p"); notice.id = "notice"; notice.className = "notice"; notice.setAttribute("role", "status"); notice.hidden = true;
+    $("form").after(notice);
+    for (const id of ["notional", "tenor", "csa", "n-live", "t-live", "n-range", "t-range"]) {
+      $(id).addEventListener(id.indexOf("range") > 0 || id.indexOf("live") > 0 ? "input" : "change", () => onInput(id));
+    }
+    $("copy").addEventListener("click", () => {
+      try { navigator.clipboard.writeText($("cmds").textContent.replace(/^# open:\n/m, "")).then(() => { $("copy").textContent = "Copied"; }, () => { $("copy").textContent = "Copy failed"; }); }
+      catch (e) { $("copy").textContent = "Copy failed"; }
+    });
+    applyMode();
+    renderPre();
+    const base = candidateApi();
+    if (base) {
+      badge("check", "Checking for a live engine at " + base);
+      if (await probe(base)) {
+        api = base; mode = "live";
+        st.n = clamp(st.n, LIMITS.nMin * 1e6, LIMITS.nMax * 1e6); st.t = clamp(st.t, LIMITS.tMin, LIMITS.tMax);
+        applyMode(); renderLive();
+      } else {
+        applyMode();
+        if (new URLSearchParams(location.search).get("api")) { $("notice").textContent = "No live engine answered at " + base + ". Showing the precomputed grid."; $("notice").hidden = false; }
+      }
+    }
+  } catch (e) {
+    $("out").innerHTML = '<p class="err" role="alert">Could not load the precomputed grid (' + e.message + ').</p>';
+    setBusy(false);
+  }
+})();
+</script>
+</body></html>

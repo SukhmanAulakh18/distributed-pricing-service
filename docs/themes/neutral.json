@@ -1,0 +1,10 @@
+{
+ "name": "Hedging portal",
+ "wordmark": "Hedge portal",
+ "tagline": "Sell USD forward and see what the bank charges for your credit.",
+ "disclaimer": "Independent project on synthetic data. Not a bank, not an offer, not advice.",
+ "colors": {
+  "light": {"primary": "#0d5c63", "primary-press": "#094349", "accent": "#0d5c63"},
+  "dark": {"primary": "#2a9aa5", "primary-press": "#3bb0bb", "accent": "#5cc4cd"}
+ }
+}
