@@ -66,6 +66,13 @@ def findings():
     return "".join(items)
 
 
+def pip_html(x, unit=""):
+    """A rate quoted as a desk quotes it: the pips (last two digits) set heavy on the marker."""
+    s = f"{x}"
+    return (f'<span class="pf">{s[:-2]}</span><span class="pp">{s[-2:]}</span>'
+            + (f'<span class="pu">{unit}</span>' if unit else ""))
+
+
 def fmt(x, d=0):
     return f"{x:,.{d}f}"
 
@@ -84,7 +91,7 @@ def numbers():
     t0, pdl, pde = xva["thresholds"][0], xva["pre_deal"], xva["predeal_endpoint"]
     e8 = next(r for r in exp["scaling"] if r["workers"] == 8)
     return {
-        "c3_avail": c3["availability_pct"], "c3_requests": fmt(c3["price_requests"]), "c3_errors": fmt(c3["price_errors"]),
+        "c3_avail_pip": pip_html(c3["availability_pct"], "%"), "c3_avail": c3["availability_pct"], "c3_requests": fmt(c3["price_requests"]), "c3_errors": fmt(c3["price_errors"]),
         "c3_p50": c3["p50_ms"], "c3_p99": c3["p99_ms"], "c3_faults": c3["faults"],
         "c3_books": c3["books"], "c3_books_ok": c3["books_complete"], "c3_retried": c3.get("books_retried", 0),
         "c3_books_lost": c3["books"] - c3["books_complete"],
