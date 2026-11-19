@@ -45,6 +45,13 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outlin
 .lede { font-size: 1.125rem; color: var(--muted); max-width: 56ch; }
 .btns { display: grid; gap: var(--s3); margin-top: var(--s2); }
 @media (min-width: 560px) { .btns { display: flex; flex-wrap: wrap; } }
+.hero-start { display: grid; gap: var(--s3); margin-top: var(--s2); }
+.hero-start > .btn { min-height: 52px; }
+@media (min-width: 560px) { .hero-start > .btn { justify-self: start; } }
+.pills { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.pill { display: inline-flex; align-items: center; min-height: 44px; padding: var(--s2) var(--s4); border-radius: 999px; border: 1px solid var(--accent); background: var(--surface); color: var(--ink); font: 500 0.9375rem var(--body); text-decoration: none; }
+.pill:hover { background: var(--accent-soft); }
+.pill:active { transform: translateY(1px); }
 .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: var(--s3) var(--s5); border-radius: var(--r1); background: var(--accent); color: var(--on-accent); border: 1px solid var(--accent); font: 600 1rem var(--body); text-decoration: none; text-align: center; cursor: pointer; white-space: nowrap; }
 .btn:hover { filter: brightness(1.1); }
 .btn:active { transform: translateY(1px); filter: brightness(.92); }
@@ -55,6 +62,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outlin
 #qr { background: var(--qr-bg); padding: var(--s3); border-radius: var(--r1); line-height: 0; min-height: 200px; min-width: 200px; }
 #qr img, #qr canvas { max-width: 100%; height: auto; }
 .qr code { font: 0.875rem var(--mono); }
+#share { scroll-margin-top: var(--s4); }
 .note { font-size: 0.875rem; color: var(--muted); }
 .tabs { display: none; flex-wrap: wrap; gap: var(--s2); }
 .js-on .tabs { display: flex; }
@@ -103,11 +111,11 @@ footer a { display: inline-flex; align-items: center; min-height: 44px; }
 }
 :root[data-theme="dark"] { --sk-n-p: #2a9aa5; --sk-n-pp: #3bb0bb; --sk-n-a: #5cc4cd; --sk-b-p: #a855d4; --sk-b-pp: #c07be0; --sk-b-a: #f0a060; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.story { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r2); padding: var(--s4); display: grid; gap: var(--s5); }
+.story { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r2); padding: var(--s4); display: grid; gap: var(--s5); scroll-margin-top: var(--s4); }
 @media (min-width: 860px) { .story { padding: var(--s6); } }
-.dots { display: none; justify-content: center; }
+.dots { display: none; justify-content: center; flex: 1 1 auto; min-width: 0; }
 .js-on .dots { display: flex; }
-.dot { width: 44px; height: 44px; padding: 0; background: none; border: 0; display: grid; place-items: center; cursor: pointer; border-radius: 50%; }
+.dot { width: 44px; height: 44px; margin: 0 -8px; padding: 0; background: none; border: 0; display: grid; place-items: center; cursor: pointer; border-radius: 50%; }
 .dot::before { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--surface); border: 2px solid var(--muted); transition: transform .2s ease-out, background-color .2s ease-out; }
 .dot:hover::before { border-color: var(--accent); }
 .dot[aria-current="step"]::before { background: var(--accent); border-color: var(--accent); transform: scale(1.3); }
@@ -188,9 +196,9 @@ footer a { display: inline-flex; align-items: center; min-height: 44px; }
 .ledger .head { font-weight: 600; }
 .ctas { display: grid; gap: var(--s4); grid-column: 1 / -1; }
 .ctas .btns { margin: 0; }
-.nav2 { display: none; justify-content: space-between; gap: var(--s3); }
+.nav2 { display: none; align-items: center; gap: var(--s2); min-width: 0; }
 .js-on .nav2 { display: flex; }
-.nav2 .btn { flex: 1 1 0; }
+.nav2 .btn { flex: 0 0 auto; min-height: 44px; padding: var(--s2) var(--s3); }
 .nav2 .btn:disabled { opacity: .45; cursor: default; }
 .story .qr { justify-self: start; }
 @media (prefers-reduced-motion: reduce) { .gauge i, .dot::before, .sw i { transition: none; } }
@@ -201,19 +209,22 @@ footer a { display: inline-flex; align-items: center; min-height: 44px; }
     <div class="kicker">Pitch kit, BFUTR, Toronto, 20 Nov 2026</div>
     <h1>Check the credit line before the trade.</h1>
     <p class="lede">Before a trader says yes, it tells them whether the client&rsquo;s credit line can take the trade and what to charge for the risk, and it keeps answering when servers fail.</p>
-    <nav class="btns" aria-label="Start here">
-      <a class="btn" href="#story">Walk me through it</a>
-      <a class="btn alt" href="portal.html">Try a client hedge</a>
-      <a class="btn alt" href="desk.html#predeal">Run a pre-deal decision</a>
-      <a class="btn alt" href="#reliability">See the reliability proof</a>
-    </nav>
+    <div class="hero-start">
+      <a class="btn" id="walk" href="#story">Walk me through it</a>
+      <nav class="pills" aria-label="Other ways in">
+        <a class="pill" href="portal.html">Price a hedge</a>
+        <a class="pill" href="desk.html#predeal">Decision API</a>
+        <a class="pill" href="#reliability">Reliability</a>
+        <a class="pill" href="#share" id="sharelink">Share (QR)</a>
+      </nav>
+    </div>
   </div>
 </header>
 
 <section id="story" aria-labelledby="sth" class="stack">
-  <h2 id="sth">Walk me through it</h2>
+  <h2 id="sth" tabindex="-1">Walk me through it</h2>
   <div class="story">
-    <div class="dots" id="dots" role="group" aria-label="Steps"></div>
+    <div class="nav2"><button type="button" class="btn alt" id="back">Back</button><div class="dots" id="dots" role="group" aria-label="Steps"></div><button type="button" class="btn" id="next">Next</button></div>
     <p class="sr" id="stepsay" aria-live="polite"></p>
     <div class="steps" id="steps">
 
@@ -299,13 +310,12 @@ footer a { display: inline-flex; align-items: center; min-height: 44px; }
           <a class="btn" id="cta1" href="portal.html?n=5000000&amp;t=5&amp;csa=0">Price a hedge</a>
           <a class="btn alt" href="desk.html#predeal">See the decision API</a>
         </nav>
-  <div class="qr"><div id="qr" role="img" aria-label="QR code linking to this page"></div>
+  <div class="qr" id="share"><div id="qr" role="img" aria-label="QR code linking to this page"></div>
     <p class="note">Scan to open this kit on your phone</p><code>https://sukhmanaulakh18.github.io/distributed-pricing-service/kit.html</code></div>
       </div>
     </article>
 
     </div>
-    <div class="nav2"><button type="button" class="btn alt" id="back">Back</button><button type="button" class="btn" id="next">Next</button></div>
   </div>
 </section>
 
@@ -364,6 +374,7 @@ footer a { display: inline-flex; align-items: center; min-height: 44px; }
   // Walkthrough. Without script every step is stacked with the default cell's numbers; here one shows at a time.
   (function () {
     var steps = Array.prototype.slice.call(document.querySelectorAll('.step'));
+    var card = document.querySelector('.story');
     var dotsEl = document.getElementById('dots'), back = document.getElementById('back'), next = document.getElementById('next');
     var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
     var st = { n: 5000000, t: 5, csa: false, i: 0, f: 'worker_killed', s: 2, skin: 'neutral' };
@@ -387,9 +398,9 @@ footer a { display: inline-flex; align-items: center; min-height: 44px; }
       $('stepsay').textContent = 'Step ' + (i + 1) + ' of ' + steps.length;
       var h = steps[i].querySelector('h3');
       if (focus) { try { h.focus({ preventScroll: true }); } catch (e) { h.focus(); } }
-      var top = document.getElementById('story').getBoundingClientRect().top;
-      if (focus && (top < 0 || top > innerHeight * 0.5)) document.getElementById('story').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+      if (focus) { var r = card.getBoundingClientRect(); if (r.top < 0 || r.bottom > innerHeight) toTop(card); }
     }
+    function toTop(el) { el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }); }
     steps.forEach(function (s, j) {
       var d = document.createElement('button'); d.type = 'button'; d.className = 'dot';
       d.setAttribute('aria-label', 'Step ' + (j + 1) + ': ' + s.querySelector('h3').textContent);
@@ -409,6 +420,18 @@ footer a { display: inline-flex; align-items: center; min-height: 44px; }
       if (Math.abs(dx) > 50 && Math.abs(dx) > 1.5 * Math.abs(dy)) show(st.i + (dx < 0 ? 1 : -1), true);
     }, { passive: true });
     show(0, false);
+    $('walk').addEventListener('click', function (e) {
+      e.preventDefault();
+      try { history.replaceState(null, '', '#story'); } catch (x) {}
+      try { $('sth').focus({ preventScroll: true }); } catch (x) {}
+      toTop(card);
+    });
+    $('sharelink').addEventListener('click', function (e) {
+      e.preventDefault();
+      show(steps.length - 1, false);
+      try { history.replaceState(null, '', '#share'); } catch (x) {}
+      toTop(document.getElementById('share'));
+    });
 
     function tween(to) {
       var el = $('b3'), id = ++tw;
