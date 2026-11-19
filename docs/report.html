@@ -28,11 +28,11 @@
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-html { scroll-behavior: smooth; scroll-padding-top: 64px; }
+html { scroll-behavior: smooth; scroll-padding-top: 112px; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 var(--body); }
 .wrap { max-width: 1080px; margin: 0 auto; padding-inline: 20px; padding-block: 36px 64px; }
-nav.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+nav.top { position: sticky; top: 44px; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
 nav.top .in { max-width: 1080px; margin: 0 auto; padding-inline: 20px; display: flex; gap: 18px; align-items: center; overflow-x: auto; white-space: nowrap; height: 48px; font-size: 0.88rem; }
 nav.top b { font-family: var(--display); font-size: 1.05rem; margin-right: 6px; }
 nav.top a { color: var(--muted); text-decoration: none; }
@@ -132,8 +132,18 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
 .faults b { font-family: var(--mono); color: var(--ink); font-weight: 500; margin-right: 6px; }
 .findings { columns: 2 300px; column-gap: 28px; margin: 0; padding-left: 22px; font-size: 0.93rem; }
 .findings li { break-inside: avoid; margin-bottom: 6px; }
+
+/* site nav, shared by every page */
+.sitenav { position: sticky; top: 0; z-index: 20; background: var(--bg); border-bottom: 1px solid var(--line); }
+.sitenav ul { list-style: none; margin: 0 auto; padding: 0 12px; max-width: 1080px; display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+.sitenav a { display: flex; align-items: center; min-height: 44px; padding: 0 12px; color: var(--muted); text-decoration: none; font: 500 0.9375rem/1 var(--body); white-space: nowrap; border-bottom: 2px solid transparent; }
+.sitenav a:hover { color: var(--ink); }
+.sitenav a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent, var(--primary)); }
+.sitenav a:focus-visible { outline: 3px solid var(--accent, var(--primary)); outline-offset: -3px; }
 </style>
 
+<nav class="sitenav" aria-label="Site"><ul><li><a href="index.html">Home</a></li><li><a href="portal.html">Client hedge</a></li><li><a href="desk.html#predeal">Decision API</a></li><li><a href="platform.html">Library &amp; platform</a></li><li><a href="kit.html">Guided tour</a></li><li><a href="case-study.html" aria-current="page">Case study</a></li></ul></nav>
+<script>(function(){var a=document.querySelector(".sitenav [aria-current]");if(a&&a.scrollIntoView)try{a.scrollIntoView({inline:"center",block:"nearest"})}catch(e){}})()</script>
 <nav class="top" aria-label="Sections"><div class="in">
   <b>Pricing Service</b>
   <a href="#design">System design</a>
@@ -145,8 +155,6 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
   <a href="#performance">Performance</a>
   <a href="#engineering">C++ &amp; pybind11</a>
   <a href="#run">Run it</a>
-  <a href="kit.html">Pitch kit</a>
-  <a href="desk.html">Try it: XVA desk</a>
 </div></nav>
 
 <div class="wrap">

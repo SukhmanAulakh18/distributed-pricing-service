@@ -6,7 +6,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Hallmark · checked: 2026-11-18 · genre: modern-minimal (inferred) · theme: brand (site tokens, docs/index.html :root; white-label colours from docs/themes/*.json)
+/* Hallmark · checked: 2026-11-18 · genre: modern-minimal (inferred) · theme: brand (site tokens, docs/case-study.html :root; white-label colours from docs/themes/*.json)
  * pre-emit critique: P4 H4 E4 S4 R5 V4 · weakest: S, a tool page has no hero image; the signature is the two bars drawn to one scale (no CSA against CSA), so the saving is seen before it is read
  * hero: none (app screen) · nav: none · footer: disclaimer only · redesign: full · built: the project · v2.0.0 */
 :root {
@@ -40,7 +40,7 @@ p { margin: 0; text-wrap: pretty; }
 code { font: 0.875rem var(--mono); }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
-.banner { position: sticky; top: 0; z-index: 2; background: var(--banner-bg); color: var(--banner-ink); padding: var(--s2) var(--s4); font-size: 0.875rem; line-height: 1.4; border-bottom: 1px solid var(--line); }
+.banner { position: sticky; top: 44px; z-index: 2; background: var(--banner-bg); color: var(--banner-ink); padding: var(--s2) var(--s4); font-size: 0.875rem; line-height: 1.4; border-bottom: 1px solid var(--line); }
 .wrap { max-width: 1040px; margin: 0 auto; padding: var(--s5) var(--s4) var(--s7); }
 header { display: grid; gap: var(--s2); margin-bottom: var(--s5); }
 .brand { font-weight: 600; color: var(--accent); font-size: 0.875rem; }
@@ -122,8 +122,18 @@ pre { margin: 0; padding: var(--s3); background: var(--bg); border: 1px solid va
 .btn:disabled { opacity: .5; cursor: not-allowed; }
 footer { color: var(--muted); font-size: 0.875rem; margin-top: var(--s5); max-width: 64ch; }
 .side details { margin-top: 0; }
+
+/* site nav, shared by every page */
+.sitenav { position: sticky; top: 0; z-index: 20; background: var(--bg); border-bottom: 1px solid var(--line); }
+.sitenav ul { list-style: none; margin: 0 auto; padding: 0 12px; max-width: 1080px; display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+.sitenav a { display: flex; align-items: center; min-height: 44px; padding: 0 12px; color: var(--muted); text-decoration: none; font: 500 0.9375rem/1 var(--body); white-space: nowrap; border-bottom: 2px solid transparent; }
+.sitenav a:hover { color: var(--ink); }
+.sitenav a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent, var(--primary)); }
+.sitenav a:focus-visible { outline: 3px solid var(--accent, var(--primary)); outline-offset: -3px; }
 </style></head>
 <body>
+<nav class="sitenav" aria-label="Site"><ul><li><a href="index.html">Home</a></li><li><a href="portal.html" aria-current="page">Client hedge</a></li><li><a href="desk.html#predeal">Decision API</a></li><li><a href="platform.html">Library &amp; platform</a></li><li><a href="kit.html">Guided tour</a></li><li><a href="case-study.html">Case study</a></li></ul></nav>
+<script>(function(){var a=document.querySelector(".sitenav [aria-current]");if(a&&a.scrollIntoView)try{a.scrollIntoView({inline:"center",block:"nearest"})}catch(e){}})()</script>
 <div class="banner" role="note" id="banner">Indicative. Synthetic market data and counterparty. Precomputed by the platform&rsquo;s C++ engine via POST /risk/predeal; not a quote.</div>
 <main class="wrap">
 <header>

@@ -129,9 +129,21 @@
  ],
  "predeal": {
   "first_quote_ms": 1434.1,
+  "n_scenarios": 10000,
   "requote_ms": 696.9,
   "threads": 2,
   "trades": 201
+ },
+ "proof": {
+  "chaos_availability_pct": 99.992,
+  "chaos_faults": 11,
+  "chaos_price_requests": 76481,
+  "pfe_identical_on_workers": [
+   1,
+   2,
+   4,
+   8
+  ]
  },
  "siege": {
   "passed": 6,

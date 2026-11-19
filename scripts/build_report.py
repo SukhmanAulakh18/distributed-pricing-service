@@ -3,7 +3,7 @@
 Every number on the page is read from bench/results/*.json or the chaos-run
 logs, so the report cannot drift from the measurements. Writes:
   docs/report.html  page body (published as a shareable page)
-  docs/index.html   the same page as a full document (GitHub Pages)
+  docs/case-study.html   the same page as a full document (GitHub Pages)
 
 Run: python scripts/build_report.py
 """
@@ -129,7 +129,7 @@ DESC = ("A distributed C++/pybind11 pricing and CVA service on Kubernetes with R
         "KEDA and Rancher: system design, chaos testing and SRE, with every number measured.")
 META = (f'<meta name="description" content="{DESC}">\n'
         f'<meta property="og:type" content="website">\n<meta property="og:title" content="Distributed Pricing Service">\n'
-        f'<meta property="og:description" content="{DESC}">\n<meta property="og:url" content="{SITE}/">\n'
+        f'<meta property="og:description" content="{DESC}">\n<meta property="og:url" content="{SITE}/case-study.html">\n'
         f'<meta property="og:image" content="{SITE}/img/og.png">\n<meta property="og:image:width" content="1200">\n'
         f'<meta property="og:image:height" content="630">\n<meta name="twitter:card" content="summary_large_image">\n'
         f'<meta name="author" content="Sukhmanpreet Singh Aulakh">\n')
@@ -142,7 +142,7 @@ def main():
     body = PAGE.substitute(n)
     with open(os.path.join(ROOT, "docs", "report.html"), "w") as f:
         f.write(body)
-    with open(os.path.join(ROOT, "docs", "index.html"), "w") as f:
+    with open(os.path.join(ROOT, "docs", "case-study.html"), "w") as f:
         f.write('<!doctype html>\n<html lang="en"><head><meta charset="utf-8">'
                 '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
                 + META +
@@ -162,7 +162,7 @@ def main():
         og = Template(f.read()).substitute(extra)
     with open(os.path.join(ROOT, "build", "og.html"), "w") as f:
         f.write(og)
-    print("wrote docs/report.html, docs/index.html, docs/brief.html and build/og.html")
+    print("wrote docs/report.html, docs/case-study.html, docs/brief.html and build/og.html")
 
 
 if __name__ == "__main__":

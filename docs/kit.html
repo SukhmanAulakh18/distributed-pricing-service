@@ -1,12 +1,12 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Pitch kit | Distributed Pricing Service</title>
-<meta name="description" content="A phone-first pitch kit: what the platform does for a bank, seven audience lenses, a 30-second demo and one measured proof number for each.">
+<title>Guided tour | Distributed Pricing Service</title>
+<meta name="description" content="A five-step guided tour on your phone: what the platform does for a bank, seven lenses on it, a 30-second demo and one measured proof number for each.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Hallmark · checked: 2026-11-18 · genre: modern-minimal (inferred) · theme: brand (site tokens, docs/index.html :root: Newsreader, IBM Plex, teal)
- * pre-emit critique: P4 H4 E4 S4 R5 V4 · weakest: S, the kit has no photograph; each lens shows the real thing instead (the portal bars drawn from data/portal.json, a one-tap link into the exact demo)
+/* Hallmark · checked: 2026-11-18 · genre: modern-minimal (inferred) · theme: brand (site tokens, docs/case-study.html :root: Newsreader, IBM Plex, teal)
+ * pre-emit critique: P4 H4 E4 S4 R5 V4 · weakest: S, the tour has no photograph; each lens shows the real thing instead (the portal bars drawn from data/portal.json, a one-tap link into the exact demo)
  * hero: Stage (head, lede and actions, the QR card moved to the walkthrough's end) · nav: none · footer: two links · job: try the demo · redesign: full · built: the project · v2.0.0
  * Hallmark · dismissed 58 · answered: the five-step walkthrough is one step at a time with script, all stacked without it; the seven lens panels are tabs, one visible at a time, and the proof table is the owner's evidence */
 :root {
@@ -202,13 +202,22 @@ footer a { display: inline-flex; align-items: center; min-height: 44px; }
 .nav2 .btn:disabled { opacity: .45; cursor: default; }
 .story .qr { justify-self: start; }
 @media (prefers-reduced-motion: reduce) { .gauge i, .dot::before, .sw i { transition: none; } }
+
+/* site nav, shared by every page */
+.sitenav { position: sticky; top: 0; z-index: 20; background: var(--bg); border-bottom: 1px solid var(--line); }
+.sitenav ul { list-style: none; margin: 0 auto; padding: 0 12px; max-width: 1080px; display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+.sitenav a { display: flex; align-items: center; min-height: 44px; padding: 0 12px; color: var(--muted); text-decoration: none; font: 500 0.9375rem/1 var(--body); white-space: nowrap; border-bottom: 2px solid transparent; }
+.sitenav a:hover { color: var(--ink); }
+.sitenav a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent, var(--primary)); }
+.sitenav a:focus-visible { outline: 3px solid var(--accent, var(--primary)); outline-offset: -3px; }
 </style></head>
-<body><main class="wrap">
+<body><nav class="sitenav" aria-label="Site"><ul><li><a href="index.html">Home</a></li><li><a href="portal.html">Client hedge</a></li><li><a href="desk.html#predeal">Decision API</a></li><li><a href="platform.html">Library &amp; platform</a></li><li><a href="kit.html" aria-current="page">Guided tour</a></li><li><a href="case-study.html">Case study</a></li></ul></nav>
+<script>(function(){var a=document.querySelector(".sitenav [aria-current]");if(a&&a.scrollIntoView)try{a.scrollIntoView({inline:"center",block:"nearest"})}catch(e){}})()</script>
+<main class="wrap">
 <header class="hero">
   <div class="hero-main">
-    <div class="kicker">Pitch kit, BFUTR, Toronto, 20 Nov 2026</div>
-    <h1>Check the credit line before the trade.</h1>
-    <p class="lede">Before a trader says yes, it tells them whether the client&rsquo;s credit line can take the trade and what to charge for the risk, and it keeps answering when servers fail.</p>
+    <h1>Guided tour</h1>
+    <p class="lede">Check a client&rsquo;s credit line before the trade, in five steps.</p>
     <div class="hero-start">
       <a class="btn" id="walk" href="#story">Walk me through it</a>
       <nav class="pills" aria-label="Other ways in">
@@ -310,8 +319,8 @@ footer a { display: inline-flex; align-items: center; min-height: 44px; }
           <a class="btn" id="cta1" href="portal.html?n=5000000&amp;t=5&amp;csa=0">Price a hedge</a>
           <a class="btn alt" href="desk.html#predeal">See the decision API</a>
         </nav>
-  <div class="qr" id="share"><div id="qr" role="img" aria-label="QR code linking to this page"></div>
-    <p class="note">Scan to open this kit on your phone</p><code>https://sukhmanaulakh18.github.io/distributed-pricing-service/kit.html</code></div>
+  <div class="qr" id="share"><div id="qr" role="img" aria-label="QR code linking to the site front door"></div>
+    <p class="note">Scan to open the site on your phone</p><code>https://sukhmanaulakh18.github.io/distributed-pricing-service/</code></div>
       </div>
     </article>
 
@@ -327,7 +336,7 @@ footer a { display: inline-flex; align-items: center; min-height: 44px; }
   <section class=lens id=p-business role=tabpanel aria-labelledby=t-business><div class=l><h3>Business <small>Commercial banking</small></h3><p>Tells a client treasurer, in seconds, what a hedge costs in credit terms and whether their credit line can take it.</p><p class=demo><strong>30-second demo.</strong> Open the client portal, pick USD 5M and 5 years, then toggle the CSA.</p></div><div class=r><div class=proof><b>5.5 bp vs 0.7 bp</b><span>running credit charge, USD 5M 5y, no CSA vs CSA (docs/data/portal.json)</span><div class=mini id=mini aria-hidden=true></div></div><div class=acts><a class=btn href="portal.html?n=5000000&amp;t=5&amp;csa=0">Show me</a><a class=link href="portal.html">Open portal</a></div></div></section>
   <section class=lens id=p-quant role=tabpanel aria-labelledby=t-quant><div class=l><h3>Quant <small>Models and risk</small></h3><p>Prices the credit charge and the exposure on a trade before it is done, with a what-if that does not jitter.</p><p class=demo><strong>30-second demo.</strong> Open the desk, run a pre-deal check, then change the CSA threshold.</p></div><div class=r><div class=proof><b>CSA cuts CVA 60%; what-if noise 5.5x lower</b><span>zero-threshold CSA vs same scenarios uncollateralized; stdev $1,809 independent seeds vs $328 shared scenarios (bench/results/xva.json)</span></div><div class=acts><a class=btn href="desk.html#predeal">Show me</a></div></div></section>
   <section class=lens id=p-developer role=tabpanel aria-labelledby=t-developer><div class=l><h3>Developer <small>C++, Python, CI</small></h3><p>A C++ core behind a Python API, with memory and thread bugs hunted by tooling rather than hope.</p><p class=demo><strong>30-second demo.</strong> Open the repo and read the README test and CI sections.</p></div><div class=r><div class=proof><b>41 C++ + 145 Python tests</b><span>ASan, UBSan, TSan and Valgrind clean in CI (README)</span></div><div class=acts><a class=btn href="https://github.com/SukhmanAulakh18/distributed-pricing-service#engineering-highlights">Show me</a><a class=link href="https://github.com/SukhmanAulakh18/distributed-pricing-service">Open repo</a></div></div></section>
-  <section class=lens id=p-sre role=tabpanel aria-labelledby=t-sre><div class=l><h3>Infrastructure &amp; SRE <small>Reliability</small></h3><p>Keeps answering when pods, databases and a node are killed, and refuses overload instead of falling over.</p><p class=demo><strong>30-second demo.</strong> Jump to the reliability proof below.</p></div><div class=r><div class=proof><b>99.992% of 76,481 prices</b><span>served in a 10-minute, 11-fault chaos run. Load shedding: 299 of 300 shed, readiness 3 ms (README, docs/SLO.md)</span></div><div class=acts><a class=btn href="index.html#reliability">Show me</a><a class=link href="#reliability">See proof</a></div></div></section>
+  <section class=lens id=p-sre role=tabpanel aria-labelledby=t-sre><div class=l><h3>Infrastructure &amp; SRE <small>Reliability</small></h3><p>Keeps answering when pods, databases and a node are killed, and refuses overload instead of falling over.</p><p class=demo><strong>30-second demo.</strong> Jump to the reliability proof below.</p></div><div class=r><div class=proof><b>99.992% of 76,481 prices</b><span>served in a 10-minute, 11-fault chaos run. Load shedding: 299 of 300 shed, readiness 3 ms (README, docs/SLO.md)</span></div><div class=acts><a class=btn href="case-study.html#reliability">Show me</a><a class=link href="#reliability">See proof</a></div></div></section>
   <section class=lens id=p-data role=tabpanel aria-labelledby=t-data><div class=l><h3>Data <small>Lineage and reproducibility</small></h3><p>Every number can be reproduced, and a distributed run gives the same answer as a local one.</p><p class=demo><strong>30-second demo.</strong> Open the desk and note the market-data version, then rerun for the same figures.</p></div><div class=r><div class=proof><b>Identical PFE and CVA on 1, 2, 4 and 8 workers</b><span>same market-data version and deterministic seed give the same answer (README, docs/BUSINESS_CASE.md)</span></div><div class=acts><a class=btn href="desk.html">Show me</a></div></div></section>
   <section class=lens id=p-cyber role=tabpanel aria-labelledby=t-cyber><div class=l><h3>Cyber &amp; controls <small>Supply chain and platform</small></h3><p>Images are scanned before they are pushed, signed, and run with least privilege.</p><p class=demo><strong>30-second demo.</strong> Open the repo and read the operations guide on release and network policy.</p></div><div class=r><div class=proof><b>Scan before push</b><span>SBOM and cosign signatures, default-deny NetworkPolicies, non-root pods (README, docs/OPERATIONS.md)</span></div><div class=acts><a class=btn href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/OPERATIONS.md#release">Show me</a><a class=link href="https://github.com/SukhmanAulakh18/distributed-pricing-service">Open repo</a></div></div></section>
   <section class=lens id=p-ai role=tabpanel aria-labelledby=t-ai><div class=l><h3>AI &amp; agentic <small>Guarded automation</small></h3><p>A guarded remediation runner: allowlisted actions, human approval, evidence by replaying the incident, a hash-chained audit ledger. No LLM decisions.</p><p class=demo><strong>30-second demo.</strong> Open the runner&rsquo;s page: a proposed fix waits for a second person&rsquo;s approval, then is proven by replaying the incident.</p></div><div class=r><div class=proof><b>Approved by a second person, proven by replay</b><span>allowlisted actions only; the approver cannot be the operator; hash-chained audit ledger (docs/REMEDIATION.md)</span></div><div class=acts><a class=btn href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/REMEDIATION.md">Show me</a></div></div></section>
@@ -346,7 +355,7 @@ footer a { display: inline-flex; align-items: center; min-height: 44px; }
 
 <p class="callout"><strong>Honest limits.</strong> Synthetic data, textbook models, laptop measurements. Not production.</p>
 
-<footer><a href="index.html">Read the case study</a><a href="https://github.com/SukhmanAulakh18/distributed-pricing-service">Source repository</a></footer>
+<footer><a href="case-study.html">Read the case study</a><a href="https://github.com/SukhmanAulakh18/distributed-pricing-service">Source repository</a></footer>
 </main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
@@ -370,7 +379,7 @@ footer a { display: inline-flex; align-items: center; min-height: 44px; }
       else if (k === 'End') { e.preventDefault(); sel(n - 1, true); }
     });
   });
-  try { if (window.QRCode) new QRCode(document.getElementById('qr'), { text: 'https://sukhmanaulakh18.github.io/distributed-pricing-service/kit.html', width: 176, height: 176, correctLevel: QRCode.CorrectLevel.M }); } catch (e) {}
+  try { if (window.QRCode) new QRCode(document.getElementById('qr'), { text: 'https://sukhmanaulakh18.github.io/distributed-pricing-service/', width: 176, height: 176, correctLevel: QRCode.CorrectLevel.M }); } catch (e) {}
   // Walkthrough. Without script every step is stacked with the default cell's numbers; here one shows at a time.
   (function () {
     var steps = Array.prototype.slice.call(document.querySelectorAll('.step'));
