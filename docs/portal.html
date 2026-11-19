@@ -276,10 +276,19 @@ function toCell(res, n, t) {
   c.uncollateralized_running_bps = uncUpfront * ratio;
   return c;
 }
+// The API sheds risk quotes with 503 + Retry-After when its risk slot is busy:
+// a well-behaved client backs off and retries rather than calling it down.
 async function quote(n, t, csa, signal) {
-  const r = await fetch(api + "/risk/predeal", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body(n, t, csa)), signal });
-  if (!r.ok) throw new Error("API " + r.status);
-  return r.json();
+  for (let attempt = 0; ; attempt++) {
+    const r = await fetch(api + "/risk/predeal", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body(n, t, csa)), signal });
+    if (r.ok) return r.json();
+    if (r.status !== 503 || attempt >= 3) throw new Error("API " + r.status);
+    const wait = Math.min(Number(r.headers.get("Retry-After")) || 1, 2) * 1000;
+    await new Promise((res, rej) => {
+      const id = setTimeout(res, wait);
+      signal && signal.addEventListener("abort", () => { clearTimeout(id); rej(new DOMException("aborted", "AbortError")); }, { once: true });
+    });
+  }
 }
 
 const bar = (frac, cls, limitAt) =>
@@ -306,7 +315,7 @@ function view(off, on, n, t, meta) {
     ? '<p class="sub"><span class="save">Saving ' + saving + '%</span> against ' + fmtBp(unc) + ' without one. About ' + fmtCad(on.incremental_cva) + ' upfront.</p>'
     : '<p class="sub">No saving against ' + fmtBp(unc) + ' without one.</p>';
   const row = (name, val, frac, cls, sel, extra) => '<div class="row' + (sel ? ' sel' : '') + '"><div class="top"><span>' + name + (sel ? ' (selected)' : '') + '</span><b>' + val + '</b></div>' + bar(frac, cls, extra) + '</div>';
-  const livebar = meta ? '<p class="live-meta">Priced live by the engine. Round trip ' + meta.rt + ' ms for two quotes run together. Engine time ' + meta.a + ' ms without a CSA, ' + meta.b + ' ms with one.</p>' : '';
+  const livebar = meta ? '<p class="live-meta">Priced live by the engine. Round trip ' + meta.rt + ' ms for two quotes, one after the other. Engine time ' + meta.a + ' ms without a CSA, ' + meta.b + ' ms with one.</p>' : '';
   const html =
     '<section class="card lead"><h2>Your forward rate</h2><div class="big">' + off.forward_rate.toFixed(4) + ' <small>CAD per USD</small></div>' +
       '<p class="sub">Sell ' + fmtUsd(n) + ' in ' + fmtYrs(t) + ' for about ' + fmtCad(n * off.forward_rate) + '. Spot ' + data.inputs.spot_cad_per_usd.toFixed(2) + '.</p></section>' +
@@ -352,7 +361,9 @@ async function renderLive() {
   else if (!$("out").querySelector(".busy")) $("out").insertAdjacentHTML("afterbegin", '<div class="busy" role="presentation"></div><p class="sub">Pricing on the engine.</p>');
   const t0 = performance.now();
   try {
-    const [a, b] = await Promise.all([quote(n, t, false, ctl.signal), quote(n, t, true, ctl.signal)]);
+    // One at a time: the API has one risk slot per pod by design.
+    const a = await quote(n, t, false, ctl.signal);
+    const b = await quote(n, t, true, ctl.signal);
     if (my !== seq) return;
     const rt = Math.round(performance.now() - t0);
     $("out").innerHTML = view(toCell(a, n, t), toCell(b, n, t), n, t, { rt: rt.toLocaleString("en-CA"), a: Math.round(a.elapsed_ms).toLocaleString("en-CA"), b: Math.round(b.elapsed_ms).toLocaleString("en-CA") });
