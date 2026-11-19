@@ -3,182 +3,131 @@
 <title>XVA desk: try the CSA</title>
 <meta name="description" content="Negotiate a collateral agreement in your browser and watch credit exposure and CVA move, then see the same effects measured on the C++ engine.">
 <meta name="author" content="Sukhmanpreet Singh Aulakh">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Sometype+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="assets/site.css">
 <style>
-/* Hallmark · checked: 2026-11-18 · genre: modern-minimal (inferred) · theme: brand (site tokens, docs/case-study.html :root: Newsreader, IBM Plex, teal)
- * pre-emit critique: P4 H4 E4 S4 R5 V4 · weakest: S, the desk is a working tool, so it shows live charts and a verdict rather than photography
- * hero: Banner (headline, lede and one action) · nav: sectional strip under the shared site nav · footer: two links · job: try the demo · redesign: floor fixes only · built: the project · v2.0.0
- * Hallmark · dismissed 58 · answered: the pre-deal check, the CSA simulator and the request/response are the working demo, and each figure is one a reader checks
- * Hallmark · waive 24b · 4px scale elsewhere; the 2px, 6px and 10px steps in tight controls and chart legends are kept for optical alignment with the Plex figures
- * Hallmark · waive 64 · th and the .n figures stay mono because they carry numbers and units, not label prose */
-:root {
-  --bg: #f5f6f3; --surface: #ffffff; --ink: #15191d; --muted: #59626b; --line: #dcdfd8;
-  --accent: #0d6b62; --accent-soft: #e2efec; --warn: #a15c07; --warn-soft: #f6ead9; --bad: #c0392b; --good: #1d7340; --code-bg: #eef0eb;
-  --s1: #2a78d6; --s2: #eb6834; --on-accent: #fbfcfa; --shadow: rgba(0,0,0,0.14);
-  --display: "Newsreader", "Iowan Old Style", Georgia, serif;
-  --body: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  color-scheme: light;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0e1113; --surface: #161a1d; --ink: #e7eae7; --muted: #9aa3aa; --line: #2a3035;
-    --accent: #5cc0b4; --accent-soft: #15302d; --warn: #e3a34d; --warn-soft: #33270f; --bad: #f07167; --good: #6cc48c; --code-bg: #1d2226;
-    --s1: #3987e5; --s2: #d95926; --on-accent: #0e1113; --shadow: rgba(0,0,0,0.14); color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #0e1113; --surface: #161a1d; --ink: #e7eae7; --muted: #9aa3aa; --line: #2a3035;
-  --accent: #5cc0b4; --accent-soft: #15302d; --warn: #e3a34d; --warn-soft: #33270f; --bad: #f07167; --good: #6cc48c; --code-bg: #1d2226;
-  --s1: #3987e5; --s2: #d95926; --on-accent: #0e1113; --shadow: rgba(0,0,0,0.14); color-scheme: dark;
-}
-* { box-sizing: border-box; }
-[hidden] { display: none !important; }
-html { overflow-x: clip; scroll-behavior: smooth; scroll-padding-top: 112px; -webkit-text-size-adjust: 100%; }
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; animation: none !important; } }
-body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 var(--body); overflow-x: clip; }
-.wrap { max-width: 1080px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 56px; }
-nav.top { position: sticky; top: 44px; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
-nav.top .in { max-width: 1080px; margin: 0 auto; padding-inline: 16px; display: flex; gap: 16px; align-items: center; overflow-x: auto; white-space: nowrap; height: 48px; font-size: 0.88rem; }
-nav.top b { font-family: var(--display); font-size: 1.05rem; margin-right: 4px; }
-nav.top a { color: var(--muted); text-decoration: none; }
-nav.top a:hover, nav.top a[aria-current] { color: var(--accent); }
-h1, h2, h3 { font-family: var(--display); font-weight: 600; line-height: 1.15; text-wrap: balance; margin: 0; }
-h1 { font-size: clamp(2rem, 5.5vw, 3.1rem); letter-spacing: -0.01em; }
-h2 { font-size: clamp(1.5rem, 4vw, 1.9rem); margin-bottom: 4px; }
-h3 { font-size: 1.2rem; }
-p { margin: 0; max-width: 70ch; }
-a { color: var(--accent); }
-code { font-family: var(--mono); font-size: 0.86em; background: var(--code-bg); padding: 0 4px; border-radius: 4px; overflow-wrap: anywhere; }
-.lede { font-size: 1.1rem; color: var(--muted); margin-top: 16px; max-width: 72ch; }
-.lede strong { color: var(--ink); font-weight: 600; }
-header { display: grid; gap: 4px; padding-bottom: 28px; border-bottom: 1px solid var(--line); }
-section { padding-block: 40px; border-bottom: 1px solid var(--line); display: grid; gap: 16px; min-width: 0; }
-section:last-of-type { border-bottom: 0; }
-.note { font-size: 0.88rem; color: var(--muted); max-width: 82ch; }
-.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 24px; }
-.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: grid; gap: 4px; align-content: start; min-width: 0; }
-.stat b { font: 500 1.5rem/1.1 var(--mono); font-variant-numeric: tabular-nums; }
-.stat span { font-size: 0.88rem; color: var(--muted); }
-.stat em { font-style: normal; color: var(--accent); font-weight: 600; }
-.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
-.card h3 { font-size: 1.1rem; }
-.card .q { font-size: 0.92rem; }
-.card .n { font: 0.8rem/1.4 var(--mono); color: var(--accent); }
-.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; min-width: 0; }
-.sim { display: grid; grid-template-columns: minmax(0, 330px) minmax(0, 1fr); gap: 16px; align-items: start; }
-@media (max-width: 820px) { .sim { grid-template-columns: minmax(0, 1fr); } }
-.ctl { display: grid; gap: 12px; }
-.ctl label, .ctl .lab { display: grid; gap: 4px; font-size: 0.88rem; font-weight: 500; }
-.ctl .row { display: flex; justify-content: space-between; gap: 8px; }
-.ctl output { font: 500 0.88rem var(--mono); color: var(--accent); }
-.ctl fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 12px; min-width: 0; }
-.ctl fieldset[disabled] { opacity: 0.45; color: var(--muted); background: var(--code-bg); cursor: not-allowed; }
-.ctl fieldset[disabled] * { cursor: not-allowed; }
-input[type=range] { width: 100%; accent-color: var(--accent); height: 28px; margin: 0; }
-select { font: 0.92rem var(--body); padding: 8px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); width: 100%; }
-.check { display: flex !important; align-items: center; gap: 8px; font-size: 0.95rem !important; }
-.check input { width: 20px; height: 20px; accent-color: var(--accent); }
-.big { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 12px; }
-.big div { background: var(--bg); border-radius: 6px; padding: 12px; min-width: 0; }
-.big small { display: block; font-size: 0.76rem; color: var(--muted); line-height: 1.3; }
-.big b { font: 500 1.25rem/1.3 var(--mono); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-.big .hl { background: var(--accent-soft); }
-.big .hl b { color: var(--accent); }
-.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 0.82rem; color: var(--muted); margin: 8px 0 0; padding: 0; list-style: none; }
-.legend i { display: inline-block; width: 18px; height: 0; border-top: 3px solid; vertical-align: middle; margin-right: 8px; }
+/* Hallmark · shape: Split Ticket, both halves: an open ruled blotter for the decision and its inputs, console panels for the engine and the measured charts · genre: modern-minimal · theme: custom (by request), docs/assets/DESIGN.md · signature: the decision cut as a ticket stub, the figures set in the system's mono · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 · weakest: S, the desk is a working tool so it shows live instruments and a verdict rather than photography; charts read their colours from the console tokens */
+/* Hallmark · dismissed 58 · answered: the pre-deal check, the CSA simulator and the request and response are the working demo, and each figure is one a reader checks */
+.console { --s1: var(--color-steel); --s2: var(--color-signal-text); }
+.sh { display: grid; gap: var(--space-xs); }
+.sh p, .note { font-size: var(--text-sm); color: var(--color-muted); max-width: 72ch; }
+.sh p b { color: var(--color-ink); }
+.sec > .container > .sh + * { margin-top: 0; }
+.qs { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-lg) var(--gap-columns); counter-reset: q; }
+.qs li { display: grid; gap: var(--space-xs); align-content: start; padding-top: var(--space-md); border-top: var(--rule-heavy) solid var(--color-ink); counter-increment: q; font-size: var(--text-lg); line-height: 1.3; }
+.qs li::before { content: counter(q); font: 600 var(--text-sm) var(--font-mono); color: var(--color-muted); }
+.qs li span { font-size: var(--text-sm); color: var(--color-muted); line-height: 1.5; }
+.sim { display: grid; grid-template-columns: minmax(0, 21rem) minmax(0, 1fr); gap: var(--space-lg) var(--gap-columns); align-items: start; }
+.panel { display: grid; gap: var(--space-md); align-content: start; padding: var(--space-lg); min-width: 0; background: var(--color-paper-2); color: var(--color-ink); border-top: var(--rule-heavy) solid var(--color-ink); }
+.panel.out { background: transparent; padding: 0; border-top: 0; }
+.panel.console { border-top-color: var(--color-accent); }
+.panel h3 { padding-top: 0; border-top: 0; font-size: var(--text-title); }
+.fm { gap: var(--space-md); }
+.fm label, .fm .lab { display: grid; gap: var(--space-2xs); font-size: var(--text-sm); font-weight: 600; color: var(--color-muted); }
+.fm .row, .figs + div .row { display: flex; justify-content: space-between; gap: var(--space-xs); }
+.fm output { font: 600 var(--text-sm) var(--font-mono); color: var(--color-signal-text); }
+.fm fieldset { display: grid; gap: var(--space-md); }
+.fm fieldset[disabled] { opacity: 0.5; cursor: not-allowed; }
+.fm fieldset[disabled] * { cursor: not-allowed; }
+.fm select, .fm input[type="number"] { width: 100%; min-height: 44px; padding: var(--space-xs) var(--space-sm); border: var(--rule-hair) solid var(--color-muted); border-radius: var(--radius-control); background: var(--color-paper); color: var(--color-ink); font: 400 var(--text-sm)/1.3 var(--font-mono); font-variant-numeric: tabular-nums; }
+.fm select:hover, .fm input[type="number"]:hover { border-color: var(--color-ink); }
+.fm input[type="range"] { width: 100%; flex: none; }
+.fm .check { display: flex; align-items: center; gap: var(--space-sm); min-height: 44px; font-size: var(--text-md); color: var(--color-ink); }
+.fm .check input { width: 22px; height: 22px; accent-color: var(--color-signal-text); }
+.two2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-sm); }
+.try { display: grid; gap: var(--space-xs); padding-top: var(--space-sm); border-top: var(--rule-hair) solid var(--color-rule); }
+.try h3 { font: 600 var(--text-md)/1.3 var(--font-body); }
+.try .t { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); gap: var(--space-2xs) var(--space-sm); align-items: center; font-size: var(--text-sm); color: var(--color-muted); }
+.try .btn { min-height: 44px; padding: 0 var(--space-sm); font-size: var(--text-sm); }
+.figs { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: var(--space-sm) var(--space-md); margin-bottom: var(--space-sm); }
+.figs > div { min-width: 0; padding-top: var(--space-xs); border-top: var(--rule-hair) solid var(--color-rule); }
+.figs .hl { border-top: var(--rule-heavy) solid var(--color-signal-text); }
+.figs small { display: block; font-size: var(--text-xs); color: var(--color-muted); line-height: 1.3; }
+.figs b { font: 600 var(--text-lg)/1.3 var(--font-mono); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.panel.out .figs { margin-top: var(--space-md); }
+.panel.out .figs b { color: var(--color-ink); }
+.util { display: flex; justify-content: space-between; gap: var(--space-sm); font-size: var(--text-sm); }
+.util b { font: 600 var(--text-sm) var(--font-mono); text-align: right; }
+.meter { height: var(--space-sm); margin-top: var(--space-xs); background: var(--color-paper-3); overflow: hidden; }
+.meter i { display: block; width: 100%; height: 100%; background: var(--color-ok); transform-origin: left; transition: transform var(--dur-short) var(--ease-out); }
+.meter i.warn { background: var(--color-signal-text); } .meter i.bad { background: var(--color-fault); }
+.badge { display: inline-flex; justify-self: start; min-height: 28px; align-items: center; padding: 0 var(--space-sm); border: var(--rule-hair) solid var(--color-ok); border-radius: var(--radius-control); font-size: var(--text-sm); font-weight: 600; color: var(--color-ok); }
+.legend { display: flex; flex-wrap: wrap; gap: var(--space-2xs) var(--space-md); font-size: var(--text-sm); color: var(--color-muted); margin: 0; padding: 0; list-style: none; }
+.legend i { display: inline-block; width: 18px; height: 0; border-top: 3px solid; vertical-align: middle; margin-right: var(--space-xs); }
 .legend i.d { border-top-style: dashed; }
-.chart { position: relative; min-width: 0; }
-.chart svg { width: 100%; height: auto; display: block; font-family: var(--body); touch-action: pan-y; }
-.chart .grid { stroke: var(--line); stroke-width: 1; }
-.chart .axis { font: 11px var(--mono); fill: var(--muted); }
-.chart .cross { stroke: var(--ink); stroke-width: 1; opacity: 0.45; }
-.tip { position: absolute; top: 4px; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 8px 8px; font-size: 0.78rem; line-height: 1.4; box-shadow: 0 4px 14px var(--shadow); white-space: nowrap; z-index: 2; }
-.tip b { font-family: var(--mono); font-weight: 500; }
-.try { display: grid; gap: 8px; margin-top: 4px; }
-.try h3 { font-size: 1rem; font-family: var(--body); font-weight: 600; }
-.try .t { display: grid; grid-template-columns: auto 1fr; gap: 4px 8px; align-items: start; font-size: 0.9rem; }
-button { font: 500 0.88rem var(--body); padding: 8px 12px; min-height: 40px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); cursor: pointer; }
-button:hover { border-color: var(--accent); }
-button:active:not(:disabled) { background: var(--accent-soft); transform: translateY(1px); }
-.cta:active { filter: brightness(0.92); }
-button[aria-pressed="true"], button[aria-current="step"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
-a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; align-items: start; }
+.chart { position: relative; }
+.chart svg { width: 100%; height: auto; display: block; font-family: var(--font-body); touch-action: pan-y; }
+.chart .grid { stroke: var(--color-rule); stroke-width: 1; }
+.chart .axis { font: 11px var(--font-mono); fill: var(--color-muted); }
+.chart .cross { stroke: var(--color-ink); stroke-width: 1; opacity: 0.45; }
+.tip { position: absolute; top: var(--space-2xs); pointer-events: none; background: var(--color-paper-3); color: var(--color-ink); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-control); padding: var(--space-xs); font-size: var(--text-xs); line-height: 1.4; white-space: nowrap; z-index: var(--z-raised); }
+.tip b { font-family: var(--font-mono); font-weight: 600; }
+.copyrow { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-sm); }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: var(--space-lg) var(--gap-columns); align-items: start; }
 .two > * { min-width: 0; }
-.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
-table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
-th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
-th { font: 500 0.82rem/1.3 var(--body); color: var(--muted); }
-tr:last-child td { border-bottom: 0; }
-td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.callout { background: var(--accent-soft); border-radius: 8px; padding: 16px; max-width: 82ch; display: grid; gap: 8px; font-size: 0.95rem; }
-.callout.warn { background: var(--warn-soft); }
-.steps { display: flex; flex-wrap: wrap; gap: 8px; }
-.steps button { display: inline-flex; gap: 8px; align-items: center; }
-.steps button span { font-family: var(--mono); font-size: 0.78rem; opacity: 0.8; }
-.stepbody { display: grid; gap: 12px; }
-.stepbody dl { margin: 0; display: grid; gap: 8px; }
-.stepbody dt { font: 500 0.82rem/1.3 var(--body); color: var(--muted); }
-.stepbody dd { margin: 2px 0 0; max-width: 72ch; }
-.nav2 { display: flex; gap: 8px; }
-ul.tight { margin: 0; padding-left: 20px; display: grid; gap: 8px; max-width: 76ch; }
-footer { padding-top: 24px; font-size: 0.9rem; color: var(--muted); display: grid; gap: 8px; }
-footer nav { display: flex; flex-wrap: wrap; gap: 8px 16px; }
-.verdict { border: 2px solid var(--line); border-radius: 8px; padding: 16px; display: grid; gap: 8px; margin-bottom: 12px; background: var(--bg); }
-.verdict h3 { font-size: 1.5rem; }
-.verdict[data-v="approve"] { border-color: var(--good); } .verdict[data-v="approve"] h3 { color: var(--good); }
-.verdict[data-v="approve_with_csa"] { border-color: var(--warn); background: var(--warn-soft); } .verdict[data-v="approve_with_csa"] h3 { color: var(--warn); }
-.verdict[data-v="refer_to_credit"] { border-color: var(--bad); } .verdict[data-v="refer_to_credit"] h3 { color: var(--bad); }
-.badge { display: inline-block; justify-self: start; background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 4px 12px; font-size: 0.85rem; font-weight: 600; }
-.meter { height: 14px; border-radius: 7px; background: var(--code-bg); overflow: hidden; margin-top: 8px; border: 1px solid var(--line); }
-.meter i { display: block; height: 100%; background: var(--good); }
-.meter i.warn { background: var(--warn); } .meter i.bad { background: var(--bad); }
-input[type=number] { font: 0.92rem var(--mono); padding: 8px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); width: 100%; min-height: 40px; }
-.ctl .two2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.cta { display: inline-flex; align-items: center; margin-top: 16px; padding: 12px 24px; min-height: 48px; border-radius: 8px; background: var(--accent); color: var(--on-accent); font: 600 1rem var(--body); text-decoration: none; justify-self: start; }
-pre.code { margin: 0; padding: 12px 16px; background: var(--code-bg); border-radius: 8px; overflow-x: auto; font: 0.8rem/1.5 var(--mono); max-width: 100%; }
-.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-
-/* site nav, shared by every page */
-.sitenav { position: sticky; top: 0; z-index: 20; background: var(--bg); border-bottom: 1px solid var(--line); }
-.sitenav ul { list-style: none; margin: 0 auto; padding: 0 12px; max-width: 1080px; display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
-.sitenav a { display: flex; align-items: center; min-height: 44px; padding: 0 12px; color: var(--muted); text-decoration: none; font: 500 0.9375rem/1 var(--body); white-space: nowrap; border-bottom: 2px solid transparent; }
-.sitenav a:hover { color: var(--ink); }
-.sitenav a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent, var(--primary)); }
-.sitenav a:focus-visible { outline: 3px solid var(--accent, var(--primary)); outline-offset: -3px; }
+.who { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-xl) var(--gap-columns); }
+.who > div { display: grid; gap: var(--space-xs); align-content: start; padding-top: var(--space-md); border-top: var(--rule-heavy) solid var(--color-ink); min-width: 0; }
+.who h3 { font-size: var(--text-lg); }
+.who .q { font-size: var(--text-sm); }
+.who .n { font: 400 var(--text-xs)/1.4 var(--font-mono); color: var(--color-signal-text); }
+.stepbar button[aria-current="step"] { background: var(--color-paper-3); border-color: var(--color-ink); box-shadow: inset 0 -3px 0 var(--color-accent); }
+.stepbar button span { margin-right: var(--space-xs); font: 600 var(--text-xs) var(--font-mono); color: var(--color-muted); }
+.stepbody { gap: var(--space-sm); }
+.stepbody dl { margin: 0; display: grid; gap: var(--space-sm); }
+.stepbody dt { font-size: var(--text-sm); font-weight: 600; color: var(--color-muted); }
+.stepbody dd { margin: var(--space-3xs) 0 0; max-width: 72ch; }
+.nav2 { margin-top: 0; }
+.nav2 .btn { min-height: 44px; }
+ul.tight { margin: 0; padding-left: var(--space-lg); display: grid; gap: var(--space-xs); max-width: 76ch; }
+@media (max-width: 60rem) { .sim, .qs, .who { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 40rem) { .try .t { grid-template-columns: minmax(0, 1fr); } .panel { padding: var(--space-md); } }
+@media (prefers-reduced-motion: reduce) { .meter i { transition: none; } }
 </style>
-</head><body>
-<nav class="sitenav" aria-label="Site"><ul><li><a href="index.html">Home</a></li><li><a href="portal.html">Client hedge</a></li><li><a href="desk.html#predeal" aria-current="page">Decision API</a></li><li><a href="platform.html">Library &amp; platform</a></li><li><a href="kit.html">Guided tour</a></li><li><a href="case-study.html">Case study</a></li></ul></nav>
-<script>(function(){var a=document.querySelector(".sitenav [aria-current]");if(a&&a.scrollIntoView)try{a.scrollIntoView({inline:"center",block:"nearest"})}catch(e){}})()</script>
-<nav class="top" aria-label="Sections"><div class="in">
-  <b>Pricing Service</b>
-  <a href="#predeal"><b>Pre-deal check</b></a>
-  <a href="#who">Who uses it</a>
-  <a href="#play">Negotiate the CSA</a>
-  <a href="#measured">Measured</a>
-  <a href="#request">One request</a>
-  <a href="#limits">Limits</a>
+<script src="assets/site.js"></script>
+</head>
+<body>
+<nav class="sitenav" aria-label="Site"><div class="sitenav-in">
+  <a class="mark" href="index.html" aria-label="Distributed Pricing Service, home"><span class="glyph" aria-hidden="true"></span><span class="wm">Pricing Service</span></a>
+  <ul><li><a href="index.html">Home</a></li><li class="g"><a href="portal.html">Client hedge</a></li><li><a href="desk.html#predeal" aria-current="page">Decision API</a></li><li class="g"><a href="platform.html">Library &amp; platform</a></li><li class="g"><a href="kit.html">Guided tour</a></li><li><a href="case-study.html">Case study</a></li></ul>
+  <button class="theme-btn" type="button">Dark</button>
 </div></nav>
-<div class="wrap">
-<header>
-  <h1>Should we say yes to this trade, and what does the client’s credit cost us?</h1>
-  <p class="lede">A corporate client asks the bank for a 5-year equity hedge. Before the trader says yes, the XVA desk must answer three questions in seconds. <strong>How much of the client's credit line does it use</strong> (PFE)? <strong>What will the client's possible default cost us</strong> (CVA)? <strong>Does a collateral agreement change the answer?</strong></p>
-  <p class="note" style="margin-top:10px">PFE is the bad-case exposure (95th percentile) at each future date. CVA is the price tag on the client defaulting while they owe us money. A CSA is the collateral agreement: when the trade moves in our favour, they hand over cash.</p>
-  <a class="cta" href="#predeal">Run a pre-deal check &darr;</a>
-  <div class="tiles" id="tiles" role="list"></div>
-  <p class="note" style="margin-top:12px">Measured by <code>bench/bench_xva.py</code> on the author's laptop (<span id="mach"></span>), with a zero-threshold CSA and a 10-business-day margin period unless stated. Percentages are computed on this page from the raw benchmark file, on the same scenarios.</p>
-</header>
+<nav class="subnav" aria-label="Sections"><ul>
+  <li><a href="#top">Top</a></li><li><a href="#predeal">Pre-deal check</a></li><li><a href="#who">Who uses it</a></li><li><a href="#play">Negotiate the CSA</a></li><li><a href="#measured">Measured</a></li><li><a href="#request">One request</a></li><li><a href="#limits">Limits</a></li>
+  <li class="sp" aria-hidden="true"></li>
+  <li><a href="portal.html">Customer product</a></li><li><a href="case-study.html">Case study</a></li>
+</ul></nav>
+<main id="top">
+<header class="hero"><div class="container hero-top">
+  <h1 class="h1-s">Should we say yes to this trade, and what does the client&rsquo;s credit cost us?</h1>
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <p class="lede">A corporate client asks for a 5-year equity hedge; the desk answers in seconds.</p>
+      <div class="btns"><a class="btn" href="#predeal">Run a pre-deal check</a></div>
+    </div>
+    <ul class="strip console" id="tiles" aria-label="Four measured results"></ul>
+  </div>
+</div></header>
 
-<section id="predeal" aria-labelledby="pd-h">
-  <div><h2 id="pd-h">Pre-deal check: say yes, say yes with a CSA, or refer</h2>
-  <p class="note"><b>In-browser model for intuition; the real engine is the API call below.</b> Pick the client's book, a new trade and the client's credit limit on peak PFE. The page prices the book with and without the new trade on the same random scenarios, so the difference is the trade and not the noise. The CSA terms come from the sliders in <a href="#play">Negotiate the CSA</a>.</p></div>
+<section class="sec" id="questions" aria-labelledby="q-h"><div class="container">
+  <div class="sec-head"><h2 id="q-h">Three questions before the trader says yes</h2>
+  <p>A corporate client asks the bank for a 5-year equity hedge. Before the trader says yes, the XVA desk must answer three questions in seconds.</p></div>
+  <ol class="qs">
+    <li><b>How much of the client&rsquo;s credit line does it use</b> (PFE)?<span>PFE is the bad-case exposure (95th percentile) at each future date.</span></li>
+    <li><b>What will the client&rsquo;s possible default cost us</b> (CVA)?<span>CVA is the price tag on the client defaulting while they owe us money.</span></li>
+    <li><b>Does a collateral agreement change the answer?</b><span>A CSA is the collateral agreement: when the trade moves in our favour, they hand over cash.</span></li>
+  </ol>
+  <p class="note">Measured by <code>bench/bench_xva.py</code> on the author&rsquo;s laptop (<span id="mach"></span>), with a zero-threshold CSA and a 10-business-day margin period unless stated. Percentages are computed on this page from the raw benchmark file, on the same scenarios.</p>
+</div></div></section>
+
+
+<section class="sec" id="predeal" aria-labelledby="pd-h"><div class="container">
+  <div class="sh"><h2 id="pd-h">Pre-deal check: say yes, say yes with a CSA, or refer</h2>
+  <p class="note"><b>In-browser model for intuition; the real engine is the API call below.</b> Pick the client’s book, a new trade and the client’s credit limit on peak PFE. The page prices the book with and without the new trade on the same random scenarios, so the difference is the trade and not the noise. The CSA terms come from the sliders in <a href="#play">Negotiate the CSA</a>.</p></div>
   <div class="sim">
-    <form class="panel ctl" id="pdctl" onsubmit="return false" aria-label="Pre-deal inputs">
-      <label>Client's existing book
+    <form class="panel fm" id="pdctl" onsubmit="return false" aria-label="Pre-deal inputs">
+      <label>Client’s existing book
         <select id="pd-preset">
           <option value="puts">Long put book</option>
           <option value="fwds">Two long forwards</option>
@@ -194,58 +143,58 @@ pre.code { margin: 0; padding: 12px 16px; background: var(--code-bg); border-rad
         </div>
         <label><span class="row">Maturity <output id="o-pd-mat" for="pd-mat"></output></span><input type="range" id="pd-mat" min="0.5" max="5" step="0.5" value="5"></label>
       </fieldset>
-      <label>Client's credit limit on peak PFE ($)<input type="number" id="pd-limit" min="100000" max="100000000" step="100000" value="5000000" inputmode="numeric"></label>
+      <label>Client’s credit limit on peak PFE ($)<input type="number" id="pd-limit" min="100000" max="100000000" step="100000" value="5000000" inputmode="numeric"></label>
       <label><span class="row">Client CDS spread <output id="o-pd-cds" for="pd-cds"></output></span><input type="range" id="pd-cds" min="25" max="600" step="25" value="150"></label>
       <label class="check"><input type="checkbox" id="pd-csa"> CSA in force</label>
       <p class="note" id="pd-terms"></p>
       <p class="note" id="pd-speed"></p>
       <div class="try">
         <h3>Try this</h3>
-        <div class="t"><button type="button" data-pd="refer">Refer</button><span>A big 5-year forward against a $1M limit: too big even with collateral.</span></div>
-        <div class="t"><button type="button" data-pd="needcsa">Needs CSA</button><span>A smaller forward, no CSA: collateral is what makes it fit.</span></div>
-        <div class="t"><button type="button" data-pd="approve">Approve</button><span>The same trade with a CSA in force.</span></div>
-        <div class="t"><button type="button" data-pd="hedge">Hedge</button><span>Selling a call against the book offsets exposure and lowers CVA.</span></div>
+        <div class="t"><button type="button" class="btn ghost" data-pd="refer">Refer</button><span>A big 5-year forward against a $1M limit: too big even with collateral.</span></div>
+        <div class="t"><button type="button" class="btn ghost" data-pd="needcsa">Needs CSA</button><span>A smaller forward, no CSA: collateral is what makes it fit.</span></div>
+        <div class="t"><button type="button" class="btn ghost" data-pd="approve">Approve</button><span>The same trade with a CSA in force.</span></div>
+        <div class="t"><button type="button" class="btn ghost" data-pd="hedge">Hedge</button><span>Selling a call against the book offsets exposure and lowers CVA.</span></div>
       </div>
     </form>
-    <div class="panel">
+    <div class="panel out">
       <div role="status" aria-live="polite" aria-atomic="true" id="pd-out">
-        <div class="verdict" id="pd-verdict" data-v=""><h3 id="pd-vt">-</h3><p id="pd-reason"></p><span class="badge" id="pd-rr" hidden></span></div>
-        <div class="big">
+        <div class="decision" id="pd-verdict" data-v=""><div class="stub"><h3 class="dword" id="pd-vt">-</h3></div><div class="dbody"><p id="pd-reason"></p><span class="badge" id="pd-rr" hidden></span></div></div>
+        <div class="figs">
           <div class="hl"><small>Incremental CVA</small><b id="pd-cva">-</b></div>
           <div class="hl"><small>Charge to the client (upfront, running)</small><b id="pd-bp">-</b></div>
           <div><small>Peak PFE, before &rarr; after</small><b id="pd-pfe">-</b></div>
         </div>
-        <div><div class="row" style="display:flex;justify-content:space-between;font-size:0.88rem"><span>Credit limit used</span><b id="pd-util" style="font-family:var(--mono)">-</b></div>
-          <div class="meter" aria-hidden="true"><i id="pd-bar" style="width:0"></i></div></div>
+        <div><div class="row util"><span>Credit limit used</span><b id="pd-util">-</b></div>
+          <div class="meter" aria-hidden="true"><i id="pd-bar" style="transform:scaleX(0)"></i></div></div>
       </div>
     </div>
   </div>
-  <div class="panel" style="display:grid;gap:10px">
+  <div class="panel console eng">
     <h3>Do this against the real engine</h3>
     <p class="note">Runs the C++ engine synchronously on the API pod, capped at 50,000 scenarios; the same scenarios before and after. Run it locally with <code>make up</code>. The request below follows the inputs above. <span id="pd-latency"></span></p>
-    <pre class="code" id="pd-curl" tabindex="0" aria-label="curl example"></pre>
-    <div><button type="button" id="pd-copy">Copy the curl command</button> <span class="note" id="pd-copied" role="status" aria-live="polite"></span></div>
-    <p class="note">The response has these fields (the numbers below come from this page's model, and the scenario count and time from the benchmark run, not from a live call):</p>
-    <pre class="code" id="pd-resp" tabindex="0" aria-label="sample response"></pre>
+    <pre id="pd-curl" tabindex="0" aria-label="curl example"></pre>
+    <div class="copyrow"><button type="button" class="btn ghost" id="pd-copy">Copy the curl command</button> <span class="note" id="pd-copied" role="status" aria-live="polite"></span></div>
+    <p class="note">The response has these fields (the numbers below come from this page’s model, and the scenario count and time from the benchmark run, not from a live call):</p>
+    <pre id="pd-resp" tabindex="0" aria-label="sample response"></pre>
   </div>
-</section>
+</div></section>
 
-<section id="who" aria-labelledby="who-h">
-  <div><h2 id="who-h">Who uses it</h2><p class="note">Five people ask this system different questions. Each one acts on a different number.</p></div>
-  <div class="cards">
-    <div class="card"><h3>Trader</h3><p class="q"><b>Decision:</b> can I do this trade, and what do I charge on top of the market price?</p><p class="n">Driven by: incremental CVA of the new trade</p></div>
-    <div class="card"><h3>XVA desk</h3><p class="q"><b>Decision:</b> how much CVA and DVA P&amp;L do we carry, and what do we hedge?</p><p class="n">Driven by: CVA, DVA, bilateral CVA</p></div>
-    <div class="card"><h3>Credit risk</h3><p class="q"><b>Decision:</b> does the worst plausible exposure fit inside this client's credit limit?</p><p class="n">Driven by: peak PFE at 95%</p></div>
-    <div class="card"><h3>Collateral and legal</h3><p class="q"><b>Decision:</b> which CSA terms are worth negotiating: threshold, minimum transfer, margin period?</p><p class="n">Driven by: CVA and PFE with and without the CSA</p></div>
-    <div class="card"><h3>SRE and platform</h3><p class="q"><b>Decision:</b> will the numbers arrive on time, and the same, even when nodes die?</p><p class="n">Driven by: latency, and identical results on any worker count</p></div>
+<section class="sec" id="who" aria-labelledby="who-h"><div class="container">
+  <div class="sh"><h2 id="who-h">Who uses it</h2><p class="note">Five people ask this system different questions. Each one acts on a different number.</p></div>
+  <div class="who">
+    <div><h3>Trader</h3><p class="q"><b>Decision:</b> can I do this trade, and what do I charge on top of the market price?</p><p class="n">Driven by: incremental CVA of the new trade</p></div>
+    <div><h3>XVA desk</h3><p class="q"><b>Decision:</b> how much CVA and DVA P&amp;L do we carry, and what do we hedge?</p><p class="n">Driven by: CVA, DVA, bilateral CVA</p></div>
+    <div><h3>Credit risk</h3><p class="q"><b>Decision:</b> does the worst plausible exposure fit inside this client’s credit limit?</p><p class="n">Driven by: peak PFE at 95%</p></div>
+    <div><h3>Collateral and legal</h3><p class="q"><b>Decision:</b> which CSA terms are worth negotiating: threshold, minimum transfer, margin period?</p><p class="n">Driven by: CVA and PFE with and without the CSA</p></div>
+    <div><h3>SRE and platform</h3><p class="q"><b>Decision:</b> will the numbers arrive on time, and the same, even when nodes die?</p><p class="n">Driven by: latency, and identical results on any worker count</p></div>
   </div>
-</section>
+</div></section>
 
-<section id="play" aria-labelledby="play-h">
-  <div><h2 id="play-h">Negotiate the CSA</h2>
-  <p class="note"><b>In-browser model, same rules as the engine, 2,000 scenarios: for intuition. Platform results below are from the C++ engine.</b> One underlying (spot 100, 3% rate), a small book, monthly dates for five years, margin calls at each node. The book is a different one from the benchmark's, so percentages will differ; the shape is the point.</p></div>
+<section class="sec" id="play" aria-labelledby="play-h"><div class="container">
+  <div class="sh"><h2 id="play-h">Negotiate the CSA</h2>
+  <p class="note"><b>In-browser model, same rules as the engine, 2,000 scenarios: for intuition. Platform results below are from the C++ engine.</b> One underlying (spot 100, 3% rate), a small book, monthly dates for five years, margin calls at each node. The book is a different one from the benchmark’s, so percentages will differ; the shape is the point.</p></div>
   <div class="sim">
-    <form class="panel ctl" id="ctl" onsubmit="return false" aria-label="Simulation inputs">
+    <form class="panel fm" id="ctl" onsubmit="return false" aria-label="Simulation inputs">
       <label>Book (what we hold against the client)
         <select id="preset">
           <option value="puts">Long put book: client wrote us downside protection</option>
@@ -264,8 +213,8 @@ pre.code { margin: 0; padding: 12px 16px; background: var(--code-bg); border-rad
       </fieldset>
       <p class="note" id="speed"></p>
     </form>
-    <div class="panel">
-      <div class="big" role="status" aria-live="polite" aria-atomic="true" id="bignums">
+    <div class="panel console">
+      <div class="figs" role="status" aria-live="polite" aria-atomic="true" id="bignums">
         <div><small>CVA, no CSA</small><b id="n-cva">-</b></div>
         <div class="hl"><small>CVA, with CSA</small><b id="n-cvac">-</b></div>
         <div class="hl"><small>CVA saving</small><b id="n-save">-</b></div>
@@ -276,71 +225,71 @@ pre.code { margin: 0; padding: 12px 16px; background: var(--code-bg); border-rad
       <ul class="legend" id="lg-sim"></ul>
       <div class="try">
         <h3>Try this</h3>
-        <div class="t"><button type="button" data-try="mpor0">MPoR 0</button><span>Margin period zero, thresholds zero: collateral removes almost all exposure.</span></div>
-        <div class="t"><button type="button" data-try="mpor20">MPoR 20</button><span>Now 20 business days. Exposure grows back because the price can move a lot before we can close out, which is why regulators floor it at 10 days for most netting sets.</span></div>
-        <div class="t"><button type="button" data-try="thr">High thresholds</button><span>Raise both thresholds. The CSA asks for collateral less often and CVA climbs back toward the uncollateralized number.</span></div>
-        <div class="t"><button type="button" data-try="reset">Reset</button><span>Back to a zero-threshold CSA, 10-business-day margin period, 150 bps.</span></div>
+        <div class="t"><button type="button" class="btn ghost" data-try="mpor0">MPoR 0</button><span>Margin period zero, thresholds zero: collateral removes almost all exposure.</span></div>
+        <div class="t"><button type="button" class="btn ghost" data-try="mpor20">MPoR 20</button><span>Now 20 business days. Exposure grows back because the price can move a lot before we can close out, which is why regulators floor it at 10 days for most netting sets.</span></div>
+        <div class="t"><button type="button" class="btn ghost" data-try="thr">High thresholds</button><span>Raise both thresholds. The CSA asks for collateral less often and CVA climbs back toward the uncollateralized number.</span></div>
+        <div class="t"><button type="button" class="btn ghost" data-try="reset">Reset</button><span>Back to a zero-threshold CSA, 10-business-day margin period, 150 bps.</span></div>
       </div>
     </div>
   </div>
-</section>
+</div></section>
 
-<section id="measured" aria-labelledby="m-h">
-  <div><h2 id="m-h">Measured on the platform</h2>
-  <p class="note">These come from the C++ engine, not the browser model above: 200 trades, 50,000 scenarios, one measurement run on the author's laptop by <code>bench/bench_xva.py</code>. Counterparty CDS 150 bps, recovery 40%. CSA terms: two-way, minimum transfer $250,000.</p></div>
+<section class="sec" id="measured" aria-labelledby="m-h"><div class="container">
+  <div class="sh"><h2 id="m-h">Measured on the platform</h2>
+  <p class="note">These come from the C++ engine, not the browser model above: 200 trades, 50,000 scenarios, one measurement run on the author’s laptop by <code>bench/bench_xva.py</code>. Counterparty CDS 150 bps, recovery 40%. CSA terms: two-way, minimum transfer $250,000.</p></div>
   <div class="two">
-    <div class="panel"><h3>CVA against the threshold</h3>
+    <div class="panel console"><h3>CVA against the threshold</h3>
       <p class="note">10-business-day margin period. Raising the threshold lets exposure build before collateral flows, so CVA returns toward the uncollateralized line.</p>
       <div class="chart" id="c-thr"></div><ul class="legend" id="lg-thr"></ul></div>
-    <div class="panel"><h3>CVA against the margin period</h3>
+    <div class="panel console"><h3>CVA against the margin period</h3>
       <p class="note">Zero threshold. Each extra day between the last margin call and close-out is a day the price can run away from the collateral held. This is the cost of slow margining.</p>
       <div class="chart" id="c-mpor"></div><ul class="legend" id="lg-mpor"></ul></div>
   </div>
   <div class="table-wrap"><table><caption class="sr">Threshold sweep</caption>
     <thead><tr><th>Threshold (each way)</th><th>CVA with CSA</th><th>CVA, no CSA</th><th>Peak PFE with CSA</th><th>Peak PFE, no CSA</th></tr></thead><tbody id="tb-thr"></tbody></table></div>
   <p class="note" id="pfe-note">One counterintuitive line in the table: a two-way CSA can leave a higher peak PFE at low thresholds than at high ones, because collateral we have posted is at risk if they default. If the trade swings in our favour inside the margin period, we are owed the value and the collateral we posted.</p>
-  <div class="panel"><h3>Exposure profile, with and without a zero-threshold CSA</h3>
+  <div class="panel console"><h3>Exposure profile, with and without a zero-threshold CSA</h3>
     <p class="note">Expected exposure (EE) and 95% PFE over five years. The collateralized lines sit far below. The jump at year 5 is the lag at work: collateral still held from before the trades matured.</p>
     <div class="chart" id="c-prof"></div><ul class="legend" id="lg-prof"></ul></div>
-  <div class="panel"><h3>Pre-deal: what does the new 5-year forward add?</h3>
+  <div class="panel console"><h3>Pre-deal: what does the new 5-year forward add?</h3>
     <p class="note" id="pre-lead"></p>
     <div class="chart" id="c-pre"></div>
-    <p class="note" id="pre-note" style="margin-top:8px"></p></div>
-</section>
+    <p class="note" id="pre-note"></p></div>
+</div></section>
 
-<section id="request" aria-labelledby="r-h">
-  <div><h2 id="r-h">Follow one request</h2><p class="note">A pre-deal exposure request from the API to the stored answer. Pick a step to see what can fail there and what keeps the answer correct.</p></div>
-  <div class="steps" role="group" aria-label="Request steps" id="steps"></div>
+<section class="sec" id="request" aria-labelledby="r-h"><div class="container">
+  <div class="sh"><h2 id="r-h">Follow one request</h2><p class="note">A pre-deal exposure request from the API to the stored answer. Pick a step to see what can fail there and what keeps the answer correct.</p></div>
+  <div class="chips stepbar" role="group" aria-label="Request steps" id="steps"></div>
   <div class="panel stepbody" id="stepbody" aria-live="polite"></div>
-  <div class="nav2"><button type="button" id="prev">Previous</button><button type="button" id="next">Next</button></div>
-  <div class="callout warn"><b>Where this stands.</b> The idempotency fix (an <code>Idempotency-Key</code> plus polling <code>GET /jobs/{id}</code>) closes the open issue from chaos run 3 and is covered by unit tests. The 10-minute chaos run has not been re-run since.</div>
-</section>
+  <div class="nav2 btns"><button type="button" class="btn ghost" id="prev">Previous</button><button type="button" class="btn ghost" id="next">Next</button></div>
+  <div class="callout"><b>Where this stands.</b> The idempotency fix (an <code>Idempotency-Key</code> plus polling <code>GET /jobs/{id}</code>) closes the open issue from chaos run 3 and is covered by unit tests. The 10-minute chaos run has not been re-run since.</div>
+</div></section>
 
-<section id="limits" aria-labelledby="l-h">
+<section class="sec" id="limits" aria-labelledby="l-h"><div class="container">
   <h2 id="l-h">Limitations, stated plainly</h2>
   <ul class="tight">
     <li>Flat interest rate and flat credit curves; constant volatility; Black-Scholes revaluation.</li>
     <li>PFE is risk-neutral (drift at the risk-free rate), not a real-world projection.</li>
-    <li>No wrong-way risk: the client's default chance does not depend on the market.</li>
+    <li>No wrong-way risk: the client’s default chance does not depend on the market.</li>
     <li>Defaults of the bank and the client are independent.</li>
-    <li>Synthetic data. The in-browser model is a teaching sketch with 2,000 scenarios, so its numbers carry sampling noise and are not comparable to the engine's.</li>
+    <li>Synthetic data. The in-browser model is a teaching sketch with 2,000 scenarios, so its numbers carry sampling noise and are not comparable to the engine’s.</li>
     <li>An independent learning project, not affiliated with any employer.</li>
   </ul>
-</section>
+</div></section>
 
-<footer>
+</main>
+<footer class="foot"><div class="container">
   <nav aria-label="Links">
     <a href="case-study.html">Case study</a>
     <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service">GitHub repository</a>
     <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/MODELS.md">Models and validation (MODELS.md)</a>
   </nav>
   <p>Built by Sukhmanpreet Singh Aulakh.</p>
-</footer>
-</div>
+</div></footer>
 
 <script>
 // Copied from bench/results/xva.json (measured on the author's laptop by bench/bench_xva.py).
-const XVA = {"machine":"arm64, 10 threads","n_trades":200,"n_scenarios":50000,"units":"USD; 1,000 units per contract","counterparty":{"recovery":0.4,"cds_spread_bps":150.0},"own_credit":{"recovery":0.4,"cds_spread_bps":60.0},"uncollateralized":{"cva":102984.92,"peak_pfe":12578864.24,"epe":1563387.91,"dva":99714.92,"bilateral_cva":964.65,"seconds":1.25,"v0":-1407374.16},"profile":{"grid":[0.08333333333333333,0.16666666666666666,0.25,0.3333333333333333,0.4166666666666667,0.5,0.5833333333333334,0.6666666666666666,0.75,0.8333333333333334,0.9166666666666666,1.0,1.0833333333333333,1.1666666666666667,1.25,1.3333333333333333,1.4166666666666667,1.5,1.5833333333333333,1.6666666666666667,1.75,1.8333333333333333,1.9166666666666667,2.0,2.0833333333333335,2.1666666666666665,2.25,2.3333333333333335,2.4166666666666665,2.5,2.5833333333333335,2.6666666666666665,2.75,2.8333333333333335,2.9166666666666665,3.0,3.0833333333333335,3.1666666666666665,3.25,3.3333333333333335,3.4166666666666665,3.5,3.5833333333333335,3.6666666666666665,3.75,3.8333333333333335,3.9166666666666665,4.0,4.083333333333333,4.166666666666667,4.25,4.333333333333333,4.416666666666667,4.5,4.583333333333333,4.666666666666667,4.75,4.833333333333333,4.916666666666667,5.0],"ee":[185660.34,403817.29,590246.82,1090562.58,1325187.34,1255684.8,1218175.03,1633381.14,1474116.58,1630148.1,1904458.3,2224142.31,2231412.97,1731542.88,1630251.09,2348897.06,2511966.82,3440263.09,3499150.14,3666470.31,2555988.4,2451026.51,2154978.74,1485877.06,1607832.15,1741453.02,1341713.43,1984773.3,1526277.95,1513180.76,1503079.08,1328358.97,1280132.43,939815.78,980421.22,1282003.13,1322584.98,1157518.58,1217447.54,1467680.86,2032787.54,1879384.79,1817461.63,1510978.32,1997941.23,1707659.46,1401431.7,1218663.24,758598.18,1021534.02,1381900.72,1067743.61,765678.26,1435132.51,2439019.39,1178177.28,2052780.56,1026304.54,272418.72,0.0],"pfe":[1319669.44,2408571.43,3275179.17,5197122.58,5982894.96,5943447.13,5968515.06,7207441.93,7025923.06,7380541.42,7695794.0,8520964.18,8878775.65,7768824.61,7354928.5,9521698.46,9818839.07,12286634.8,12578864.24,12557556.64,10523976.24,10407731.41,9878577.05,7727054.69,8222255.42,8748360.66,7315138.31,9382652.19,8137824.02,8187442.1,8129461.27,7410936.58,7176747.68,6059977.66,6248965.26,7199394.31,7384400.7,6985754.81,7177511.03,8186712.08,10325682.91,9829236.73,9675756.24,7502657.65,8839626.93,8111120.82,7419302.47,5708075.16,4379895.62,5344172.44,6539113.75,5329722.17,4115975.3,5332027.48,7094064.51,6564782.43,9496273.21,4155643.61,1584995.55,0.0],"ene":[1595974.31,1824891.52,2015367.15,2183030.61,2312490.01,2503621.4,2812069.99,2498765.36,3099279.14,2724813.41,2157053.95,2051581.01,2492980.85,3213442.99,3098151.54,3006643.36,3020606.53,2952935.84,3057402.32,2824702.29,4156828.59,4128484.83,4999629.34,4605195.05,5129182.76,5347019.52,6115977.66,5657149.71,6319581.24,7218757.71,7309736.8,6205248.47,6088856.35,7416300.64,7469161.71,6659317.85,6717303.1,7110392.32,5960653.13,4990433.05,4373172.39,5176334.62,5156297.39,6032167.54,4971984.74,4184506.06,4146612.79,4032351.35,2956767.44,3281489.95,2456688.95,2775140.17,3026546.0,2512922.35,2090612.41,1151523.42,1040761.36,1223802.25,2943144.53,0.0],"ee_csa":[467236.19,470014.46,480078.25,783878.61,555566.33,293568.92,430214.22,561384.68,398299.9,857992.28,1160533.57,740713.51,448113.99,404330.04,543785.77,675698.64,530884.83,781992.48,536664.77,591427.58,118348.44,787783.97,193651.57,394556.14,427392.94,539896.99,775148.85,510226.31,284334.14,244241.42,531948.56,763338.89,531255.69,137564.66,443208.26,695565.7,436586.12,374213.78,1036266.0,374955.53,1316616.1,330785.41,527897.36,688070.98,988035.97,1260503.19,292034.61,950303.52,1648003.43,555928.06,1378686.26,195891.57,631460.62,1282751.14,1399772.83,925561.31,166766.81,289641.85,33027.37,2900200.13],"pfe_csa":[1903801.49,1902351.14,1939910.52,2715633.41,2277417.73,1670142.55,1912387.49,2184087.26,1861179.43,3002473.6,3309069.56,2642586.15,1869688.11,1882872.46,2331227.96,2296628.27,2041076.03,2832493.5,2226370.27,2290331.86,897025.9,2912177.07,1235900.43,1891422.03,1882470.43,2076321.77,2668351.25,2140383.38,1733382.39,1346970.3,2311684.99,4069510.69,2326705.7,935883.86,1900493.61,2319016.35,1856255.41,1775658.59,4120621.67,1733944.99,4349637.6,1691137.52,2139525.38,2549332.34,2949110.6,5486194.18,1273503.56,3272223.09,6763245.95,1801763.28,4563293.02,852289.76,3124389.6,3720432.59,3370921.44,4572390.69,812259.71,1151046.73,220444.76,10208965.6]},"thresholds":[{"threshold":0,"cva":40549.51,"peak_pfe":10208965.6,"epe":627078.36,"dva":14681.52,"bilateral_cva":24834.27,"seconds":2.38,"same_scenarios_uncollateralized":{"cva":102099.96,"peak_pfe":12509703.64,"epe":1550454.14,"dva":100556.91,"bilateral_cva":-748.17}},{"threshold":1000000,"cva":40414.71,"peak_pfe":9208965.6,"epe":623326.25,"dva":20446.17,"bilateral_cva":18957.18,"seconds":2.36,"same_scenarios_uncollateralized":{"cva":102099.96,"peak_pfe":12509703.64,"epe":1550454.14,"dva":100556.91,"bilateral_cva":-748.17}},{"threshold":5000000,"cva":78841.22,"peak_pfe":7327343.32,"epe":1199265.1,"dva":55061.57,"bilateral_cva":21991.37,"seconds":2.36,"same_scenarios_uncollateralized":{"cva":102099.96,"peak_pfe":12509703.64,"epe":1550454.14,"dva":100556.91,"bilateral_cva":-748.17}},{"threshold":20000000,"cva":101907.82,"peak_pfe":12509703.64,"epe":1547423.95,"dva":95808.82,"bilateral_cva":3813.43,"seconds":2.39,"same_scenarios_uncollateralized":{"cva":102099.96,"peak_pfe":12509703.64,"epe":1550454.14,"dva":100556.91,"bilateral_cva":-748.17}},{"threshold":100000000,"cva":102099.96,"peak_pfe":12509703.64,"epe":1550454.14,"dva":100556.91,"bilateral_cva":-748.17,"seconds":2.55,"same_scenarios_uncollateralized":{"cva":102099.96,"peak_pfe":12509703.64,"epe":1550454.14,"dva":100556.91,"bilateral_cva":-748.17}}],"mpor":[{"mpor_days":0,"cva":420.86,"peak_pfe":119603.59,"epe":6444.38,"dva":163.08,"bilateral_cva":247.78,"same_scenarios_uncollateralized":{"cva":102984.92,"peak_pfe":12578864.24,"epe":1563387.91,"dva":99714.92,"bilateral_cva":964.65}},{"mpor_days":2,"cva":13736.96,"peak_pfe":7542900.39,"epe":210552.82,"dva":6296.41,"bilateral_cva":7112.6,"same_scenarios_uncollateralized":{"cva":102754.05,"peak_pfe":12459557.04,"epe":1560095.41,"dva":99599.58,"bilateral_cva":851.99}},{"mpor_days":5,"cva":25600.28,"peak_pfe":7226399.83,"epe":396211.23,"dva":10997.41,"bilateral_cva":13946.2,"same_scenarios_uncollateralized":{"cva":101893.58,"peak_pfe":12473601.21,"epe":1547285.41,"dva":100104.87,"bilateral_cva":-497.44}},{"mpor_days":10,"cva":40549.51,"peak_pfe":10208965.6,"epe":627078.36,"dva":14681.52,"bilateral_cva":24834.27,"same_scenarios_uncollateralized":{"cva":102099.96,"peak_pfe":12509703.64,"epe":1550454.14,"dva":100556.91,"bilateral_cva":-748.17}},{"mpor_days":20,"cva":57653.98,"peak_pfe":10860244.53,"epe":889856.01,"dva":22024.13,"bilateral_cva":34178.28,"same_scenarios_uncollateralized":{"cva":102406.92,"peak_pfe":12468744.79,"epe":1555035.23,"dva":100352.02,"bilateral_cva":-242.2}}],"pre_deal":{"trade":{"trade_id":"NEW","underlying":"SPX","kind":"forward","strike":100.0,"maturity":5.0,"quantity":40000},"n_scenarios":10000,"incremental_cva_mean":11880.36,"stdev_common_random_numbers":327.758,"stdev_independent_seeds":1809.365,"seconds_per_run":0.27},"predeal_endpoint":{"n_trades":201,"n_scenarios":10000,"pricer_threads":2,"first_quote_ms":1434.1,"requote_book_cached_ms":696.9,"limit_breach_with_fallback_csa_ms":4183.7,"approve":{"credit_limit":15000000,"verdict":"approve","incremental_cva":11879.16,"cva_charge_bps":29.7,"peak_pfe_after":13291663.86},"breach":{"credit_limit":9000000,"verdict":"refer_to_credit","reason":"Exceeds the limit by $1,326,625 even with collateral.","peak_pfe_after_csa":10326624.63}},"cva_sensitivities":{"n_trades":200,"n_scenarios":10000,"n_runs":21,"elapsed_ms":15207.19,"cva":100968.71,"cs01":634.06,"underlyings":[{"name":"SPX","delta":1440.52,"vega":308.46},{"name":"TSX","delta":-3988.85,"vega":2830.73},{"name":"STOXX","delta":3462.81,"vega":138.05},{"name":"NKY","delta":-2918.44,"vega":1322.08},{"name":"FTSE","delta":-318.0,"vega":2212.38}]}};
+const XVA = {"machine":"arm64, 10 threads","n_trades":200,"n_scenarios":50000,"units":"USD; 1,000 units per contract","counterparty":{"recovery":0.4,"cds_spread_bps":150.0},"own_credit":{"recovery":0.4,"cds_spread_bps":60.0},"uncollateralized":{"cva":102984.92,"peak_pfe":12578864.24,"epe":1563387.91,"dva":99714.92,"bilateral_cva":964.65,"seconds":1.25,"v0":-1407374.16},"profile":{"grid":[0.08333333333333333,0.16666666666666666,0.25,0.3333333333333333,0.4166666666666667,0.5,0.5833333333333334,0.6666666666666666,0.75,0.8333333333333334,0.9166666666666666,1.0,1.0833333333333333,1.1666666666666667,1.25,1.3333333333333333,1.4166666666666667,1.5,1.5833333333333333,1.6666666666666667,1.75,1.8333333333333333,1.9166666666666667,2.0,2.0833333333333335,2.1666666666666665,2.25,2.3333333333333335,2.4166666666666665,2.5,2.5833333333333335,2.6666666666666665,2.75,2.8333333333333335,2.9166666666666665,3.0,3.0833333333333335,3.1666666666666665,3.25,3.3333333333333335,3.4166666666666665,3.5,3.5833333333333335,3.6666666666666665,3.75,3.8333333333333335,3.9166666666666665,4.0,4.083333333333333,4.166666666666667,4.25,4.333333333333333,4.416666666666667,4.5,4.583333333333333,4.666666666666667,4.75,4.833333333333333,4.916666666666667,5.0],"ee":[185660.34,403817.29,590246.82,1090562.58,1325187.34,1255684.8,1218175.03,1633381.14,1474116.58,1630148.1,1904458.3,2224142.31,2231412.97,1731542.88,1630251.09,2348897.06,2511966.82,3440263.09,3499150.14,3666470.31,2555988.4,2451026.51,2154978.74,1485877.06,1607832.15,1741453.02,1341713.43,1984773.3,1526277.95,1513180.76,1503079.08,1328358.97,1280132.43,939815.78,980421.22,1282003.13,1322584.98,1157518.58,1217447.54,1467680.86,2032787.54,1879384.79,1817461.63,1510978.32,1997941.23,1707659.46,1401431.7,1218663.24,758598.18,1021534.02,1381900.72,1067743.61,765678.26,1435132.51,2439019.39,1178177.28,2052780.56,1026304.54,272418.72,0.0],"pfe":[1319669.44,2408571.43,3275179.17,5197122.58,5982894.96,5943447.13,5968515.06,7207441.93,7025923.06,7380541.42,7695794.0,8520964.18,8878775.65,7768824.61,7354928.5,9521698.46,9818839.07,12286634.8,12578864.24,12557556.64,10523976.24,10407731.41,9878577.05,7727054.69,8222255.42,8748360.66,7315138.31,9382652.19,8137824.02,8187442.1,8129461.27,7410936.58,7176747.68,6059977.66,6248965.26,7199394.31,7384400.7,6985754.81,7177511.03,8186712.08,10325682.91,9829236.73,9675756.24,7502657.65,8839626.93,8111120.82,7419302.47,5708075.16,4379895.62,5344172.44,6539113.75,5329722.17,4115975.3,5332027.48,7094064.51,6564782.43,9496273.21,4155643.61,1584995.55,0.0],"ene":[1595974.31,1824891.52,2015367.15,2183030.61,2312490.01,2503621.4,2812069.99,2498765.36,3099279.14,2724813.41,2157053.95,2051581.01,2492980.85,3213442.99,3098151.54,3006643.36,3020606.53,2952935.84,3057402.32,2824702.29,4156828.59,4128484.83,4999629.34,4605195.05,5129182.76,5347019.52,6115977.66,5657149.71,6319581.24,7218757.71,7309736.8,6205248.47,6088856.35,7416300.64,7469161.71,6659317.85,6717303.1,7110392.32,5960653.13,4990433.05,4373172.39,5176334.62,5156297.39,6032167.54,4971984.74,4184506.06,4146612.79,4032351.35,2956767.44,3281489.95,2456688.95,2775140.17,3026546.0,2512922.35,2090612.41,1151523.42,1040761.36,1223802.25,2943144.53,0.0],"ee_csa":[467236.19,470014.46,480078.25,783878.61,555566.33,293568.92,430214.22,561384.68,398299.9,857992.28,1160533.57,740713.51,448113.99,404330.04,543785.77,675698.64,530884.83,781992.48,536664.77,591427.58,118348.44,787783.97,193651.57,394556.14,427392.94,539896.99,775148.85,510226.31,284334.14,244241.42,531948.56,763338.89,531255.69,137564.66,443208.26,695565.7,436586.12,374213.78,1036266.0,374955.53,1316616.1,330785.41,527897.36,688070.98,988035.97,1260503.19,292034.61,950303.52,1648003.43,555928.06,1378686.26,195891.57,631460.62,1282751.14,1399772.83,925561.31,166766.81,289641.85,33027.37,2900200.13],"pfe_csa":[1903801.49,1902351.14,1939910.52,2715633.41,2277417.73,1670142.55,1912387.49,2184087.26,1861179.43,3002473.6,3309069.56,2642586.15,1869688.11,1882872.46,2331227.96,2296628.27,2041076.03,2832493.5,2226370.27,2290331.86,897025.9,2912177.07,1235900.43,1891422.03,1882470.43,2076321.77,2668351.25,2140383.38,1733382.39,1346970.3,2311684.99,4069510.69,2326705.7,935883.86,1900493.61,2319016.35,1856255.41,1775658.59,4120621.67,1733944.99,4349637.6,1691137.52,2139525.38,2549332.34,2949110.6,5486194.18,1273503.56,3272223.09,6763245.95,1801763.28,4563293.02,852289.76,3124389.6,3720432.59,3370921.44,4572390.69,812259.71,1151046.73,220444.76,10208965.6]},"thresholds":[{"threshold":0,"cva":40549.51,"peak_pfe":10208965.6,"epe":627078.36,"dva":14681.52,"bilateral_cva":24834.27,"seconds":2.38,"same_scenarios_uncollateralized":{"cva":102099.96,"peak_pfe":12509703.64,"epe":1550454.14,"dva":100556.91,"bilateral_cva":-748.17}},{"threshold":1000000,"cva":40414.71,"peak_pfe":9208965.6,"epe":623326.25,"dva":20446.17,"bilateral_cva":18957.18,"seconds":2.36,"same_scenarios_uncollateralized":{"cva":102099.96,"peak_pfe":12509703.64,"epe":1550454.14,"dva":100556.91,"bilateral_cva":-748.17}},{"threshold":5000000,"cva":78841.22,"peak_pfe":7327343.32,"epe":1199265.1,"dva":55061.57,"bilateral_cva":21991.37,"seconds":2.36,"same_scenarios_uncollateralized":{"cva":102099.96,"peak_pfe":12509703.64,"epe":1550454.14,"dva":100556.91,"bilateral_cva":-748.17}},{"threshold":20000000,"cva":101907.82,"peak_pfe":12509703.64,"epe":1547423.95,"dva":95808.82,"bilateral_cva":3813.43,"seconds":2.39,"same_scenarios_uncollateralized":{"cva":102099.96,"peak_pfe":12509703.64,"epe":1550454.14,"dva":100556.91,"bilateral_cva":-748.17}},{"threshold":100000000,"cva":102099.96,"peak_pfe":12509703.64,"epe":1550454.14,"dva":100556.91,"bilateral_cva":-748.17,"seconds":2.55,"same_scenarios_uncollateralized":{"cva":102099.96,"peak_pfe":12509703.64,"epe":1550454.14,"dva":100556.91,"bilateral_cva":-748.17}}],"mpor":[{"mpor_days":0,"cva":420.86,"peak_pfe":119603.59,"epe":6444.38,"dva":163.08,"bilateral_cva":247.78,"same_scenarios_uncollateralized":{"cva":102984.92,"peak_pfe":12578864.24,"epe":1563387.91,"dva":99714.92,"bilateral_cva":964.65}},{"mpor_days":2,"cva":13736.96,"peak_pfe":7542900.39,"epe":210552.82,"dva":6296.41,"bilateral_cva":7112.6,"same_scenarios_uncollateralized":{"cva":102754.05,"peak_pfe":12459557.04,"epe":1560095.41,"dva":99599.58,"bilateral_cva":851.99}},{"mpor_days":5,"cva":25600.28,"peak_pfe":7226399.83,"epe":396211.23,"dva":10997.41,"bilateral_cva":13946.2,"same_scenarios_uncollateralized":{"cva":101893.58,"peak_pfe":12473601.21,"epe":1547285.41,"dva":100104.87,"bilateral_cva":-497.44}},{"mpor_days":10,"cva":40549.51,"peak_pfe":10208965.6,"epe":627078.36,"dva":14681.52,"bilateral_cva":24834.27,"same_scenarios_uncollateralized":{"cva":102099.96,"peak_pfe":12509703.64,"epe":1550454.14,"dva":100556.91,"bilateral_cva":-748.17}},{"mpor_days":20,"cva":57653.98,"peak_pfe":10860244.53,"epe":889856.01,"dva":22024.13,"bilateral_cva":34178.28,"same_scenarios_uncollateralized":{"cva":102406.92,"peak_pfe":12468744.79,"epe":1555035.23,"dva":100352.02,"bilateral_cva":-242.2}}],"pre_deal":{"trade":{"trade_id":"NEW","underlying":"SPX","kind":"forward","strike":100.0,"maturity":5.0,"quantity":40000},"n_scenarios":10000,"incremental_cva_mean":11880.36,"stdev_common_random_numbers":327.758,"stdev_independent_seeds":1809.365,"seconds_per_run":0.27},"predeal_endpoint":{"n_trades":201,"n_scenarios":10000,"pricer_threads":2,"first_quote_ms":1434.1,"requote_book_cached_ms":696.9,"limit_breach_with_fallback_csa_ms":4183.7,"approve":{"credit_limit":15000000,"verdict":"approve","incremental_cva":11879.16,"cva_charge_bps":29.7,"peak_pfe_after":13291663.86},"breach":{"credit_limit":9000000,"verdict":"refer_to_credit","reason":"Exceeds the limit by $1,326,625 even with collateral.","peak_pfe_after_csa":10326624.63}},"cva_sensitivities":{"n_trades":200,"n_scenarios":10000,"n_runs":21,"elapsed_ms":15207.19,"cva":100968.71,"cs01":634.06,"underlyings":[{"name":"SPX","delta":1440.52,"vega":308.46},{"name":"TSX","delta":-3988.85,"vega":2830.73},{"name":"STO","delta":3462.81,"vega":138.05},{"name":"NKY","delta":-2918.44,"vega":1322.08},{"name":"FTSE","delta":-318.0,"vega":2212.38}]}};
 /*CORE-START*/
 const RATE = 0.03, S0 = 100, REC = 0.4, NS = 2000, MONTHS = 60, QPFE = 0.95;
 const OFFS = [20, 10, 5, 2, 0];                    // days before each month-end: the lag nodes, then the month-end itself
@@ -527,7 +476,7 @@ $("tiles").innerHTML = [
   ["Peak PFE cut by the CSA", "-" + pct(pfeCut), `${short(sameU.peak_pfe)} to ${short(thr0.peak_pfe)}`],
   ["Pre-deal noise, common random numbers", noise.toFixed(1) + "x tighter", `stdev ${usd(pd.stdev_common_random_numbers)} vs ${usd(pd.stdev_independent_seeds)}`],
   ["Pre-deal run time", pd.seconds_per_run + " s", `${nf0.format(pd.n_scenarios)} scenarios x ${XVA.n_trades} trades`],
-].map(([l, v, s]) => `<div class="stat" role="listitem"><span>${l}</span><b>${v}</b><span>${s}</span></div>`).join("");
+].map(([l, v, s]) => `<li class="stat"><span class="v">${v}</span><span class="l">${l}</span><span class="s">${s}</span></li>`).join("");
 
 /* ---------- Charts ---------- */
 function chart(host, o) {
@@ -559,7 +508,7 @@ function chart(host, o) {
   svg.addEventListener("pointerleave", () => { cross.style.display = "none"; tip.hidden = true; });
 }
 function niceStep(raw) { if (!(raw > 0)) return 1; const p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p; }
-const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const css = n => getComputedStyle($("c-sim")).getPropertyValue(n).trim();   // the charts sit in console panels, so read their tokens
 const legend = (id, items) => $(id).innerHTML = items.map(([n, c, d]) => `<li><i style="border-color:${c}" ${d ? 'class="d"' : ""}></i>${n}</li>`).join("");
 const yrTicks = max => Array.from({ length: max + 1 }, (_, i) => ({ x: i, label: i + "y" }));
 
@@ -721,7 +670,7 @@ function pdRender() {
   $("pd-pfe").textContent = short(r.pfeBefore) + " \u2192 " + short(r.pfeAfter);
   $("pd-util").textContent = r.verdict === "approve_with_csa" ? `${Math.round(r.pfeAfterC / limit * 100)}% of ${short(limit)} with the CSA (${Math.round(r.util * 100)}% without)`
     : Math.round(r.util * 100) + "% of " + short(limit) + (p.csa ? " (collateralized)" : " (uncollateralized)");
-  const bar = $("pd-bar"); bar.style.width = Math.min(r.util * 100, 100) + "%"; bar.className = r.util > 1 ? "bad" : r.util > 0.8 ? "warn" : "";
+  const bar = $("pd-bar"); bar.style.transform = "scaleX(" + Math.min(r.util, 1) + ")"; bar.className = r.util > 1 ? "bad" : r.util > 0.8 ? "warn" : "";
   const body = pdBody(p, nt, limit);
   $("pd-curl").textContent = "curl -s -X POST http://localhost:8080/risk/predeal \\\n  -H 'Content-Type: application/json' \\\n  -d '" + JSON.stringify(body, null, 2).replace(/'/g, "") + "'";
   const n2 = x => Math.round(x * 100) / 100;
@@ -755,5 +704,6 @@ render(); pdRender(); drawMeasured(); drawSteps();
 let rt; const redraw = () => { clearTimeout(rt); rt = setTimeout(() => { drawSim(); drawMeasured(); }, 120); };
 addEventListener("resize", redraw);
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", redraw);
+document.addEventListener("themechange", redraw);
 </script>
 </body></html>
