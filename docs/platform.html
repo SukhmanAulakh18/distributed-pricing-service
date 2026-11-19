@@ -3,273 +3,51 @@
 <title>The library and the platform | Distributed Pricing Service</title>
 <meta name="description" content="A C++ pricing library exposed to Python and served across a cluster: how it is built, how it scales and how it behaves under injected failure, with every number tied to a measured file.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<style>
-/* Hallmark · checked: 2026-11-18 · genre: modern-minimal (inferred) · theme: brand (site tokens, docs/index.html :root: Newsreader, IBM Plex, teal)
- * pre-emit critique: P4 H4 E4 S4 R4 V4 · weakest: S, the page has no photograph; each section shows the measured thing itself (a request tracing through the system, scrubbers over the recorded runs, the real console captures)
- * hero: Split (headline, one sentence and actions left; four measured proof numbers right) · nav: sticky text bar, wordmark, section links, the customer product, a theme switch · footer: limits then links · job: judge the platform and open its evidence · signature: the architecture explorer with a request traced through it · built: the project · v2.0.0
- * Hallmark · dismissed 58 · answered: the hero headline is the owner's sentence, nine words; every section is one claim, one interactive visual, one evidence line, and the data tables sit behind a disclosure so the page stays scannable */
-:root {
-  --bg: #f5f6f3; --surface: #ffffff; --ink: #15191d; --muted: #59626b; --line: #dcdfd8;
-  --accent: #0d6b62; --accent-soft: #e2efec; --warn: #a15c07; --warn-soft: #f6ead9; --bad: #c0392b; --good: #1d7340; --code-bg: #eef0eb;
-  --on-accent: #ffffff; --scrim: #15191dcc;
-  --c1: #2a78d6; --c2: #eb6834;
-  --display: "Newsreader", "Iowan Old Style", Georgia, serif;
-  --body: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  --sp1: 4px; --sp2: 8px; --sp3: 12px; --sp4: 16px; --sp5: 24px; --sp6: 32px; --sp7: 48px; --sp8: 72px;
-  --r1: 8px; --r2: 12px;
-  color-scheme: light;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0e1113; --surface: #161a1d; --ink: #e7eae7; --muted: #9aa3aa; --line: #2a3035;
-    --accent: #5cc0b4; --accent-soft: #15302d; --warn: #e3a34d; --warn-soft: #33270f; --bad: #f07167; --good: #6cc48c; --code-bg: #1d2226;
-    --on-accent: #0e1113; --scrim: #000000d9; --c1: #3987e5; --c2: #d95926; color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #0e1113; --surface: #161a1d; --ink: #e7eae7; --muted: #9aa3aa; --line: #2a3035;
-  --accent: #5cc0b4; --accent-soft: #15302d; --warn: #e3a34d; --warn-soft: #33270f; --bad: #f07167; --good: #6cc48c; --code-bg: #1d2226;
-  --on-accent: #0e1113; --scrim: #000000d9; --c1: #3987e5; --c2: #d95926; color-scheme: dark;
-}
-* { box-sizing: border-box; }
-[hidden] { display: none !important; }
-html { overflow-x: clip; scroll-behavior: smooth; scroll-padding-top: 64px; }
-body { overflow-x: clip; margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 var(--body); accent-color: var(--accent); caret-color: var(--accent); scrollbar-color: var(--line) var(--bg); }
-::selection { background: var(--accent-soft); color: var(--ink); }
-.wrap { max-width: 1120px; margin: 0 auto; padding-inline: var(--sp5); }
-h1, h2, h3 { font-family: var(--display); font-weight: 600; line-height: 1.15; text-wrap: balance; margin: 0; overflow-wrap: break-word; min-width: 0; }
-h1 { font-size: clamp(2.1rem, 4.6vw, 3.5rem); letter-spacing: -0.01em; }
-h2 { font-size: clamp(1.55rem, 3vw, 2.15rem); }
-h3 { font-size: 1.2rem; }
-p { margin: 0; max-width: 68ch; text-wrap: pretty; }
-a { color: var(--accent); text-underline-offset: 3px; }
-code, .mono { font-family: var(--mono); font-size: 0.86em; }
-code { background: var(--code-bg); padding: 2px 4px; border-radius: 4px; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-
-/* Nav */
-nav.top { position: sticky; top: 0; z-index: 20; background: var(--bg); border-bottom: 1px solid var(--line); }
-nav.top .in { max-width: 1120px; margin: 0 auto; padding-inline: var(--sp5); display: flex; gap: var(--sp1); align-items: center; overflow-x: auto; white-space: nowrap; min-height: 52px; font-size: 0.9rem; scrollbar-width: none; }
-nav.top a, nav.top button { color: var(--muted); text-decoration: none; display: inline-flex; align-items: center; min-height: 44px; padding-inline: var(--sp3); border-radius: var(--r1); font: inherit; }
-nav.top a:hover, nav.top button:hover { color: var(--accent); }
-nav.top .brand { font: 600 1.05rem var(--display); color: var(--ink); padding-left: 0; margin-right: var(--sp2); }
-nav.top .gap { flex: 1 0 var(--sp3); }
-nav.top button { background: none; border: 1px solid var(--line); cursor: pointer; margin-left: var(--sp2); }
-nav.top a.here { color: var(--accent); }
-
-/* Hero */
-.hero { padding-block: var(--sp7) var(--sp6); display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); gap: var(--sp6) var(--sp7); align-items: center; }
-.hero .lede { font-size: 1.15rem; color: var(--muted); margin-top: var(--sp4); max-width: 46ch; }
-.actions { display: flex; flex-wrap: wrap; gap: var(--sp3) var(--sp5); align-items: center; margin-top: var(--sp5); }
-.cta { display: inline-flex; align-items: center; min-height: 48px; padding: 12px 24px; border-radius: var(--r1); background: var(--accent); color: var(--on-accent); font: 600 1rem var(--body); text-decoration: none; border: 0; cursor: pointer; transition: filter 0.15s; }
-.cta:hover { filter: brightness(1.1); }
-.cta:active { filter: brightness(0.92); }
-.cta[disabled] { background: var(--line); color: var(--muted); cursor: not-allowed; filter: none; }
-.txt { display: inline-flex; align-items: center; min-height: 44px; font-weight: 500; }
-.proof { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp3); margin: 0; padding: 0; list-style: none; }
-.proof li { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r2); padding: var(--sp4); display: grid; gap: var(--sp1); align-content: start; }
-.proof b { font: 500 clamp(1.7rem, 3.2vw, 2.3rem)/1.05 var(--mono); font-variant-numeric: tabular-nums; color: var(--accent); }
-.proof span { font-size: 0.92rem; }
-.proof small { font: 0.8rem var(--body); color: var(--muted); overflow-wrap: anywhere; }
-
-/* Sections */
-.sec { padding-block: var(--sp8) var(--sp6); border-top: 1px solid var(--line); }
-.sec > .wrap { display: grid; gap: var(--sp5); }
-.sec .claim { color: var(--muted); font-size: 1.05rem; }
-.head { display: grid; gap: var(--sp2); }
-.block { display: grid; gap: var(--sp3); min-width: 0; }
-.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp5); align-items: start; }
-.two > * { min-width: 0; }
-.ev { font-size: 0.9rem; color: var(--muted); max-width: 90ch; border-top: 1px solid var(--line); padding-top: var(--sp3); }
-.ev a { font-family: var(--mono); font-size: 0.92em; overflow-wrap: anywhere; }
-.panel { color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r2); padding: var(--sp4); min-width: 0; }
-.callout { background: var(--accent-soft); border-radius: var(--r1); padding: var(--sp3) var(--sp4); max-width: 82ch; font-size: 0.95rem; }
-.callout.warn { background: var(--warn-soft); }
-
-/* Controls */
-.seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--r1); overflow: hidden; background: var(--surface); }
-.seg button { font: 500 0.9rem var(--body); min-height: 44px; min-width: 44px; padding: 8px 16px; border: 0; background: var(--surface); color: var(--muted); cursor: pointer; transition: background-color 0.15s, color 0.15s; }
-.seg button + button { border-left: 1px solid var(--line); }
-.seg button:hover { color: var(--accent); }
-.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
-.ctl { display: flex; flex-wrap: wrap; gap: var(--sp3) var(--sp5); align-items: center; }
-.ctl label, .ctl .lab { font-size: 0.9rem; color: var(--muted); }
-input[type="range"] { flex: 1 1 220px; min-height: 44px; margin: 0; }
-.read { font: 0.92rem/1.5 var(--mono); background: var(--code-bg); border-radius: var(--r1); padding: var(--sp3) var(--sp4); min-height: 3.6em; overflow-wrap: anywhere; }
-.read b { color: var(--accent); font-weight: 500; }
-
-/* Charts */
-.vz { display: grid; gap: var(--sp2); min-width: 0; }
-.chart { width: 100%; min-width: 0; }
-.chart.fail { color: var(--muted); font-size: 0.92rem; display: grid; place-items: center; text-align: center; background: var(--code-bg); border-radius: var(--r1); padding: var(--sp4); }
-.tbl summary { cursor: pointer; font-size: 0.88rem; color: var(--accent); min-height: 44px; display: inline-flex; align-items: center; }
-.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r1); background: var(--surface); }
-table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
-th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
-th { font: 500 0.85rem var(--body); color: var(--muted); }
-tr:last-child td { border-bottom: 0; }
-td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
-tr.sel td { background: var(--accent-soft); }
-figcaption, .cap { font-size: 0.88rem; color: var(--muted); max-width: 82ch; }
-.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--sp3); margin: 0; padding: 0; list-style: none; }
-.tiles li { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r1); padding: var(--sp3) var(--sp4); display: grid; gap: 2px; }
-.tiles b { font: 500 1.35rem/1.1 var(--mono); font-variant-numeric: tabular-nums; }
-.tiles span { font-size: 0.85rem; color: var(--muted); }
-.tiles .ok b { color: var(--good); }
-pre.cmd { background: var(--code-bg); border-radius: var(--r1); padding: var(--sp3) var(--sp4); overflow-x: auto; margin: 0; font: 0.84rem/1.6 var(--mono); max-width: 100%; }
-
-/* Explorer */
-.explorer { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: var(--sp5); align-items: start; }
-.map { min-width: 0; display: grid; gap: var(--sp3); }
-svg.sys { width: 100%; height: auto; display: block; font-family: var(--body); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r2); }
-.sys .node { cursor: pointer; }
-.sys .node rect { fill: var(--surface); stroke: var(--muted); stroke-width: 1.4; transition: fill 0.2s, stroke 0.2s; }
-.sys .node.soft rect { fill: var(--bg); stroke: var(--line); }
-.sys .node:hover rect { stroke: var(--accent); }
-.sys .node.hot rect { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; }
-.sys .node[aria-pressed="true"] rect { stroke: var(--accent); stroke-width: 3; }
-.sys .node:focus-visible { outline: none; }
-.sys .node:focus-visible rect { stroke: var(--accent); stroke-width: 3; stroke-dasharray: 6 3; }
-.sys .nt { font: 600 19px var(--body); fill: var(--ink); }
-.sys .ns { font: 14px var(--body); fill: var(--muted); }
-.sys .edge { fill: none; stroke: var(--muted); stroke-width: 1.6; }
-.sys .edge.dash { stroke-dasharray: 5 4; }
-.sys .frame { fill: none; stroke: var(--line); stroke-width: 1.5; stroke-dasharray: 7 5; }
-.sys .fl { font: 14px var(--body); fill: var(--muted); }
-.sys .ring { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.4; }
-.sys .dot { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
-.chips { display: flex; flex-wrap: wrap; gap: var(--sp2); margin: 0; padding: 0; list-style: none; }
-.chips button { min-height: 44px; padding: 8px 16px; border-radius: var(--r1); border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: 500 0.88rem var(--body); cursor: pointer; transition: background-color 0.15s, border-color 0.15s; }
-.chips button:hover { border-color: var(--accent); }
-.chips button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
-.detail { display: grid; gap: var(--sp3); align-content: start; }
-.detail dl { margin: 0; display: grid; gap: var(--sp3); }
-.detail dt { font-weight: 600; font-size: 0.9rem; }
-.detail dd { margin: 2px 0 0; color: var(--muted); font-size: 0.95rem; }
-.detail ul { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--sp3); }
-.detail li b { display: block; font: 500 1.3rem/1.2 var(--mono); color: var(--accent); font-variant-numeric: tabular-nums; }
-.detail li span { color: var(--ink); font-size: 0.9rem; }
-.detail li a { display: flex; align-items: center; min-height: 44px; font: 0.8rem var(--mono); overflow-wrap: anywhere; }
-.thumb { display: block; width: 100%; padding: 0; border: 1px solid var(--line); border-radius: var(--r1); overflow: hidden; background: var(--bg); cursor: zoom-in; }
-.thumb img { display: block; width: 100%; height: auto; }
-.steps { margin: 0; padding-left: 1.4em; display: grid; gap: var(--sp1); font-size: 0.92rem; color: var(--muted); max-width: 70ch; }
-#flist { list-style: none; padding-left: 0; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); max-width: none; }
-.steps li[aria-current="step"] { color: var(--ink); font-weight: 500; }
-
-/* Cassandra ring */
-.ringwrap { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: var(--sp5); align-items: center; }
-svg.ringsvg { width: 100%; height: auto; display: block; font-family: var(--body); }
-.ringsvg .orbit { fill: none; stroke: var(--line); stroke-width: 2; stroke-dasharray: 6 5; }
-.ringsvg .rn circle { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2.5; transition: fill 0.2s, stroke 0.2s; }
-.ringsvg .rn.down circle { fill: var(--bg); stroke: var(--bad); stroke-dasharray: 4 3; }
-.ringsvg .rn text { font: 600 18px var(--body); fill: var(--ink); text-anchor: middle; }
-.ringsvg .rn.down text { fill: var(--muted); }
-.ringsvg .drv { stroke: var(--accent); stroke-width: 2; fill: none; stroke-dasharray: 5 4; }
-.ringsvg .lbl { font: 15px var(--body); fill: var(--muted); text-anchor: middle; }
-.ringsvg .lbl.l { text-anchor: start; }
-
-/* Gallery and lightbox */
-.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: var(--sp4); margin: 0; padding: 0; list-style: none; }
-.gallery figure { margin: 0; display: grid; gap: var(--sp2); align-content: start; }
-.gallery a.thumb { cursor: zoom-in; }
-dialog#lb { padding: 0; border: 0; background: transparent; max-width: min(1200px, 100vw - 24px); width: 100%; color: var(--ink); }
-dialog#lb::backdrop { background: var(--scrim); }
-.lbbox { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r1); padding: var(--sp3); display: grid; gap: var(--sp3); max-height: calc(100dvh - 24px); overflow: auto; }
-.lbbox img { width: 100%; height: auto; max-height: 70dvh; object-fit: contain; border-radius: var(--r1); background: var(--bg); }
-.lbbar { display: flex; flex-wrap: wrap; gap: var(--sp2); align-items: center; justify-content: space-between; }
-.lbbar button { min-height: 44px; min-width: 44px; padding: 8px 16px; border-radius: var(--r1); border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: 500 0.9rem var(--body); cursor: pointer; }
-.lbbar button:hover { border-color: var(--accent); color: var(--accent); }
-
-/* Siege */
-.siege { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr)); gap: var(--sp3); }
-.siege li { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r1); padding: var(--sp4); display: grid; gap: var(--sp2); align-content: start; }
-.siege h3 { font: 600 1rem var(--body); }
-.siege .f { color: var(--muted); font-size: 0.88rem; }
-.siege dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 2px var(--sp3); font-size: 0.86rem; }
-.siege dt { color: var(--muted); }
-.siege dd { margin: 0; font: 0.84rem var(--mono); overflow-wrap: anywhere; }
-.siege .pass { color: var(--good); font-weight: 600; }
-
-/* Pipeline */
-.lane { display: grid; gap: var(--sp2); }
-.lane h3 { font-size: 1.05rem; }
-.pipe { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp5); counter-reset: s; }
-.pipe li { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r1); padding: var(--sp4); display: grid; gap: var(--sp1); align-content: start; position: relative; counter-increment: s; }
-.pipe li::before { content: counter(s); font: 500 0.85rem var(--mono); color: var(--accent); }
-.pipe li:not(:last-child)::after { content: ""; position: absolute; right: calc(-1 * var(--sp5)); top: 50%; width: var(--sp5); border-top: 2px solid var(--accent); }
-.pipe b { font-size: 0.98rem; }
-.pipe span { font-size: 0.88rem; color: var(--muted); }
-.pipe .ok { font: 0.82rem var(--mono); color: var(--good); }
-.pipe.gate li.gt { border-color: var(--accent); background: var(--accent-soft); }
-
-footer { border-top: 1px solid var(--line); padding-block: var(--sp7); font-size: 0.92rem; color: var(--muted); }
-footer .wrap { display: grid; gap: var(--sp4); }
-footer ul { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: var(--sp1) var(--sp5); }
-footer li a { display: inline-flex; align-items: center; min-height: 44px; }
-
-@media (max-width: 900px) {
-  .hero { grid-template-columns: minmax(0, 1fr); padding-block: var(--sp6) var(--sp5); }
-  .explorer, .two, .ringwrap { grid-template-columns: minmax(0, 1fr); }
-  .pipe { grid-template-columns: minmax(0, 1fr); gap: var(--sp4); }
-  .pipe li:not(:last-child)::after { right: auto; left: 24px; top: 100%; width: 0; height: var(--sp4); border-top: 0; border-left: 2px solid var(--accent); }
-  .sec { padding-block: var(--sp7) var(--sp5); }
-}
-@media (max-width: 480px) {
-  .wrap, nav.top .in { padding-inline: var(--sp4); }
-  .proof { gap: var(--sp2); }
-  .proof li { padding: var(--sp3); }
-}
-@media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-  * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
-}
-/* The section nav below is the one that sticks here; the site nav scrolls away so the two never overlap. */
-.sitenav { background: var(--bg); border-bottom: 1px solid var(--line); }
-.sitenav ul { list-style: none; margin: 0 auto; padding: 0 12px; max-width: 1080px; display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
-.sitenav a { display: flex; align-items: center; min-height: 44px; padding: 0 12px; color: var(--muted); text-decoration: none; font: 500 0.9375rem/1 var(--body); white-space: nowrap; border-bottom: 2px solid transparent; }
-.sitenav a:hover { color: var(--ink); }
-.sitenav a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent, var(--primary)); }
-.sitenav a:focus-visible { outline: 3px solid var(--accent, var(--primary)); outline-offset: -3px; }
-</style></head>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Sometype+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/site.js"></script>
+</head>
 <body>
-<nav class="sitenav" aria-label="Site"><ul><li><a href="index.html">Home</a></li><li><a href="portal.html">Client hedge</a></li><li><a href="desk.html#predeal">Decision API</a></li><li><a href="platform.html" aria-current="page">Library &amp; platform</a></li><li><a href="kit.html">Guided tour</a></li><li><a href="case-study.html">Case study</a></li></ul></nav>
-<nav class="top" aria-label="Sections"><div class="in">
-  <a class="brand" href="#top">Library and platform</a>
-  <a href="#explorer">Architecture</a><a href="#library">Library</a><a href="#scale">Scale</a><a href="#data">Data</a><a href="#operate">Operate</a><a href="#ship">Ship</a>
-  <span class="gap"></span>
-  <a href="index.html#demo">Customer product</a><a href="case-study.html">Case study</a>
-  <button type="button" id="theme" aria-label="Switch colour theme">Theme</button>
+<nav class="sitenav" aria-label="Site"><div class="sitenav-in">
+  <a class="mark" href="index.html" aria-label="Distributed Pricing Service, home"><span class="glyph" aria-hidden="true"></span><span class="wm">Pricing Service</span></a>
+  <ul><li><a href="index.html">Home</a></li><li class="g"><a href="portal.html">Client hedge</a></li><li><a href="desk.html#predeal">Decision API</a></li><li class="g"><a href="platform.html" aria-current="page">Library &amp; platform</a></li><li class="g"><a href="kit.html">Guided tour</a></li><li><a href="case-study.html">Case study</a></li></ul>
+  <button class="theme-btn" type="button">Dark</button>
 </div></nav>
+<nav class="subnav" aria-label="Sections"><ul>
+  <li><a href="#top">Top</a></li><li><a href="#explorer">Architecture</a></li><li><a href="#library">Library</a></li><li><a href="#scale">Scale</a></li><li><a href="#data">Data</a></li><li><a href="#operate">Operate</a></li><li><a href="#ship">Ship</a></li>
+  <li class="sp" aria-hidden="true"></li>
+  <li><a href="index.html#demo">Customer product</a></li><li><a href="case-study.html">Case study</a></li>
+</ul></nav>
 
 <main id="top">
-<header class="wrap hero">
-  <div>
-    <h1>A C++ pricing library, served to the desk and proven under failure.</h1>
-    <p class="lede">Measured on a laptop cluster; every number links to its result file.</p>
-    <div class="actions">
-      <a class="cta" href="#explorer">Trace a request</a>
-      <a class="txt" href="desk.html">The desk product</a>
-      <a class="txt" href="portal.html">Client portal</a>
-      <a class="txt" href="case-study.html">Case study</a>
+<header class="hero"><div class="container hero-top">
+  <h1 class="h1-s">A C++ pricing library, served to the desk and proven under failure.</h1>
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <p class="lede">Measured on a laptop cluster; every number links to its result file.</p>
+      <div class="btns">
+        <a class="btn" href="#explorer">Trace a request</a>
+        <a class="link" href="desk.html">The desk product</a>
+        <a class="link" href="portal.html">Client portal</a>
+        <a class="link" href="case-study.html">Case study</a>
+      </div>
     </div>
+    <ul class="strip console" aria-label="Four measured proof numbers">
+      <li class="stat"><span class="v">147M</span><span class="l">Black-Scholes prices a second through one zero-copy NumPy call</span><span class="s">bench/results/core.json, bs_batch 8 threads</span></li>
+      <li class="stat"><span class="v"><span class="pip"><span class="sr">99.992%</span><span aria-hidden="true"><span class="pf">99.9</span><span class="pp">92</span><span class="pu">%</span></span></span></span><span class="l">of prices served while 11 faults hit the cluster in 10 minutes</span><span class="s">bench/results/chaos-run3.json</span></li>
+      <li class="stat"><span class="v">1 to 8</span><span class="l">workers give bit-identical PFE and CVA</span><span class="s">bench/results/exposure.json</span></li>
+      <li class="stat"><span class="v">6 of 6</span><span class="l">siege scenarios recovered, detected and routed to an owner</span><span class="s">bench/results/siege.json</span></li>
+    </ul>
   </div>
-  <ul class="proof" aria-label="Four measured proof numbers">
-    <li><b>147M</b><span>Black-Scholes prices a second through one zero-copy NumPy call</span><small>bench/results/core.json, bs_batch 8 threads</small></li>
-    <li><b>99.992%</b><span>of prices served while 11 faults hit the cluster in 10 minutes</span><small>bench/results/chaos-run3.json</small></li>
-    <li><b>1 to 8</b><span>workers give bit-identical PFE and CVA</span><small>bench/results/exposure.json</small></li>
-    <li><b>6 of 6</b><span>siege scenarios recovered, detected and routed to an owner</span><small>bench/results/siege.json</small></li>
-  </ul>
-</header>
-<noscript><div class="wrap"><p class="callout warn">The charts and the architecture explorer need JavaScript. The key numbers, the siege scorecard, the console captures and every evidence file link below work without it.</p></div></noscript>
+</div></header>
+<noscript><div class="container"><p class="callout warn">The charts and the architecture explorer need JavaScript. The key numbers, the siege scorecard, the console captures and every evidence file link below work without it.</p></div></noscript>
 
-<section class="sec" id="explorer" aria-labelledby="h-exp"><div class="wrap">
-  <div class="head"><h2 id="h-exp">Pick any part of the system and see why it is there.</h2>
-  <p class="claim">Select a component, or trace a 2,000-trade book through it. Each one carries a measured number and the file it came from.</p></div>
-  <div class="explorer">
+<section class="sec" id="explorer" aria-labelledby="h-exp"><div class="container">
+  <div class="sec-head"><h2 id="h-exp">Pick any part of the system and see why it is there.</h2>
+  <p>Select a component, or trace a 2,000-trade book through it. Each one carries a measured number and the file it came from.</p></div>
+  <div class="explorer console">
     <div class="map">
-      <svg class="sys" id="sys" viewBox="0 0 700 640" role="group" aria-label="System architecture: clients, API pods, two Redis streams, two worker pools, a Cassandra ring, observability and Rancher">
+      <div class="sysbox"><svg class="sys" id="sys" viewBox="0 0 700 640" role="group" aria-label="System architecture: clients, API pods, two Redis streams, two worker pools, a Cassandra ring, observability and Rancher">
         <rect class="frame" x="10" y="90" width="520" height="535" rx="14"/>
         <text class="fl" x="24" y="114">Kubernetes, kind cluster</text>
         <path id="e-ca" class="edge" d="M265 66V120"/>
@@ -296,24 +74,24 @@ footer li a { display: inline-flex; align-items: center; min-height: 44px; }
         <g class="node soft" data-n="graf" tabindex="0" role="button" aria-pressed="false" aria-label="Grafana"><rect x="550" y="350" width="140" height="56" rx="10"/><text class="nt" x="620" y="384" text-anchor="middle">Grafana</text></g>
         <g class="node soft" data-n="jaeg" tabindex="0" role="button" aria-pressed="false" aria-label="Jaeger"><rect x="550" y="420" width="140" height="56" rx="10"/><text class="nt" x="620" y="454" text-anchor="middle">Jaeger</text></g>
         <circle class="dot" id="dot" r="9" cx="265" cy="38" opacity="0"/>
-      </svg>
-      <div class="ctl"><button type="button" class="cta" id="trace">Trace a request</button><span class="cap" id="trace-cap" aria-live="polite">A 2,000-trade book, from client to trace.</span></div>
+      </svg></div>
+      <div class="cell"><button type="button" class="btn" id="trace">Trace a request</button><span class="cap" id="trace-cap" aria-live="polite">A 2,000-trade book, from client to trace.</span></div>
       <ul class="chips" id="chips" aria-label="Components"></ul>
     </div>
-    <div class="detail panel" id="detail" aria-live="polite"></div>
+    <div class="detail" id="detail" aria-live="polite"></div>
   </div>
   <ol class="steps" id="steps" aria-label="Steps of the traced request"></ol>
   <p class="ev">Evidence: the component list and reasons come from <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/ARCHITECTURE.md">docs/ARCHITECTURE.md</a>; the trace is the real 2,000-trade book in <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/bench/results/tracing.json">bench/results/tracing.json</a> (206 spans, 3 pods).</p>
 </div></section>
 
-<section class="sec" id="library" aria-labelledby="h-lib"><div class="wrap">
-  <div class="head"><h2 id="h-lib">The C++ core lets Python threads run in parallel and reads NumPy memory in place.</h2>
-  <p class="claim">pybind11 releases the GIL around every pricing call and takes arrays without copying them; the module keeps no global state.</p></div>
-<pre class="cmd">m.def("price_european_mc", &amp;european, ..., py::call_guard&lt;py::gil_scoped_release&gt;());
-PYBIND11_MODULE(pricer_core, m, py::mod_gil_not_used())</pre>
-  <div class="two">
-    <div class="block"><h3>Threads scale only when the GIL is released</h3><div class="vz" data-id="gil" data-h="300" data-label="Line chart: pricing calls per second against Python threads, GIL released rises to 176 and GIL held stays at about 45"></div></div>
-    <div class="block"><h3>One call, eight threads: 147M prices a second</h3><div class="vz" data-id="batch" data-h="300" data-label="Bar chart on a log axis: options per second for a pure Python loop, a per-call binding, bs_batch on one thread and bs_batch on eight threads"></div></div>
+<section class="sec" id="library" aria-labelledby="h-lib"><div class="container">
+  <div class="sec-head"><h2 id="h-lib">The C++ core lets Python threads run in parallel and reads NumPy memory in place.</h2>
+  <p>pybind11 releases the GIL around every pricing call and takes arrays without copying them; the module keeps no global state.</p></div>
+<figure class="code"><figcaption>core/python/bindings.cpp</figcaption><pre class="console cmd" tabindex="0">m.def("price_european_mc", &amp;european, ..., py::call_guard&lt;py::gil_scoped_release&gt;());
+PYBIND11_MODULE(pricer_core, m, py::mod_gil_not_used())</pre></figure>
+  <div class="cols-2">
+    <div class="block"><h3>Threads scale only when the GIL is released</h3><div class="vz console" data-id="gil" data-h="300" data-label="Line chart: pricing calls per second against Python threads, GIL released rises to 176 and GIL held stays at about 45"></div></div>
+    <div class="block"><h3>One call, eight threads: 147M prices a second</h3><div class="vz console" data-id="batch" data-h="300" data-label="Bar chart on a log axis: options per second for a pure Python loop, a per-call binding, bs_batch on one thread and bs_batch on eight threads"></div></div>
   </div>
   <p class="ev">Evidence: <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/bench/results/core.json">bench/results/core.json</a> (gil, batch) on a 10-core arm64 laptop; code in <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/core/python/bindings.cpp">core/python/bindings.cpp</a>.</p>
 
@@ -322,9 +100,9 @@ PYBIND11_MODULE(pricer_core, m, py::mod_gil_not_used())</pre>
     <p class="cap">A counter-based random stream means a scenario draws the same numbers wherever it runs. Choose a worker count: speed changes, the answer does not.</p>
     <div class="ctl"><span class="lab" id="w-lab">Workers</span><div class="seg" role="group" aria-labelledby="w-lab" id="wseg"></div></div>
     <ul class="tiles" id="wtiles" aria-live="polite"></ul>
-    <div class="two">
-      <div class="vz" data-id="pfe" data-h="300" data-label="Line chart: expected exposure and potential future exposure of the benchmark netting set over five years, identical on every worker count"></div>
-      <div class="vz" data-id="wbar" data-h="300" data-label="Bar chart: portfolio revaluations per second at 1, 2, 4 and 8 workers"></div>
+    <div class="cols-2">
+      <div class="vz console" data-id="pfe" data-h="300" data-label="Line chart: expected exposure and potential future exposure of the benchmark netting set over five years, identical on every worker count"></div>
+      <div class="vz console" data-id="wbar" data-h="300" data-label="Bar chart: portfolio revaluations per second at 1, 2, 4 and 8 workers"></div>
     </div>
     <div class="table-wrap"><table id="exp-static"><thead><tr><th scope="col">Workers</th><th scope="col">Time</th><th scope="col">Revaluations a second</th><th scope="col">PFE and CVA identical</th></tr></thead><tbody>
       <tr data-w="1"><td class="num">1</td><td class="num">7.98 s</td><td class="num">75.7M</td><td>yes</td></tr>
@@ -336,39 +114,39 @@ PYBIND11_MODULE(pricer_core, m, py::mod_gil_not_used())</pre>
 
   <div class="block">
     <h3>Monte Carlo: antithetic paths help a little, a control variate helps a lot</h3>
-    <div class="two">
-      <div class="vz" data-id="conv" data-h="300" data-label="Log-log chart: standard error against path count for plain and antithetic Monte Carlo, both falling with the square root of paths"></div>
-      <div class="vz" data-id="vr" data-h="300" data-label="Bar chart on a log axis: paths needed to match plain Monte Carlo at 200,000 paths: antithetic 144,233, antithetic plus control variate 198"></div>
+    <div class="cols-2">
+      <div class="vz console" data-id="conv" data-h="300" data-label="Log-log chart: standard error against path count for plain and antithetic Monte Carlo, both falling with the square root of paths"></div>
+      <div class="vz console" data-id="vr" data-h="300" data-label="Bar chart on a log axis: paths needed to match plain Monte Carlo at 200,000 paths: antithetic 144,233, antithetic plus control variate 198"></div>
     </div>
     <p class="ev">Evidence: <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/bench/results/core.json">bench/results/core.json</a> (convergence, variance_reduction): variance cut 1,009 times, so 198 paths match what plain needs 200,000 for.</p>
   </div>
 </div></section>
 
-<section class="sec" id="scale" aria-labelledby="h-scale"><div class="wrap">
-  <div class="head"><h2 id="h-scale">Add workers and book throughput rises; intraday pricing stays fast beside batch.</h2>
-  <p class="claim">Books split into tasks on Redis Streams. Two streams keep risk batch from queueing ahead of the trading desk, and KEDA sizes each pool on its own lag.</p></div>
+<section class="sec alt" id="scale" aria-labelledby="h-scale"><div class="container">
+  <div class="sec-head"><h2 id="h-scale">Add workers and book throughput rises; intraday pricing stays fast beside batch.</h2>
+  <p>Books split into tasks on Redis Streams. Two streams keep risk batch from queueing ahead of the trading desk, and KEDA sizes each pool on its own lag.</p></div>
   <div class="block">
     <div class="ctl"><h3>Book pricing, trades a second</h3><div class="seg" role="group" aria-label="Chart view" id="pfseg"><button type="button" aria-pressed="true" data-v="workers">By workers</button><button type="button" aria-pressed="false" data-v="task">By task size</button></div></div>
-    <div class="vz" data-id="pf" data-h="320" data-label="Chart of book pricing throughput in trades per second, by worker count for books of 1,000, 10,000 and 50,000 trades, or by task size at 4 workers"></div>
+    <div class="vz console" data-id="pf" data-h="320" data-label="Chart of book pricing throughput in trades per second, by worker count for books of 1,000, 10,000 and 50,000 trades, or by task size at 4 workers"></div>
     <p class="ev">Evidence: <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/bench/results/portfolio.json">bench/results/portfolio.json</a>. A 10,000-trade book goes from 2,295 trades a second on 1 worker to 7,335 on 8. Tasks of one trade are 2.6 times slower than tasks of 50; the default sits on the plateau.</p>
   </div>
-  <div class="two">
-    <div class="block"><h3>Intraday price during a batch run</h3><div class="vz" data-id="pri" data-h="300" data-label="Grouped bars: a 1,000-trade intraday book takes 0.22 s idle and 5.17 s during batch under FIFO, versus 0.30 s idle and 0.32 s during batch with priority streams"></div>
+  <div class="cols-2">
+    <div class="block"><h3>Intraday price during a batch run</h3><div class="vz console" data-id="pri" data-h="300" data-label="Grouped bars: a 1,000-trade intraday book takes 0.22 s idle and 5.17 s during batch under FIFO, versus 0.30 s idle and 0.32 s during batch with priority streams"></div>
       <p class="cap">First-in-first-out queueing made intraday wait 5.17 s behind batch. Priority streams cut it to 0.32 s; batch pays 0.6 s.</p>
       <p class="ev">Evidence: <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/bench/results/priority.json">bench/results/priority.json</a>.</p></div>
     <div class="block"><h3>KEDA autoscaling, replayed</h3>
       <div class="ctl"><div class="seg" role="group" aria-label="Start state" id="kseg"><button type="button" aria-pressed="true" data-k="cold">From zero</button><button type="button" aria-pressed="false" data-k="warm">Warm pool</button></div></div>
-      <div class="vz" data-id="keda" data-h="240" data-label="Step chart: batch worker replicas over time. From zero the first worker is ready at 10.3 s and replicas grow to 6; a warm pool starts at 6"></div>
+      <div class="vz console" data-id="keda" data-h="240" data-label="Step chart: batch worker replicas over time. From zero the first worker is ready at 10.3 s and replicas grow to 6; a warm pool starts at 6"></div>
       <div class="ctl"><label for="kscrub">Time</label><input type="range" id="kscrub" min="0" max="40" step="0.1" value="0"></div>
       <p class="read" id="kread" aria-live="polite"></p>
       <p class="ev">Evidence: <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/bench/results/keda.json">bench/results/keda.json</a>. The file records replicas only, not stream lag, so the lag that triggers scaling is not plotted.</p></div>
   </div>
 </div></section>
 
-<section class="sec" id="data" aria-labelledby="h-data"><div class="wrap">
-  <div class="head"><h2 id="h-data">Lose a Cassandra node and prices keep flowing.</h2>
-  <p class="claim">Three nodes, replication factor 3, LOCAL_QUORUM and a token-aware driver: any one node can go.</p></div>
-  <div class="ringwrap panel">
+<section class="sec" id="data" aria-labelledby="h-data"><div class="container">
+  <div class="sec-head"><h2 id="h-data">Lose a Cassandra node and prices keep flowing.</h2>
+  <p>Three nodes, replication factor 3, LOCAL_QUORUM and a token-aware driver: any one node can go.</p></div>
+  <div class="ringwrap console">
     <svg class="ringsvg" id="ring" viewBox="0 0 340 330" role="group" aria-label="Cassandra ring of three nodes">
       <circle class="orbit" cx="170" cy="165" r="105"/>
       <path class="drv" d="M170 8V50"/><text class="lbl l" x="182" y="30">token-aware driver</text>
@@ -396,8 +174,8 @@ PYBIND11_MODULE(pricer_core, m, py::mod_gil_not_used())</pre>
   </div>
   <div class="block">
     <h3>The price log never blocks a price</h3>
-    <div class="two">
-      <div class="vz" data-id="wb" data-h="260" data-label="Bar chart: price latency p50 and p99 in milliseconds, synchronous log write 3.68 and 5.49, write-behind 1.03 and 1.65"></div>
+    <div class="cols-2">
+      <div class="vz console" data-id="wb" data-h="260" data-label="Bar chart: price latency p50 and p99 in milliseconds, synchronous log write 3.68 and 5.49, write-behind 1.03 and 1.65"></div>
       <div><p>Rows go to a bounded queue drained by a background thread. If Cassandra is slow or down, rows are dropped and counted; the request never waits.</p>
       <p class="cap" style="margin-top:12px">Book throughput stays the same (7,669 against 8,208 trades a second for 10,000 trades); what moves is the single-price latency.</p></div>
     </div>
@@ -405,12 +183,12 @@ PYBIND11_MODULE(pricer_core, m, py::mod_gil_not_used())</pre>
   </div>
 </div></section>
 
-<section class="sec" id="operate" aria-labelledby="h-op"><div class="wrap">
-  <div class="head"><h2 id="h-op">Every injected failure was seen, routed to an owner and can be replayed here.</h2>
-  <p class="claim">Ten minutes, 11 faults: pods, workers, a Cassandra node, Redis and a whole Kubernetes node, under continuous load.</p></div>
+<section class="sec alt" id="operate" aria-labelledby="h-op"><div class="container">
+  <div class="sec-head"><h2 id="h-op">Every injected failure was seen, routed to an owner and can be replayed here.</h2>
+  <p>Ten minutes, 11 faults: pods, workers, a Cassandra node, Redis and a whole Kubernetes node, under continuous load.</p></div>
   <div class="block">
     <h3>Chaos run, replayed</h3>
-    <div class="vz" data-id="chaos" data-h="340" data-label="Chart of a 10 minute chaos run: prices served per second, cumulative availability, numbered fault markers and six failed requests"></div>
+    <div class="vz console" data-id="chaos" data-h="340" data-label="Chart of a 10 minute chaos run: prices served per second, cumulative availability, numbered fault markers and six failed requests"></div>
     <div class="ctl"><label for="cscrub">Time</label><input type="range" id="cscrub" min="0" max="600" step="5" value="0"></div>
     <p class="read" id="cread" aria-live="polite"></p>
     <ol class="steps" id="flist"></ol>
@@ -444,9 +222,9 @@ PYBIND11_MODULE(pricer_core, m, py::mod_gil_not_used())</pre>
   </div>
 </div></section>
 
-<section class="sec" id="ship" aria-labelledby="h-ship"><div class="wrap">
-  <div class="head"><h2 id="h-ship">Nothing ships until the checks and the scan pass.</h2>
-  <p class="claim">The C++ is run under sanitizers and Valgrind, the manifests and alert rules are validated, and an image is scanned before it is pushed or signed.</p></div>
+<section class="sec" id="ship" aria-labelledby="h-ship"><div class="container">
+  <div class="sec-head"><h2 id="h-ship">Nothing ships until the checks and the scan pass.</h2>
+  <p>The C++ is run under sanitizers and Valgrind, the manifests and alert rules are validated, and an image is scanned before it is pushed or signed.</p></div>
   <div class="lane"><h3>Every change: CI</h3>
     <ol class="pipe">
       <li><b>Tests and coverage gate</b><span>pytest with a 75% coverage floor on the service and tools.</span></li>
@@ -466,11 +244,11 @@ PYBIND11_MODULE(pricer_core, m, py::mod_gil_not_used())</pre>
 </main>
 
 <dialog id="lb" aria-label="Console capture">
-  <div class="lbbox"><img id="lbimg" src="img/ui/rancher-home.png" alt="" width="1600" height="1000"><p class="cap" id="lbcap"></p>
+  <div class="lbbox console"><img id="lbimg" src="img/ui/rancher-home.png" alt="" width="1600" height="1000"><p class="cap" id="lbcap"></p>
     <div class="lbbar"><span class="cap" id="lbn"></span><span><button type="button" id="lbp">Previous</button> <button type="button" id="lbx">Next</button> <button type="button" id="lbc">Close</button></span></div></div>
 </dialog>
 
-<footer><div class="wrap">
+<footer class="foot"><div class="container">
   <p><strong>Honest limits.</strong> Market data and trades are synthetic. Every measurement is from one 10-core laptop running a kind cluster, so absolute speeds will differ on real hardware. The models are textbook: Black-Scholes, geometric Brownian motion Monte Carlo and a simple CVA. The chaos run is one 10-minute run, not a soak test.</p>
   <ul><li><a href="https://github.com/SukhmanAulakh18/distributed-pricing-service">Repository</a></li><li><a href="case-study.html">Case study</a></li><li><a href="index.html#demo">Customer product, the desk</a></li><li><a href="portal.html">Client portal</a></li><li><a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/PERFORMANCE_REVIEW.md">Performance review</a></li></ul>
 </div></footer>
@@ -490,18 +268,8 @@ function mil(x) { return (x / 1e6).toFixed(x >= 1e8 ? 0 : 1) + 'M'; }
 function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 function ref(f) { return '<a href="' + REPO + f + '">' + f + '</a>'; }
 
-/* theme */
-function effTheme() { var t = document.documentElement.getAttribute('data-theme'); return t || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); }
-function labelTheme() { $('#theme').textContent = effTheme() === 'dark' ? 'Light theme' : 'Dark theme'; }
-try { var sv = localStorage.getItem('pf-theme'); if (sv) document.documentElement.setAttribute('data-theme', sv); } catch (e) {}
-$('#theme').addEventListener('click', function () {
-  var t = effTheme() === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', t);
-  try { localStorage.setItem('pf-theme', t); } catch (e) {}
-  labelTheme(); redrawAll();
-});
-matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () { labelTheme(); redrawAll(); });
-labelTheme();
+/* theme: the switch lives in assets/site.js; charts re-theme on its event */
+document.addEventListener('themechange', function () { redrawAll(); });
 
 /* chart plumbing */
 var ecP = null;
@@ -516,12 +284,17 @@ var io = new IntersectionObserver(function (es) { ioFired = true; es.forEach(fun
 function sweep() { Object.keys(charts).forEach(function (id) { var c = charts[id]; if (!c.started && c.el.getBoundingClientRect().top < innerHeight + 250) { io.unobserve(c.el); start(id); } }); }
 setTimeout(function () { if (!ioFired) { addEventListener('scroll', sweep, { passive: true }); sweep(); } }, 1500);
 var ro = new ResizeObserver(function (es) { es.forEach(function (e) { var c = charts[e.target.dataset.id]; if (c && c.inst) c.inst.resize(); }); });
-function T() { return { ink: css('--ink'), mut: css('--muted'), line: css('--line'), surf: css('--surface'), a: css('--accent'), c1: css('--c1'), c2: css('--c2'), w: css('--warn'), bad: css('--bad'), soft: css('--accent-soft') }; }
+var cx = document.createElement('canvas'); cx.width = cx.height = 1; cx = cx.getContext('2d', { willReadFrequently: true });
+function rgb(v) { try { cx.clearRect(0, 0, 1, 1); cx.fillStyle = v; cx.fillRect(0, 0, 1, 1); var d = cx.getImageData(0, 0, 1, 1).data; return 'rgb(' + d[0] + ',' + d[1] + ',' + d[2] + ')'; } catch (e) { return v; } }
+var curEl = null;
+function T() { var s = getComputedStyle(curEl || document.documentElement); function g(n) { return rgb(s.getPropertyValue(n).trim()); }
+  return { ink: g('--color-ink'), mut: g('--color-muted'), line: g('--color-rule'), surf: g('--color-paper-2'), a: g('--color-signal-text'), c1: g('--color-steel'), c2: g('--color-muted'), w: g('--color-ink-2'), bad: g('--color-fault'), soft: g('--color-paper-3'), mono: s.getPropertyValue('--font-mono').trim() }; }
+function bld(c) { curEl = c.el; try { return c.build(); } finally { curEl = null; } }
 function TOP() { return innerWidth < 560 ? 92 : 56; }
 function base(o, anim) {
   var t = T();
   return Object.assign({ animation: anim !== false && !reduce, animationDuration: 500, color: [t.a, t.c2, t.c1, t.w],
-    textStyle: { color: t.mut, fontFamily: getComputedStyle(document.body).fontFamily, fontSize: 12 },
+    textStyle: { color: t.mut, fontFamily: t.mono, fontSize: 11 },
     grid: { left: 8, right: 30, top: TOP(), bottom: 40, containLabel: true },
     legend: { top: 0, textStyle: { color: t.mut }, itemWidth: 16, itemHeight: 3 },
     tooltip: { trigger: 'axis', confine: true, backgroundColor: t.surf, borderColor: t.line, textStyle: { color: t.ink } } }, o);
@@ -541,10 +314,10 @@ function mount(id, build, head, rows) {
 }
 function start(id) {
   var c = charts[id]; if (c.started) return; c.started = true;
-  loadEc().then(function () { c.inst = echarts.init(c.el, null, { renderer: 'svg' }); c.inst.setOption(c.build(), true); ro.observe(c.el); })
+  loadEc().then(function () { return document.fonts && document.fonts.ready; }).then(function () { c.inst = echarts.init(c.el, null, { renderer: 'svg' }); c.inst.setOption(bld(c), true); ro.observe(c.el); })
     .catch(function () { c.el.classList.add('fail'); c.el.textContent = 'The chart library did not load. The data table below has the same numbers.'; var d = c.el.parentNode.querySelector('details'); if (d) d.open = true; });
 }
-function redraw(id) { var c = charts[id]; if (c && c.inst) c.inst.setOption(c.build(), true); }
+function redraw(id) { var c = charts[id]; if (c && c.inst) c.inst.setOption(bld(c), true); }
 function redrawAll() { Object.keys(charts).forEach(redraw); drawDetail(); }
 function seg(root, attr, fn) {
   $$('button', root).forEach(function (b) { b.addEventListener('click', function () { $$('button', root).forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); }); fn(b.dataset[attr]); }); });
@@ -693,8 +466,8 @@ function defs() {
     series: [{ name: 'GIL released', type: 'line', data: gser('released'), symbolSize: 8, lineStyle: { width: 3 }, itemStyle: { color: c.a }, endLabel: { show: true, color: c.a, formatter: '{c}' } },
              { name: 'GIL held', type: 'line', data: gser('held'), symbolSize: 8, lineStyle: { width: 3 }, itemStyle: { color: c.c2 }, endLabel: { show: true, color: c.c2, formatter: '{c}' } }] }); },
     ['Python threads', 'GIL released, per s', 'GIL held, per s'], th.map(function (n, i) { return [n, gser('released')[i], gser('held')[i]]; }));
-  mount('batch', function () { var c = t(); return base({ legend: { show: false }, grid: { left: 8, right: 56, top: 12, bottom: 28, containLabel: true }, tooltip: { trigger: 'item', confine: true, backgroundColor: c.surf, borderColor: c.line, textStyle: { color: c.ink } },
-    xAxis: ax({ type: 'log', min: 100000, axisLabel: { color: c.mut, formatter: function (v) { return mil(v); } } }), yAxis: ax({ type: 'category', inverse: true, data: D.batch.map(function (b) { return b.method; }), splitLine: { show: false } }),
+  mount('batch', function () { var c = t(); return base({ legend: { show: false }, grid: { left: innerWidth < 560 ? 124 : 156, right: 56, top: 12, bottom: 28, containLabel: false }, tooltip: { trigger: 'item', confine: true, backgroundColor: c.surf, borderColor: c.line, textStyle: { color: c.ink } },
+    xAxis: ax({ type: 'log', min: 100000, axisLabel: { color: c.mut, formatter: function (v) { return mil(v); } } }), yAxis: ax({ type: 'category', inverse: true, data: D.batch.map(function (b) { return b.method; }), splitLine: { show: false }, axisLabel: { color: c.mut, width: innerWidth < 560 ? 112 : 144, overflow: 'break' } }),
     series: [{ type: 'bar', barWidth: '55%', data: D.batch.map(function (b, i) { return { value: b.per_s, itemStyle: { color: i === 3 ? c.a : c.c1 } }; }), label: { show: true, position: 'right', color: c.ink, formatter: function (p) { return mil(p.value); } } }] }); },
     ['Method', 'Options per second'], D.batch.map(function (b) { return [b.method, n0(b.per_s)]; }));
   var ex = D.exposure;
