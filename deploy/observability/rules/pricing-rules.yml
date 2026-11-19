@@ -27,6 +27,24 @@ groups:
       - record: sli:book_failure_ratio:rate1h
         expr: (sum(rate(jobs_total{kind="portfolio",outcome!="complete"}[1h])) or vector(0)) / sum(rate(jobs_total{kind="portfolio"}[1h]))
 
+  - name: risk-sli
+    interval: 15s
+    rules:
+      - record: sli:predeal_request_rate:rate5m
+        expr: sum(rate(http_request_seconds_count{route="/risk/predeal"}[5m]))
+      - record: sli:predeal_error_ratio:rate5m
+        expr: (sum(rate(http_request_seconds_count{route="/risk/predeal",status=~"5.."}[5m])) or vector(0)) / sum(rate(http_request_seconds_count{route="/risk/predeal"}[5m]))
+      - record: sli:predeal_latency_p99:rate5m
+        expr: histogram_quantile(0.99, sum by (le) (rate(http_request_seconds_bucket{route="/risk/predeal"}[5m])))
+      - record: sli:cva_sensitivities_request_rate:rate5m
+        expr: sum(rate(http_request_seconds_count{route="/risk/cva-sensitivities"}[5m]))
+      - record: sli:cva_sensitivities_error_ratio:rate5m
+        expr: (sum(rate(http_request_seconds_count{route="/risk/cva-sensitivities",status=~"5.."}[5m])) or vector(0)) / sum(rate(http_request_seconds_count{route="/risk/cva-sensitivities"}[5m]))
+      - record: sli:cva_sensitivities_latency_p99:rate5m
+        expr: histogram_quantile(0.99, sum by (le) (rate(http_request_seconds_bucket{route="/risk/cva-sensitivities"}[5m])))
+      - record: sli:risk_shed_rate:rate5m
+        expr: sum(rate(http_request_seconds_count{route=~"/risk/predeal|/risk/cva-sensitivities",status="503"}[5m])) or vector(0)
+
   - name: pricing-slo-burn
     rules:
       # Multi-window burn rates: the long window proves the burn is real, the
@@ -127,6 +145,32 @@ groups:
         annotations:
           summary: "A task crashed workers 3 times and was failed: send the trade to quant analytics"
           runbook_url: "https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/RUNBOOK.md#5-books-slow-partial-http-206-or-exposure-runs-stuck"
+
+  - name: risk-endpoints
+    rules:
+      # Route-level, so both endpoints are covered by one expression; the
+      # recorded series above are for dashboards.
+      - alert: PredealLatencyHigh
+        expr: histogram_quantile(0.99, sum by (le, route) (rate(http_request_seconds_bucket{route=~"/risk/predeal|/risk/cva-sensitivities"}[5m]))) > 3
+        for: 10m
+        labels: {severity: ticket, owner: core}
+        annotations:
+          summary: "p99 latency of {{ $labels.route }} is {{ $value | humanizeDuration }} (over 3s)"
+          runbook_url: "https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/RUNBOOK.md#1-price-slow-or-503s"
+      - alert: PredealErrorsHigh
+        expr: (sum by (route) (rate(http_request_seconds_count{route=~"/risk/predeal|/risk/cva-sensitivities",status=~"5.."}[5m])) / sum by (route) (rate(http_request_seconds_count{route=~"/risk/predeal|/risk/cva-sensitivities"}[5m]))) > 0.05
+        for: 5m
+        labels: {severity: page, owner: core}
+        annotations:
+          summary: "{{ $value | humanizePercentage }} of {{ $labels.route }} requests fail with 5xx (over 5%)"
+          runbook_url: "https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/RUNBOOK.md#2-errors-5xx-resets-or-pods-restarting"
+      - alert: RiskEndpointShedding
+        expr: sum by (route) (rate(http_request_seconds_count{route=~"/risk/predeal|/risk/cva-sensitivities",status="503"}[5m])) > 0.5
+        for: 5m
+        labels: {severity: ticket, owner: platform}
+        annotations:
+          summary: "{{ $labels.route }} is shedding load (503) at {{ $value | humanize }}/s: capacity"
+          runbook_url: "https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/RUNBOOK.md#1-price-slow-or-503s"
 
   - name: kubernetes
     rules:

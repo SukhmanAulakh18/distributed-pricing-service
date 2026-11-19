@@ -11,14 +11,25 @@ route:
     # Must stay first (before the owner routes). The heartbeat repeats often so
     # a dead-man's switch downstream notices within minutes if it stops.
     - {matchers: ['alertname="Watchdog"'], receiver: watchdog, group_by: [alertname], repeat_interval: 5m}
-    - {matchers: ['owner="database"'], receiver: database-team}
-    - {matchers: ['owner="platform"'], receiver: platform}
-    - {matchers: ['owner="quant"'], receiver: quant-analytics}
+    # Pages go to a paging receiver, tickets to a queue; owner picks the team.
+    - {matchers: ['severity="page"', 'owner="database"'], receiver: database-page}
+    - {matchers: ['severity="page"', 'owner="platform"'], receiver: platform-page}
+    - {matchers: ['severity="page"', 'owner="quant"'], receiver: quant-page}
+    - {matchers: ['severity="page"'], receiver: core-page}
+    - {matchers: ['owner="database"'], receiver: database-ticket}
+    - {matchers: ['owner="platform"'], receiver: platform-ticket}
+    - {matchers: ['owner="quant"'], receiver: quant-ticket}
+    - {matchers: ['owner="core"'], receiver: core-ticket}
 receivers:
   - name: core-engineering
-  - name: database-team
-  - name: platform
-  - name: quant-analytics
+  - name: core-page
+  - name: core-ticket
+  - name: database-page
+  - name: database-ticket
+  - name: platform-page
+  - name: platform-ticket
+  - name: quant-page
+  - name: quant-ticket
   - name: watchdog
 inhibit_rules:
   # One root cause, one page: when Redis or a node is down, the backlog and

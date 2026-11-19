@@ -26,11 +26,12 @@ recovery) and the bank is at 60 bp.
 
 | Finding | Measured | What it means for the business |
 | --- | --- | --- |
-| A zero-threshold CSA at the 10-day regulatory margin period | CVA $102.2k → $28.9k (−72%); peak PFE $12.4M → $7.1M (−43%), compared on the same scenarios | The CSA is worth about $73k of CVA on this one book. It also frees about 40% of the credit line for more trading with the same client |
-| Margin period of risk 0 → 2 → 10 → 20 days | CVA $0.4k → $11.8k → $28.9k → $49.7k | Faster, more reliable margining is worth real money. The model prices the operational quality of the collateral process |
-| Threshold sweep, $0 → $1M → $5M → $20M | CVA $28.9k → $32.1k → $77.5k → $102.0k | Above about $20M the CSA does nothing for this book. Sales and legal know where to negotiate |
-| Pre-deal incremental CVA of a new 5-year forward | Standard deviation $188 on the same scenarios vs $1,961 with independent seeds; 0.25 s per engine run on 10 threads | 10× tighter for the same compute, which is about 100× fewer scenarios for the same precision |
-| `POST /risk/predeal`, end to end (201 trades, 10,000 scenarios, an API pod's 2 compute threads) | 1.39 s first quote; 0.70 s to re-quote once the book is cached; 2.76 s when a limit breach also prices a fallback CSA. Verdict on the benchmark trade: approve, 30 bp credit charge | A trader gets a decision (approve, approve only with a CSA, refer to credit) and a price for credit in about a second, from one call |
+| A zero-threshold CSA at a 10-business-day margin period (one synthetic 200-trade book, 50,000 scenarios) | CVA $102.1k → $40.5k (−60%); peak PFE $12.5M → $10.2M (−18%), compared with the uncollateralized run on the same scenarios | The CSA cuts CVA by about $61.6k on this one book and frees 18% of peak exposure under the credit line |
+| MPoR 0 → 2 → 5 → 10 → 20 business days | CVA $0.4k → $13.7k → $25.6k → $40.5k → $57.7k | Faster, more reliable margining is worth real money. The model prices the operational quality of the collateral process |
+| Threshold sweep, $0 → $1M → $5M → $20M | CVA $40.5k → $40.4k → $78.8k → $101.9k (uncollateralized: $102.1k) | Above about $20M the CSA does nothing for this book. Sales and legal know where to negotiate |
+| Pre-deal incremental CVA of a new 5-year forward (30 repetitions, 10,000 scenarios) | Standard deviation $328 on shared scenarios vs $1,809 with independent seeds; 0.27 s per engine run on 10 threads | 5.5× less noisy for the same compute, about 30× fewer scenarios for equal precision. Measured for one forward on this book; the ratio shrinks as the new trade grows relative to the book |
+| `POST /risk/predeal`, end to end (201 trades, 10,000 scenarios, 2 compute threads) | 1.43 s first quote; 0.70 s to re-quote once the book is cached; 4.18 s when a limit breach also prices a fallback CSA (4 passes). Benchmark trade: approve, upfront charge 29.7 bp of notional. Deployed pods use 1 thread per quote, so latency there is higher | A trader gets a decision (approve, approve only with a CSA, refer to credit) and a price for credit in seconds, from one call |
+| `POST /risk/cva-sensitivities` (200 trades, 10,000 scenarios, 21 runs) | 15.2 s at 2 threads; CVA $101.0k, CS01 $634 | Per-underlying delta and vega for hedging. An end-of-day or on-demand calculation, not a quote-time one |
 | Exposure run, 604M option revaluations | 2.7 s on 8 workers, identical on 1, 2, 4 and 8 workers | An end-of-day XVA run is minutes, not hours, and reproducible for audit |
 | Reliability under chaos, 10 minutes, 11 faults | 99.992% of 76,481 prices served; 29 of 30 books complete | The numbers arrive on time when infrastructure fails. The one lost book now has a fix (below) |
 
@@ -44,7 +45,7 @@ recovery) and the bank is at 60 bp.
 | Worker heartbeat on long tasks; a duplicate's error never overwrites a good result | Large exposure blocks (over 10 s) were being reclaimed while still running and could be failed as "poison". Batch runs that used to fail intermittently now complete |
 | Intraday and batch on separate streams and pools | A big end-of-day XVA run does not slow trader quotes (5.17 s → 0.32 s measured) |
 | Owner-labelled alerts, runbook, SLOs as code | Incidents reach the right team first time. Mean time to repair is an operating cost |
-| CI: lint, coverage gate, sanitizers, manifest and alert-rule validation. CD: signed image with SBOM and vulnerability scan | Supply-chain and change-management evidence that a bank's model-risk and security reviews ask for |
+| CI: lint, coverage gate, sanitizers, manifest and alert-rule validation. Release after CI: local build, Trivy scan, then push with SBOM and provenance and a cosign signature by digest | Supply-chain and change-management evidence that a bank's model-risk and security reviews ask for |
 
 ## Executive review: is the impact, usage and interactivity there?
 
@@ -53,49 +54,37 @@ user, not by reading the code.
 
 | Lens | Before this review | After | Evidence |
 | --- | --- | --- | --- |
-| **Impact**: is the business value visible? | Measured but buried: the landing page showed only reliability numbers; the desk link was off-screen | Landing page leads with a "Try the XVA desk" button and three business tiles (−72% CVA with a CSA, the pre-deal time, 10× tighter what-if pricing), built from `bench/results/xva.json` | `docs/index.html`, `scripts/build_report.py` |
-| **Usage**: can someone use it for the decision it exists for? | No. The desk page asked "should we say yes to this trade?" and could not answer it; the API needed two exposure jobs, polling and client-side math | `POST /risk/predeal`: one call returns approve / approve with a CSA / refer to credit, the reason, the credit charge in $ and bp, and limit use. The book's own run is cached between quotes | `service/main.py: predeal`, `tests/test_predeal.py` (9 tests) |
+| **Impact**: is the business value visible? | Measured but buried: the landing page showed only reliability numbers; the desk link was off-screen | Landing page leads with a "Try the XVA desk" button and three business tiles built from `bench/results/xva.json` | `docs/index.html`, `scripts/build_report.py` |
+| **Usage**: can someone use it for the decision it exists for? | No. The desk page asked "should we say yes to this trade?" and could not answer it; the API needed two exposure jobs, polling and client-side math | `POST /risk/predeal`: one call returns approve / approve with a CSA / refer to credit, the reason, the upfront credit charge in $ and bp of notional (and as a running spread), and limit use. The book's own run is cached between quotes | `service/main.py: predeal`, `tests/test_predeal.py` |
 | **Interactivity**: can a non-specialist feel it in 60 seconds? | A CSA simulator: good for intuition, but no decision at the end | A pre-deal panel with the same verdict rules as the API, four one-click scenarios (refer, needs a CSA, approve, a hedge that lowers CVA) and a copyable request for the real endpoint | `docs/desk.html#predeal`, checked in a browser at 375 px |
 
-**Principal business analyst: approved, with conditions.**
-- The platform now produces the *decision* a desk makes, not just inputs to
-  it, in the units each stakeholder uses: dollars and basis points of
-  credit charge, % of the credit line, seconds to an answer.
-- The hedge scenario shows something non-obvious and valuable: a trade can
-  *lower* CVA by netting against the book, so the desk can pay the client
-  for it rather than charge.
-- Conditions before any real use:
-  - wrong-way risk and stochastic rates and credit;
-  - real-world PFE for limits (PFE here is risk-neutral);
-  - validation against an established XVA library on real trades;
-  - capital (SA-CCR, BA-CVA) as a separate, regulated calculation, which this
-    project does not claim.
+## Review panel: what was found and what changed
 
-**CTO: approved as an engineering reference.**
-- Determinism and exact merging are tested, not asserted.
-- The C++ changes have independent references and pass ASan, UBSan, TSan
-  and Valgrind in CI.
-- The pre-deal endpoint reuses admission control, so a burst of quotes is
-  shed with 503s instead of starving `/price`.
-- It runs the C++ engine with the GIL released and caps the size (50,000
-  scenarios) so a quote cannot become a batch job.
-- Release images are scanned and signed, and the scanner action is pinned
-  by commit SHA.
-- Remaining risks:
-  - Redis and Cassandra have no authentication or TLS;
-  - the API has no authentication or authorization;
-  - the price log can still drop rows under sustained Cassandra outage;
-  - the chaos run should be repeated to confirm the idempotency fix end to end;
-  - pre-deal latency at 2 threads (about 1.4 s first quote) is fine for a
-    trader but not for e-trading. More threads per quote, or precomputed
-    book scenarios, is the next lever.
+A panel of XVA quants, a distributed-systems director, a principal engineer
+and an executive lens (CEO, CTO, business analyst) reviewed the platform.
+The panel is a review exercise on a learning project, not an approval. This
+table lists what each lens found and the status today. "Fixed" names the
+evidence; "open" means not done.
 
-**CEO: the story now holds together.**
-- One sentence: *before a trader says yes, it tells them whether the
-  client's credit line can take the trade and what to charge for the risk,
-  in about a second, and it keeps answering when servers fail.*
-- A visitor can now *do* that on the site in three clicks, and an engineer
-  can do it against the real engine with one request.
-- What would still move the needle most: a hosted demo of the API itself,
-  so the "real engine" step needs no `make up`, and a short recorded
-  walkthrough of the pre-deal panel for people who will not click.
+| Finding | Raised by | Status |
+| --- | --- | --- |
+| MPoR was ambiguous (calendar or business days) | Quant | Fixed. `mpor_days` is business days on a 252-day year (10 days is about 14.5 calendar days), and the CSA results were re-run |
+| Common random numbers claim was too broad; the seed included spots, vols, trades and credit | Quant | Fixed. The seed now covers only market data version, underlying names, correlation and nodes, so bumps, added trades and spread or threshold changes share scenarios |
+| The "10×" and "100×" noise claims came from 6 repetitions | Quant | Fixed. 30 repetitions: 5.5× less noisy, about 30× fewer scenarios, for one 5-year forward on this book (`pre_deal` in `xva.json`) |
+| Pre-deal charge units were unclear, and a hedge showed a negative charge | Quant, exec | Fixed. `cva_charge_bps` is upfront in bp of notional, `cva_charge_running_bps` is the running spread, hedges report a credit benefit, and an `approve_with_csa` charge is priced under the proposed CSA |
+| No CVA sensitivities | Quant | Fixed. `POST /risk/cva-sensitivities` (delta, vega, CS01), checked against a closed form: delta within 0.1%, vega within 1% (`tests/test_sensitivities.py`) |
+| Pre-deal bursts starved the pod: 300 concurrent quotes, 0 shed, worst 36.4 s, `/health/ready` timed out, `/price` 4.4 to 5.4 s | Distributed systems | Fixed. Risk quotes have their own slot checked before any thread is taken: 299 of 300 shed with 503, worst 0.2 s, `/health/ready` 3 ms, `/price` 2.7 ms. `tests/test_shedding.py` locks it in |
+| Release pushed before scanning and ran on any push | Principal engineer | Fixed. Builds locally, Trivy-scans, then pushes with SBOM and provenance and signs by digest. Runs after CI succeeds on main or on `v*` tags. Actions pinned by commit SHA |
+| No alerts on the new risk endpoints; routing by team name only | Distributed systems | Fixed. `PredealLatencyHigh`, `PredealErrorsHigh`, `RiskEndpointShedding`, and Alertmanager routes by severity to `<owner>-page` and `<owner>-ticket` |
+| MTA tested node to node, not daily | Quant | Open, documented as a limitation in MODELS.md |
+| Wrong-way risk is not modelled | Quant | Open |
+| PFE is risk-neutral, not real-world, so not fit for limits | Quant | Open |
+| No validation against an established XVA library (for example Open Source Risk Engine) | Quant | Open |
+| No Monte Carlo standard error on CVA | Quant | Open |
+| No authentication or TLS on the API, Redis or Cassandra; egress is not default-deny | Principal engineer | Open |
+| Pre-deal shares pods with `/price`; no dedicated low-latency worker pool or per-book scenario cubes | Distributed systems, CTO | Open |
+| The chaos run has not been repeated since the idempotency fix | Distributed systems | Open |
+| Sensitivities are bump-and-revalue; no pathwise or AAD, no GPU | Quant | Open. Next step is pathwise or AAD sensitivities in the C++ engine |
+
+Capital (SA-CCR, BA-CVA) is a separate regulated calculation that this
+project does not claim to do.

@@ -39,10 +39,10 @@ Redis and Cassandra outage:
 
 | Component | Owner | Route to them when |
 | --- | --- | --- |
-| C++ pricer and numerics | Quant analytics | A price disagrees with its reference, NaNs, a crash inside `pricer_core`, a poison trade |
+| C++ pricer and numerics | Quant (`quant-page`, `quant-ticket`) | A price disagrees with its reference, NaNs, a crash inside `pricer_core`, a poison trade |
 | API, workers, queue | Core engineering (this team) | Latency, errors, deploys, backlog, 503s |
-| Redis | Platform | Redis down or evicting |
-| Cassandra | Database team | Node down, write timeouts, full disk |
+| Redis | Platform (`platform-page`, `platform-ticket`) | Redis down or evicting |
+| Cassandra | Database (`database-page`, `database-ticket`) | Node down, write timeouts, full disk |
 | Kubernetes cluster | Platform | Pods Pending, node NotReady, image pulls |
 
 ---
@@ -60,7 +60,15 @@ Redis and Cassandra outage:
    waits longer than `ADMISSION_TIMEOUT_S`. Check the HPA
    (`kubectl -n pricing get hpa`); at `maxReplicas`, it is a capacity
    question for Platform.
-4. Throttling: if `nr_throttled` climbs, the pod is running more threads
+4. `503` on `/risk/predeal` or `/risk/cva-sensitivities` (`RiskEndpointShedding`):
+   the pod's risk slot (`RISK_SLOTS`, default 1) is busy, so the request was
+   refused at once with `Retry-After`. This protects `/price` and
+   `/health/ready`, and is expected under a burst. If it persists, the fix is
+   more pods or a dedicated pre-deal pool, which is not built yet. A slow
+   `/risk/cva-sensitivities` is normal: it runs 21 revaluations (15.2 s on
+   200 trades and 10,000 scenarios at 2 threads), so use it end of day, not at
+   quote time.
+5. Throttling: if `nr_throttled` climbs, the pod is running more threads
    than its CPU limit (performance review finding 6).
 
 ## 2. Errors (5xx, resets) or pods restarting
@@ -82,7 +90,7 @@ Redis after 3 failures, so requests do not wait out timeouts. Books fall back
 to pricing on the API pods (`mode: local`). Exposure submissions return `503
 batch queue (Redis) unavailable` rather than running inline.
 
-**Act:** route to Platform. Nothing to do on our side; the breaker closes by
+**Act:** route to Platform (`platform-page`). Nothing to do on our side; the breaker closes by
 itself.
 
 ## 4. Cassandra down or slow
@@ -93,7 +101,7 @@ write-behind buffer are written when Cassandra returns, or dropped and counted
 `503 job history unavailable`. Readiness is deliberately **not** gated on
 Cassandra (incident 2).
 
-**Act:** route to the Database team. Afterwards, the window between `circuit
+**Act:** route to Database (`database-page` or `database-ticket`). Afterwards, the window between `circuit
 opened` and `circuit closed` in the logs is the gap. Logged prices are
 reproducible from their request hash, so the gap can be backfilled.
 
@@ -107,7 +115,7 @@ reproducible from their request hash, so the gap can be backfilled.
    - **Pending stuck above 0**: a worker died holding tasks. Others reclaim
      them after 10 s. If pending stays flat, no worker is alive.
 2. A trade with `error: exceeded max deliveries` crashed or hung a worker 3
-   times: a poison trade. Route it to Quant analytics with its parameters;
+   times: a poison trade. Route it to Quant (`quant-ticket`) with its parameters;
    do not resubmit it.
 3. An exposure run with `payload expired or missing`: it sat queued longer
    than the job TTL (1 hour). Resubmit it.

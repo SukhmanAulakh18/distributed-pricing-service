@@ -19,15 +19,17 @@ def plan(req: ExposureRequest) -> tuple[dict, list[dict]]:
     idx = {n: i for i, n in enumerate(names)}
     corr = req.correlation or np.eye(len(names)).tolist()
     nodes, lag, report = req.sim_grid
-    # The seed covers the market state and the simulated nodes only, not the
-    # trades, credit or CSA amounts. Adding a trade, changing a spread or a
-    # threshold then reuses the same scenarios (common random numbers), so a
-    # pre-deal incremental CVA or a sensitivity is a clean difference rather
-    # than two independent noisy estimates. Changing the MPoR (or switching
-    # the CSA on) adds nodes and so changes the paths; compare against the
-    # uncollateralized figures the same run reports instead.
-    seed_src = json.dumps({"md": req.market_data_version, "rate": req.rate, "corr": corr, "grid": nodes,
-                           "underlyings": [u.model_dump() for u in req.underlyings]}, sort_keys=True).encode()
+    # The seed covers what fixes the random numbers' layout (market data
+    # version, underlying names, correlation, nodes), not any level: spots,
+    # vols, the rate, trades, credit and CSA amounts are all left out. A trade
+    # added, a spread or threshold changed, or a spot or vol bumped then reuses
+    # the same normals (common random numbers), so a pre-deal incremental CVA
+    # or a bump-and-revalue sensitivity is a clean difference rather than two
+    # independent noisy estimates. Changing the MPoR (or switching the CSA on)
+    # adds nodes and so changes the paths; compare against the uncollateralized
+    # figures the same run reports instead.
+    seed_src = json.dumps({"md": req.market_data_version, "names": names, "corr": corr, "grid": nodes},
+                          sort_keys=True).encode()
     payload = {
         "spot": [u.spot for u in req.underlyings],
         "vol": [u.vol for u in req.underlyings],

@@ -24,6 +24,7 @@ from service.models import ExposureRequest  # noqa: E402
 
 OUT = os.path.join(os.path.dirname(__file__), "results", "xva.json")
 THREADS = os.cpu_count() or 4
+REPS = 30  # pre-deal repetitions: a stdev from 6 samples is itself only good to about 30%
 CPTY = {"recovery": 0.4, "cds_spread_bps": 150.0}  # a BBB-ish corporate
 OWN = {"recovery": 0.4, "cds_spread_bps": 60.0}  # a bank
 
@@ -82,13 +83,13 @@ def main():
     # Pre-deal check: the CVA a new 5-year forward adds to the book. With the
     # seed shared (same market data), both runs see the same scenarios and the
     # difference is clean; with independent seeds each estimate's noise lands
-    # in the difference. Repeated over 6 market-data versions to measure the
-    # spread of each estimator.
+    # in the difference. Repeated over REPS market-data versions to measure the
+    # spread of each estimator (enough repetitions that the stdev itself is stable).
     new = {"trade_id": "NEW", "underlying": "SPX", "kind": "forward", "strike": 100.0, "maturity": 5.0,
            "quantity": 40 * SCALE}
     small = base | {"n_scenarios": 10_000, "block_size": 10_000}
     crn, indep, secs_pre = [], [], []
-    for i in range(6):
+    for i in range(REPS):
         md, md2 = f"md-{i}", f"md-{i}-b"
         before, _ = run(small | {"market_data_version": md})
         after, s = run(small | {"market_data_version": md, "trades": small["trades"] + [new]})
@@ -137,11 +138,25 @@ def main():
         "limit_breach_with_fallback_csa_ms": round(breach_ms, 1),
         "approve": {"credit_limit": 15_000_000, "verdict": res["verdict"],
                     "incremental_cva": round(res["incremental_cva"], 2), "cva_charge_bps": round(res["cva_charge_bps"], 2),
+                    "cva_charge_running_bps": round(res["cva_charge_running_bps"], 2),
                     "peak_pfe_after": round(res["peak_pfe_after"], 2)},
         "breach": {"credit_limit": 9_000_000, "verdict": breach["verdict"], "reason": breach["reason"],
                    "peak_pfe_after_csa": round(breach["peak_pfe_after_csa"], 2)},
     }
     print("predeal endpoint", out["predeal_endpoint"])
+
+    # CVA sensitivities on the same book: delta and vega per underlying by
+    # central bumps on shared scenarios, plus CS01 (no new simulation).
+    app.state.cache = PriceCache(None)
+    with TestClient(app) as c:
+        sens = c.post("/risk/cva-sensitivities", json={"netting_set": small | {"market_data_version": "md-0"}}).json()
+    out["cva_sensitivities"] = {
+        "n_trades": len(small["trades"]), "n_scenarios": small["n_scenarios"], "n_runs": sens["n_runs"],
+        "elapsed_ms": sens["elapsed_ms"], "cva": round(sens["cva"], 2), "cs01": round(sens["cs01"], 2),
+        "underlyings": [{k: (round(v, 2) if isinstance(v, float) else v) for k, v in u.items()}
+                        for u in sens["underlyings"]],
+    }
+    print("cva sensitivities", {k: v for k, v in out["cva_sensitivities"].items() if k != "underlyings"})
     with open(OUT, "w") as f:
         json.dump(out, f, indent=1)
     print("wrote", OUT)

@@ -75,3 +75,33 @@ def test_book_baseline_is_cached_between_quotes(make_client, r):
     assert second["peak_pfe_before"] == first["peak_pfe_before"]
     with make_client(cache=PriceCache(r)) as c:  # a different book misses
         assert not predeal(c, netting_set={**REQ, "rate": 0.03})["baseline_cached"]
+
+
+def test_csa_verdict_is_priced_under_the_proposed_csa(make_client):
+    with make_client() as c:
+        unc = predeal(c)["peak_pfe_after"]
+        coll = predeal(c, credit_limit=1.0, fallback_csa=CSA)["peak_pfe_after_csa"]
+        res = predeal(c, credit_limit=(unc + coll) / 2, fallback_csa=CSA)
+    assert res["verdict"] == "approve_with_csa" and res["charge_basis"] == "proposed_csa"
+    before = _exposure_inline(ExposureRequest(**{**REQ, "csa": CSA}))
+    after = _exposure_inline(ExposureRequest(**{**REQ, "csa": CSA, "trades": [*REQ["trades"], NEW]}))
+    assert res["incremental_cva"] == pytest.approx(after.cva_csa - before.cva_csa, rel=1e-12)
+    assert res["incremental_cva"] < res["incremental_cva_uncollateralized"]  # collateral makes credit cheaper
+    assert "Under that CSA" in res["reason"]
+
+
+def test_running_spread_is_upfront_over_the_risky_annuity(make_client):
+    import math
+    with make_client() as c:
+        res = predeal(c)
+    lam, dt = 100 / 1e4 / 0.6, 2 / 24  # REQ: 100 bp, 40% recovery; NEW: 2-year trade, monthly
+    annuity = sum(math.exp(-0.02 * i * dt) * math.exp(-lam * i * dt) * dt for i in range(1, 25))
+    assert res["cva_charge_running_bps"] == pytest.approx(res["cva_charge_bps"] / annuity)
+    assert res["cva_charge_running_bps"] < res["cva_charge_bps"]  # spread a year < upfront for a 2y trade
+
+
+def test_hedge_is_a_benefit_not_a_negative_charge(make_client):
+    hedge = {**REQ["trades"][0], "trade_id": "hedge", "quantity": -REQ["trades"][0]["quantity"]}
+    with make_client() as c:
+        res = predeal(c, new_trade=hedge)
+    assert "Credit benefit" in res["reason"] and "$-" not in res["reason"]

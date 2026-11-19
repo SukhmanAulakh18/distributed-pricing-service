@@ -93,7 +93,7 @@ def test_csa_grid_adds_a_node_one_mpor_before_each_date():
     req = ExposureRequest(**{**REQ, "csa": CSA})
     nodes, lag, report = req.sim_grid
     assert [nodes[i] for i in report] == req.grid
-    d = 10 / 365
+    d = 10 / 252  # business days
     for j, t in enumerate(nodes):
         if lag[j] >= 0:
             assert nodes[lag[j]] <= t - d + 1e-9
@@ -108,7 +108,11 @@ def test_seed_ignores_trades_credit_and_csa_amounts():
     seed = exposure.plan(ExposureRequest(**REQ))[0]["seed"]
     more = {**REQ, "trades": REQ["trades"][:2], "cds_spread_bps": 300, "own_credit": {"cds_spread_bps": 80}}
     assert exposure.plan(ExposureRequest(**more))[0]["seed"] == seed
-    assert exposure.plan(ExposureRequest(**{**REQ, "rate": 0.03}))[0]["seed"] != seed
+    # Market levels are bumped for sensitivities: they must share scenarios too.
+    bumped = {**REQ, "rate": 0.03, "underlyings": [{**REQ["underlyings"][0], "spot": 101, "vol": 0.21},
+                                                   REQ["underlyings"][1]]}
+    assert exposure.plan(ExposureRequest(**bumped))[0]["seed"] == seed
+    assert exposure.plan(ExposureRequest(**{**REQ, "market_data_version": "md2"}))[0]["seed"] != seed
     # Thresholds and MTA share scenarios; the MPoR adds nodes, so it does not.
     a = exposure.plan(ExposureRequest(**{**REQ, "csa": CSA}))[0]["seed"]
     b = exposure.plan(ExposureRequest(**{**REQ, "csa": {**CSA, "threshold_recv": 0, "mta": 0}}))[0]["seed"]

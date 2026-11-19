@@ -178,9 +178,9 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
   </div>
   <div class="biz-label" id="biz-h">What it means for the desk (XVA bench, 50,000 scenarios)</div>
   <div class="biz" role="list" aria-labelledby="biz-h">
-    <div class="stat" role="listitem"><b>−72% CVA with a CSA</b><span>CVA with a CSA: collateral cuts the credit charge on the book, so more trades fit at a lower price.</span></div>
-    <div class="stat" role="listitem"><b>0.27 s pre-deal check</b><span>A trader gets the credit cost and limit usage of a new trade while the client is still on the phone.</span></div>
-    <div class="stat" role="listitem"><b>10.4&times; tighter what-if pricing</b><span>Same scenarios before and after, so a small change in CVA is signal, not simulation noise.</span></div>
+    <div class="stat" role="listitem"><b>−60% CVA with a CSA</b><span>(10-business-day MPoR). Collateral cuts the credit charge on the book, and peak exposure by 18%, so more trades fit at a lower price.</span></div>
+    <div class="stat" role="listitem"><b>0.7 to 1.4 s pre-deal check</b><span>A trader gets the credit cost and limit usage of a new trade while the client is still on the phone (4.2 s when a breach also prices a CSA). Laptop benchmark, synthetic data.</span></div>
+    <div class="stat" role="listitem"><b>5.5&times; less noise in what-if pricing</b><span>Same scenarios before and after, so a small change in CVA is signal, not simulation noise.</span></div>
   </div>
   <div class="biz-label">Reliability, from the chaos run</div>
   <div class="ledger" style="margin-top:12px">
@@ -574,7 +574,7 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
   <p>The objectives are 99.9% availability and 99% of prices under 250 ms, written down in <code>docs/SLO.md</code> and alerted on multi-window burn rate rather than fixed thresholds. All fourteen alerts carry an <code>owner</code> label and a <code>runbook_url</code>. Alertmanager routes on the owner and inhibits the symptoms of a known root cause.</p>
   <figure>
     <div class="panel">
-    <svg class="d" viewBox="0 0 1000 300" role="img" aria-label="Alert routing: pods and kube-state-metrics are scraped by Prometheus, which evaluates SLI recordings and alerts; Alertmanager routes each alert by owner to core engineering, database, platform or quant, and inhibits backlog alerts when a node or Redis is down.">
+    <svg class="d" viewBox="0 0 1000 300" role="img" aria-label="Alert routing: pods and kube-state-metrics are scraped by Prometheus, which evaluates SLI recordings and alerts; Alertmanager routes each alert by owner to a page or ticket receiver for core, database, platform or quant, and inhibits backlog alerts when a node or Redis is down.">
       <defs><marker id="a6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="arrow"/></marker>
       <marker id="a6w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="arrow wrn"/></marker></defs>
       <rect class="box" x="15" y="30" width="180" height="46" rx="6"/><text class="t" x="105" y="51" text-anchor="middle">every pod</text><text class="s" x="105" y="68" text-anchor="middle">/metrics</text>
@@ -597,10 +597,10 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
       <line class="w" x1="710" y1="82" x2="740" y2="96" marker-end="url(#a6)"/>
       <line class="w" x1="710" y1="96" x2="740" y2="156" marker-end="url(#a6)"/>
       <line class="w" x1="710" y1="110" x2="740" y2="216" marker-end="url(#a6)"/>
-      <rect class="box" x="742" y="12" width="248" height="48" rx="6"/><text class="t" x="754" y="32">core-engineering</text><text class="lbl" x="754" y="50">IntradayBacklog · PodRestarting</text>
-      <rect class="box" x="742" y="72" width="248" height="48" rx="6"/><text class="t" x="754" y="92">database-team</text><text class="lbl" x="754" y="110">CassandraReplicaDown</text>
-      <rect class="box" x="742" y="132" width="248" height="48" rx="6"/><text class="t" x="754" y="152">platform</text><text class="lbl" x="754" y="170">NodeNotReady · RedisCircuitOpen</text>
-      <rect class="box" x="742" y="192" width="248" height="48" rx="6"/><text class="t" x="754" y="212">quant-analytics</text><text class="lbl" x="754" y="230">PoisonTrade</text>
+      <rect class="box" x="742" y="12" width="248" height="48" rx="6"/><text class="t" x="754" y="32">core-page / -ticket</text><text class="lbl" x="754" y="50">IntradayBacklog · PodRestarting</text>
+      <rect class="box" x="742" y="72" width="248" height="48" rx="6"/><text class="t" x="754" y="92">database-page / -ticket</text><text class="lbl" x="754" y="110">CassandraReplicaDown</text>
+      <rect class="box" x="742" y="132" width="248" height="48" rx="6"/><text class="t" x="754" y="152">platform-page / -ticket</text><text class="lbl" x="754" y="170">NodeNotReady · RedisCircuitOpen</text>
+      <rect class="box" x="742" y="192" width="248" height="48" rx="6"/><text class="t" x="754" y="212">quant-page / -ticket</text><text class="lbl" x="754" y="230">PoisonTrade</text>
       <rect class="wbox" x="430" y="190" width="300" height="56" rx="6"/>
       <text class="m" x="442" y="212">NodeNotReady, RedisCircuitOpen</text>
       <text class="s" x="442" y="232">silence IntradayBacklog, TasksStuckPending</text>
@@ -614,7 +614,7 @@ svg.d { width: 100%; min-width: 640px; height: auto; display: block; color: var(
     </div>
     <figcaption>The ownership table is shared by the alert rules, the runbook and the triage CLI, so all three name the same team for the same symptom.</figcaption>
   </figure>
-  <figure><img src="img/ui/alertmanager.png" alt="Alertmanager with CassandraReplicaDown routed to the database team and NodeNotReady to platform" loading="lazy"><figcaption>Alertmanager during the node outage: <code>NodeNotReady</code> goes to platform and <code>CassandraReplicaDown</code> to the database team.</figcaption></figure>
+  <figure><img src="img/ui/alertmanager.png" alt="Alertmanager with CassandraReplicaDown routed to the database receivers and NodeNotReady to the platform receivers" loading="lazy"><figcaption>Alertmanager during the node outage: <code>NodeNotReady</code> goes to <code>platform-page</code> and <code>CassandraReplicaDown</code> to <code>database-page</code>.</figcaption></figure>
   <figure><img src="img/ui/jaeger-trace.png" alt="Jaeger trace of one book across the API and worker pods" loading="lazy"><figcaption>A 2,000-trade book in Jaeger: 206 spans across 3 pods. Each task has one span for the queue message, the cache read, each C++ batch and the result write. Tracing every request cost about 11% of throughput (278 vs 312 prices/s), so production samples 5%, and workers follow the API's sampling decision.</figcaption></figure>
   <div class="two">
     <figure><img src="img/ui/grafana-slo.png" alt="Grafana SLO dashboard" loading="lazy"><figcaption>SLOs as code. Availability held at 100%, but with Rancher competing for the laptop's CPU about 6% of prices took over 250 ms. That burns latency budget below the 14.4× rate that pages, so it shows on the dashboard without waking anyone.</figcaption></figure>
