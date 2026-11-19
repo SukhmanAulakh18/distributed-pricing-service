@@ -7,6 +7,8 @@
   function announce() { document.dispatchEvent(new CustomEvent('themechange', { detail: eff() })); }
   function label(btn) { btn.textContent = eff() === 'dark' ? 'Light' : 'Dark'; btn.setAttribute('aria-label', 'Switch to the ' + (eff() === 'dark' ? 'light' : 'dark') + ' colour scheme'); }
   document.addEventListener('DOMContentLoaded', function () {
+    var cur = document.querySelector('.sitenav [aria-current]');
+    if (cur && cur.scrollIntoView) { try { cur.scrollIntoView({ inline: 'center', block: 'nearest' }); } catch (e) {} }
     var btns = document.querySelectorAll('.theme-btn');
     btns.forEach(function (b) {
       label(b);

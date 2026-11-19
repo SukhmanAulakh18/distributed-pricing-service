@@ -4,142 +4,116 @@
 <title>USD forward hedge and credit charge</title>
 <meta name="description" content="Indicative USD forward rate and the credit charge for a corporate hedge, with and without a collateral agreement. Synthetic data.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Sometype+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="assets/site.css">
 <style>
-/* Hallmark · checked: 2026-11-18 · genre: modern-minimal (inferred) · theme: brand (site tokens, docs/case-study.html :root; white-label colours from docs/themes/*.json)
- * pre-emit critique: P4 H4 E4 S4 R5 V4 · weakest: S, a tool page has no hero image; the signature is the two bars drawn to one scale (no CSA against CSA), so the saving is seen before it is read
- * hero: none (app screen) · nav: none · footer: disclaimer only · redesign: full · built: the project · v2.0.0 */
+/* Hallmark · shape: Split Ticket, the blotter half (an app screen: a ruled order well beside the quoted ticket) · genre: modern-minimal · theme: custom (by request), docs/assets/DESIGN.md · signature: the pip numeral on the forward rate, the decision cut as a ticket stub · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V5 · weakest: S, a tool page has no hero image; the two bars drawn to one scale carry the saving, and the white-label tokens re-skin the pip marker, the action and the bars */
+/* Hallmark · dismissed 58 · answered: an app screen; the copy is the order form, the quote and the pricing notes a client reads before relying on a number */
 :root {
-  --bg: #f4f6f7; --surface: #ffffff; --ink: #14191c; --muted: #50595f; --line: #d5dadd;
-  --primary: #0d5c63; --primary-press: #094349; --on-primary: #ffffff; --accent: #0d5c63;
-  --good: #1d6b3a; --good-bg: #e1f1e7; --warn: #8a4b00; --warn-bg: #f8ebd5; --bad: #a32a1d; --bad-bg: #f9e1dd;
-  --banner-bg: #fff3c4; --banner-ink: #3d3000;
-  --display: "Newsreader", "Iowan Old Style", Georgia, serif;
-  --body: "IBM Plex Sans", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px;
-  --r1: 8px; --r2: 12px;
-  color-scheme: light;
+  /* white-label tokens: docs/themes/*.json overwrite these three, the page reads only them */
+  --primary: var(--color-accent);
+  --primary-press: color-mix(in oklab, var(--color-accent), var(--color-ink) 16%);
+  --accent: var(--color-signal-text);
+  --on-primary: var(--color-accent-ink);
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-scheme="light"]) {
-    --bg: #101416; --surface: #181e21; --ink: #eef1f2; --muted: #a7b0b5; --line: #323b40;
-    --primary: #2a9aa5; --primary-press: #3bb0bb; --on-primary: #06191b; --accent: #5cc4cd;
-    --good: #6fd08f; --good-bg: #17301f; --warn: #f0b45a; --warn-bg: #33250d; --bad: #f19a8f; --bad-bg: #3a1a16;
-    --banner-bg: #3a3000; --banner-ink: #fff0b0;
-    color-scheme: dark;
-  }
-}
-* { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; overflow-x: clip; scroll-behavior: smooth; }
-body { margin: 0; overflow-x: clip; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body); overflow-wrap: anywhere; accent-color: var(--primary); caret-color: var(--primary); scrollbar-color: var(--line) var(--bg); }
-::selection { background: var(--primary); color: var(--on-primary); }
-[hidden] { display: none !important; }
-h1, h2, h3 { font-family: var(--display); font-weight: 600; margin: 0; text-wrap: balance; min-width: 0; overflow-wrap: break-word; }
-p { margin: 0; text-wrap: pretty; }
-code { font: 0.875rem var(--mono); }
-:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-
-.banner { position: sticky; top: 44px; z-index: 2; background: var(--banner-bg); color: var(--banner-ink); padding: var(--s2) var(--s4); font-size: 0.875rem; line-height: 1.4; border-bottom: 1px solid var(--line); }
-.wrap { max-width: 1040px; margin: 0 auto; padding: var(--s5) var(--s4) var(--s7); }
-header { display: grid; gap: var(--s2); margin-bottom: var(--s5); }
-.brand { font-weight: 600; color: var(--accent); font-size: 0.875rem; }
-header h1 { font-size: clamp(2rem, 7vw, 3rem); line-height: 1.1; }
-header p { color: var(--muted); max-width: 52ch; }
-.badge { justify-self: start; display: inline-flex; align-items: center; min-height: 32px; padding: var(--s1) var(--s3); border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-size: 0.875rem; font-weight: 500; }
-.badge.live { color: var(--good); background: var(--good-bg); border-color: var(--good); }
-.badge.check { color: var(--muted); }
-
-.layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s5); align-items: start; }
-@media (min-width: 900px) { .layout { grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: var(--s6); } .panel { position: sticky; top: 64px; } }
-.panel, .card, details { color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r2); }
-.panel { padding: var(--s4) var(--s4) var(--s5); display: grid; gap: var(--s4); }
-.panel h2 { font-size: 1.25rem; }
-.grp { display: grid; gap: var(--s4); }
-.field { display: grid; gap: var(--s1); }
-.field > span, .lab { font-size: 0.875rem; color: var(--muted); font-weight: 500; }
-.help { font-size: 0.875rem; color: var(--muted); min-height: 1lh; }
-.help.bad { color: var(--bad); }
-select, input[type="number"] { width: 100%; min-height: 48px; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: var(--r1); padding: var(--s2) var(--s3); font-variant-numeric: tabular-nums; }
-select:hover, input[type="number"]:hover { border-color: var(--muted); }
-select:disabled, input:disabled { opacity: .5; cursor: not-allowed; }
-input[aria-invalid="true"] { border-color: var(--bad); }
-input[type="range"] { width: 100%; min-height: 44px; margin: 0; cursor: pointer; }
-.pair { display: grid; grid-template-columns: minmax(0, 120px) minmax(0, 1fr); gap: var(--s3); align-items: center; }
-.check { display: flex; gap: var(--s3); align-items: flex-start; min-height: 48px; cursor: pointer; }
-.check input { width: 24px; height: 24px; margin: var(--s1) 0 0; flex: none; }
-.check small { display: block; color: var(--muted); font-size: 0.875rem; }
-
-.out { display: grid; gap: var(--s4); min-width: 0; }
-.out[aria-busy="true"] > .card { opacity: .55; }
-.pair-cards { display: grid; gap: var(--s4); grid-template-columns: minmax(0, 1fr); }
-@media (min-width: 640px) { .pair-cards { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
-.card { padding: var(--s4) var(--s4) var(--s5); display: grid; gap: var(--s2); align-content: start; }
-.card h2 { font-family: var(--body); font-size: 0.875rem; font-weight: 500; color: var(--muted); }
-.card.lead { border-color: var(--primary); }
-.big { font: 600 clamp(2.25rem, 8vw, 3.25rem)/1.1 var(--display); font-variant-numeric: lining-nums tabular-nums; }
-.big small { font: 500 1rem var(--body); color: var(--muted); }
-.sub { color: var(--muted); font-size: 0.875rem; }
-.save { color: var(--good); font-weight: 600; }
-.chip { justify-self: start; padding: var(--s1) var(--s3); border-radius: 999px; font-weight: 600; font-size: 0.875rem; border: 1px solid currentColor; }
-.chip.approve { color: var(--good); background: var(--good-bg); }
-.chip.approve_with_csa { color: var(--warn); background: var(--warn-bg); }
-.chip.refer_to_credit { color: var(--bad); background: var(--bad-bg); }
-
-.bars { display: grid; gap: var(--s3); margin: var(--s2) 0; }
-.row { display: grid; gap: var(--s1); }
-.row .top { display: flex; justify-content: space-between; gap: var(--s3); font-size: 0.875rem; }
-.row .top b { font-variant-numeric: tabular-nums; font-weight: 600; }
+.banner { position: sticky; top: var(--nav-h); z-index: var(--z-sticky); padding: var(--space-xs) max(var(--gutter), calc((100% - var(--container)) / 2 + var(--gutter))); background: var(--color-paper-2); border-top: var(--rule-heavy) solid var(--primary); border-bottom: var(--rule-hair) solid var(--color-rule); font-size: var(--text-sm); line-height: 1.4; color: var(--color-ink-2); }
+.phead { display: grid; gap: var(--space-sm); padding-top: var(--space-xl); padding-bottom: var(--space-lg); justify-items: start; }
+.brandline { font: 800 var(--text-lg)/1 var(--font-display); font-stretch: 118%; letter-spacing: -0.02em; color: var(--accent); }
+.phead .lede { max-width: 44ch; }
+.badge { display: inline-flex; align-items: center; min-height: 32px; padding: 0 var(--space-sm); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-control); font-size: var(--text-sm); font-weight: 600; color: var(--color-muted); }
+.badge.live { color: var(--color-ok); border-color: var(--color-ok); }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-xl); align-items: start; padding-bottom: var(--space-lg); }
+@media (min-width: 62rem) { .layout { grid-template-columns: minmax(0, 21rem) minmax(0, 1fr); gap: var(--gap-columns); } .panel { position: sticky; top: calc(var(--nav-h) + 56px); } }
+.side { display: grid; gap: var(--space-md); min-width: 0; }
+.panel { display: grid; gap: var(--space-md); padding: var(--space-lg); background: var(--color-paper-2); color: var(--color-ink); border-top: var(--rule-heavy) solid var(--color-ink); }
+.panel h2 { font-size: var(--text-lg); font-weight: 600; max-width: none; }
+.grp { display: grid; gap: var(--space-md); }
+.field { display: grid; gap: var(--space-2xs); }
+.field > span, .lab { font-size: var(--text-sm); color: var(--color-muted); font-weight: 600; }
+.help { font-size: var(--text-sm); color: var(--color-muted); min-height: 1lh; }
+.help.bad { color: var(--color-fault); }
+select, input[type="number"] { width: 100%; min-height: 48px; padding: var(--space-xs) var(--space-sm); border: var(--rule-hair) solid var(--color-muted); border-radius: var(--radius-control); background: var(--color-paper); color: var(--color-ink); font: 400 var(--text-md)/1.3 var(--font-mono); font-variant-numeric: tabular-nums; }
+select:hover, input[type="number"]:hover { border-color: var(--color-ink); }
+select:disabled, input:disabled { opacity: 0.55; cursor: not-allowed; }
+input[aria-invalid="true"] { border-color: var(--color-fault); }
+.pair { display: grid; grid-template-columns: minmax(0, 7.5rem) minmax(0, 1fr); gap: var(--space-sm); align-items: center; }
+.check { display: flex; gap: var(--space-sm); align-items: flex-start; min-height: 48px; cursor: pointer; }
+.check input { width: 24px; height: 24px; margin: var(--space-3xs) 0 0; flex: none; accent-color: var(--accent); }
+.check small { display: block; color: var(--color-muted); font-size: var(--text-sm); }
+.out { display: grid; gap: var(--space-lg); min-width: 0; }
+.out[aria-busy="true"] > .blk, .out[aria-busy="true"] .pair-blks { opacity: 0.55; }
+.pair-blks { display: grid; gap: var(--space-lg); grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 40rem) { .pair-blks { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--gap-columns); } }
+.blk { display: grid; gap: var(--space-xs); align-content: start; min-width: 0; padding-top: var(--space-md); border-top: var(--rule-heavy) solid var(--color-ink); }
+.blk h2.lab, .decision h2.lab { font: 600 var(--text-sm)/1.3 var(--font-body); letter-spacing: 0; max-width: none; }
+.rate { grid-template-columns: minmax(0, 1fr); }
+.rate-fig { font-size: clamp(3.25rem, 1.2rem + 8vw, 7rem); }
+.rate-fig .pip .pp { background: var(--primary); color: var(--on-primary); }
+.unit { font-weight: 600; }
+.fig-big { font: 800 var(--text-3xl)/1 var(--font-display); font-stretch: 118%; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.sub { color: var(--color-muted); font-size: var(--text-sm); }
+.save { color: var(--color-ok); font-weight: 600; }
+.decision { --vbg: var(--color-ok); --vink: var(--color-paper); display: grid; border: var(--rule-heavy) solid var(--color-ink); background: var(--color-paper); min-width: 0; }
+.decision[data-v="approve_with_csa"] { --vbg: var(--color-accent); --vink: var(--color-accent-ink); }
+.decision[data-v="refer_to_credit"] { --vbg: var(--color-fault); --vink: var(--color-paper); }
+.stub { display: grid; gap: var(--space-xs); padding: var(--space-lg); background: var(--vbg); color: var(--vink); }
+.stub .lab { color: inherit; }
+.dword { font: 800 var(--text-2xl)/1.05 var(--font-display); font-stretch: 118%; letter-spacing: -0.03em; overflow-wrap: break-word; min-width: 0; }
+.dbody { display: grid; gap: var(--space-sm); padding: var(--space-md) var(--space-lg) var(--space-lg); border-top: var(--rule-heavy) dashed var(--color-ink); }
+.qbars { display: grid; gap: var(--space-sm); margin: var(--space-xs) 0; }
+.row { display: grid; gap: var(--space-2xs); }
+.row .top { display: flex; justify-content: space-between; gap: var(--space-sm); font-size: var(--text-sm); }
+.row .top b { font: 600 var(--text-sm) var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .row.sel .top span:first-child { font-weight: 600; }
-.row:not(.sel) svg { opacity: .55; }
-svg.bar { display: block; width: 100%; height: 16px; overflow: hidden; }
-.bar .track { fill: var(--line); }
-.bar .fill { transform-box: fill-box; transform-origin: left center; }
-.bar .fill.off { fill: var(--muted); }
-.bar .fill.on { fill: var(--primary); }
-.bar .fill.good { fill: var(--good); } .bar .fill.warn { fill: var(--warn); } .bar .fill.bad { fill: var(--bad); }
-.bar .limit { stroke: var(--ink); stroke-width: 2; }
+.row:not(.sel) svg { opacity: 0.55; }
+svg.qbar { display: block; width: 100%; height: 16px; overflow: hidden; }
+.qbar .track { fill: var(--color-paper-3); }
+.qbar .fill { transform-box: fill-box; transform-origin: left center; }
+.qbar .fill.off { fill: var(--color-muted); }
+.qbar .fill.on { fill: var(--accent); }
+.qbar .fill.good { fill: var(--color-ok); } .qbar .fill.warn { fill: var(--color-signal-text); } .qbar .fill.bad { fill: var(--color-fault); }
+.qbar .limit { stroke: var(--color-ink); stroke-width: 2; }
 @keyframes grow { from { transform: scaleX(0); } }
-@media (prefers-reduced-motion: no-preference) { .bar .fill { animation: grow .4s ease-out; } }
-
-.live-meta { font-size: 0.875rem; color: var(--muted); padding: var(--s3) var(--s4); border: 1px solid var(--line); border-radius: var(--r1); background: var(--surface); font-variant-numeric: tabular-nums; }
-.busy { height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
+@media (prefers-reduced-motion: no-preference) { .qbar .fill { animation: grow var(--dur-long) var(--ease-out); } }
+.live-meta { padding-top: var(--space-sm); border-top: var(--rule-hair) solid var(--color-rule); font: 400 var(--text-sm)/1.5 var(--font-mono); color: var(--color-muted); font-variant-numeric: tabular-nums; }
+.busy { height: 4px; background: var(--color-paper-3); overflow: hidden; }
 .busy::after { content: ""; display: block; height: 100%; width: 40%; background: var(--primary); }
 @keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
-@media (prefers-reduced-motion: no-preference) { .busy::after { animation: slide 1.1s ease-in-out infinite; } }
-.notice, .err { border-radius: var(--r1); padding: var(--s3) var(--s4); font-size: 0.875rem; }
-.notice { background: var(--warn-bg); color: var(--warn); }
-.err { background: var(--bad-bg); color: var(--bad); }
-
-details { padding: var(--s1) var(--s4); margin-top: var(--s4); }
-summary { cursor: pointer; font-weight: 600; min-height: 48px; display: flex; align-items: center; border-radius: var(--r1); }
-details > :not(summary) { margin-bottom: var(--s4); }
-details ul { margin: 0 0 var(--s3); padding-left: var(--s5); display: grid; gap: var(--s2); }
-pre { margin: 0; padding: var(--s3); background: var(--bg); border: 1px solid var(--line); border-radius: var(--r1); overflow-x: auto; font: 0.875rem/1.5 var(--mono); }
-.btn { min-height: 44px; padding: var(--s2) var(--s4); border-radius: var(--r1); border: 1px solid var(--primary); background: var(--surface); color: var(--primary); font: 600 0.875rem var(--body); cursor: pointer; }
-.btn:hover { background: var(--primary); color: var(--on-primary); }
-.btn:active { background: var(--primary-press); color: var(--on-primary); }
-.btn:disabled { opacity: .5; cursor: not-allowed; }
-footer { color: var(--muted); font-size: 0.875rem; margin-top: var(--s5); max-width: 64ch; }
-.side details { margin-top: 0; }
-
-/* site nav, shared by every page */
-.sitenav { position: sticky; top: 0; z-index: 20; background: var(--bg); border-bottom: 1px solid var(--line); }
-.sitenav ul { list-style: none; margin: 0 auto; padding: 0 12px; max-width: 1080px; display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
-.sitenav a { display: flex; align-items: center; min-height: 44px; padding: 0 12px; color: var(--muted); text-decoration: none; font: 500 0.9375rem/1 var(--body); white-space: nowrap; border-bottom: 2px solid transparent; }
-.sitenav a:hover { color: var(--ink); }
-.sitenav a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent, var(--primary)); }
-.sitenav a:focus-visible { outline: 3px solid var(--accent, var(--primary)); outline-offset: -3px; }
-</style></head>
+@media (prefers-reduced-motion: no-preference) { .busy::after { animation: slide 1.1s var(--ease-in-out) infinite; } }
+.notice, .err { padding: var(--space-sm) var(--space-md); font-size: var(--text-sm); background: var(--color-paper-2); border-top: var(--rule-heavy) solid var(--color-signal-text); }
+.err { border-top-color: var(--color-fault); }
+details { border-top: var(--rule-hair) solid var(--color-rule); }
+details:last-of-type { border-bottom: var(--rule-hair) solid var(--color-rule); }
+summary { display: flex; align-items: center; min-height: 48px; cursor: pointer; font-weight: 600; }
+summary:hover { color: var(--accent); }
+details > :not(summary) { margin-bottom: var(--space-md); }
+details ul { margin: 0 0 var(--space-sm); padding-left: var(--space-lg); display: grid; gap: var(--space-xs); max-width: 72ch; }
+.side details { border: 0; }
+.side details > summary { padding: 0 var(--space-lg); background: var(--color-paper-2); }
+.side details[open] { background: var(--color-paper-2); }
+.side details > :not(summary) { margin-inline: var(--space-lg); }
+.side details > pre { margin-top: 0; }
+.more { display: grid; gap: 0; margin-top: var(--space-lg); }
+.btn { background: var(--primary); border-color: var(--primary); color: var(--on-primary); justify-self: start; }
+.btn:hover { background: var(--primary-press); border-color: var(--primary-press); }
+.foot { margin-top: var(--space-xl); }
+</style>
+<script src="assets/site.js"></script>
+</head>
 <body>
-<nav class="sitenav" aria-label="Site"><ul><li><a href="index.html">Home</a></li><li><a href="portal.html" aria-current="page">Client hedge</a></li><li><a href="desk.html#predeal">Decision API</a></li><li><a href="platform.html">Library &amp; platform</a></li><li><a href="kit.html">Guided tour</a></li><li><a href="case-study.html">Case study</a></li></ul></nav>
-<script>(function(){var a=document.querySelector(".sitenav [aria-current]");if(a&&a.scrollIntoView)try{a.scrollIntoView({inline:"center",block:"nearest"})}catch(e){}})()</script>
+<nav class="sitenav" aria-label="Site"><div class="sitenav-in">
+  <a class="mark" href="index.html" aria-label="Distributed Pricing Service, home"><span class="glyph" aria-hidden="true"></span><span class="wm">Pricing Service</span></a>
+  <ul><li><a href="index.html">Home</a></li><li class="g"><a href="portal.html" aria-current="page">Client hedge</a></li><li><a href="desk.html#predeal">Decision API</a></li><li class="g"><a href="platform.html">Library &amp; platform</a></li><li class="g"><a href="kit.html">Guided tour</a></li><li><a href="case-study.html">Case study</a></li></ul>
+  <button class="theme-btn" type="button">Dark</button>
+</div></nav>
 <div class="banner" role="note" id="banner">Indicative. Synthetic market data and counterparty. Precomputed by the platform&rsquo;s C++ engine via POST /risk/predeal; not a quote.</div>
-<main class="wrap">
-<header>
-  <div class="brand" id="wordmark">Hedge portal</div>
-  <h1>Sell USD forward</h1>
-  <p id="tagline">Sell USD forward and see what the bank charges for your credit.</p>
+<main>
+<div class="container">
+<header class="phead">
+  <div class="brandline" id="wordmark">Hedge portal</div>
+  <h1 class="h1-s">Sell USD forward</h1>
+  <p class="lede" id="tagline">Sell USD forward and see what the bank charges for your credit.</p>
   <span class="badge check" id="badge" role="status">Precomputed by the engine (synthetic)</span>
 </header>
 
@@ -165,7 +139,7 @@ footer { color: var(--muted); font-size: 0.875rem; margin-top: var(--s5); max-wi
 <details id="runlive">
   <summary>Run it live</summary>
   <p class="sub">With the engine running, this page prices any hedge from USD 0.1M to 25M and 0.25 to 5 years, instead of looking one up.</p>
-  <pre id="cmds">make up
+  <pre id="cmds" class="console" tabindex="0">make up
 .venv/bin/python -m http.server 8001 --directory docs
 # open:
 http://localhost:8001/portal.html?api=http://localhost:8000</pre>
@@ -180,6 +154,7 @@ http://localhost:8001/portal.html?api=http://localhost:8000</pre>
 </section>
 </div>
 
+<div class="more">
 <details>
   <summary>How this is priced</summary>
   <ul>
@@ -195,9 +170,17 @@ http://localhost:8001/portal.html?api=http://localhost:8000</pre>
   <summary>Assumptions (all synthetic)</summary>
   <ul id="assumptions"></ul>
 </details>
-
-<footer><p id="disclaimer"></p></footer>
+</div>
+</div>
 </main>
+<footer class="foot"><div class="container">
+  <nav aria-label="Links">
+    <a href="case-study.html">Case study</a>
+    <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service">Source repository</a>
+    <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/MODELS.md">Models and validation</a>
+  </nav>
+  <p id="disclaimer"></p>
+</div></footer>
 
 <script>
 "use strict";
@@ -232,9 +215,19 @@ async function loadTheme() {
     try { t = await getJson("../local/themes/" + name + ".json"); }
     catch (e2) { t = name === "neutral" ? {} : await getJson("themes/neutral.json").catch(() => ({})); }
   }
-  const rule = (c) => Object.entries(c || {}).map(([k, v]) => "--" + k.replace(/[^a-z-]/g, "") + ":" + String(v).replace(/[;{}]/g, "")).join(";");
+  // The theme sets --primary (the one filled action and the pip marker), --primary-press and --accent
+  // (the readable form on the page). The text on a filled primary is chosen here, for contrast.
+  const lum = (hex) => { const m = /^#([0-9a-f]{6})$/i.exec(hex); if (!m) return null; const v = parseInt(m[1], 16);
+    const c = [v >> 16 & 255, v >> 8 & 255, v & 255].map((x) => { x /= 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); });
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+  const rule = (c) => {
+    const o = Object.assign({}, c || {}), l = lum(o.primary);
+    if (l !== null && !o["on-primary"]) o["on-primary"] = (1.05 / (l + 0.05) >= (l + 0.05) / 0.06) ? "oklch(99% 0 0)" : "oklch(19% 0.035 262)";
+    return Object.entries(o).map(([k, v]) => "--" + k.replace(/[^a-z-]/g, "") + ":" + String(v).replace(/[;{}]/g, "")).join(";");
+  };
   const css = ":root{" + rule(t.colors && t.colors.light) + "}" +
-    "@media (prefers-color-scheme: dark){:root:not([data-scheme=\"light\"]){" + rule(t.colors && t.colors.dark) + "}}";
+    "@media (prefers-color-scheme: dark){:root:not([data-theme=\"light\"]){" + rule(t.colors && t.colors.dark) + "}}" +
+    ":root[data-theme=\"dark\"]{" + rule(t.colors && t.colors.dark) + "}";
   const s = document.createElement("style"); s.textContent = css; document.head.appendChild(s);
   if (t.wordmark) $("wordmark").textContent = t.wordmark;
   if (t.tagline) $("tagline").textContent = t.tagline;
@@ -301,8 +294,10 @@ async function quote(n, t, csa, signal) {
   }
 }
 
+const pip = (x) => { const s = x.toFixed(4), k = s.length - 2;
+  return '<span class="pip"><span class="sr">' + s + '</span><span aria-hidden="true"><span class="pf">' + s.slice(0, k) + '</span><span class="pp">' + s.slice(k) + '</span></span></span>'; };
 const bar = (frac, cls, limitAt) =>
-  '<svg class="bar" role="presentation" focusable="false"><rect class="track" x="0" y="4" width="100%" height="8" rx="4"/>' +
+  '<svg class="qbar" role="presentation" focusable="false"><rect class="track" x="0" y="4" width="100%" height="8"/>' +
   '<rect class="fill ' + cls + '" x="0" y="4" width="100%" height="8" style="transform:scaleX(' + clamp(frac, 0.004, 1).toFixed(4) + ')"/>' +
   (limitAt == null ? "" : '<line class="limit" x1="' + (limitAt * 100).toFixed(2) + '%" x2="' + (limitAt * 100).toFixed(2) + '%" y1="0" y2="16"/>') + '</svg>';
 
@@ -327,19 +322,20 @@ function view(off, on, n, t, meta) {
   const row = (name, val, frac, cls, sel, extra) => '<div class="row' + (sel ? ' sel' : '') + '"><div class="top"><span>' + name + (sel ? ' (selected)' : '') + '</span><b>' + val + '</b></div>' + bar(frac, cls, extra) + '</div>';
   const livebar = meta ? '<p class="live-meta">Priced live by the engine. Round trip ' + meta.rt + ' ms for two quotes, one after the other. Engine time ' + meta.a + ' ms without a CSA, ' + meta.b + ' ms with one.</p>' : '';
   const html =
-    '<section class="card lead"><h2>Your forward rate</h2><div class="big">' + off.forward_rate.toFixed(4) + ' <small>CAD per USD</small></div>' +
+    '<section class="blk rate" aria-label="Your forward rate"><h2 class="lab">Your forward rate</h2><div class="rate-fig">' + pip(off.forward_rate) + '</div>' +
+      '<p class="unit">CAD per USD</p>' +
       '<p class="sub">Sell ' + fmtUsd(n) + ' in ' + fmtYrs(t) + ' for about ' + fmtCad(n * off.forward_rate) + '. Spot ' + data.inputs.spot_cad_per_usd.toFixed(2) + '.</p></section>' +
-    '<div class="pair-cards">' +
-    '<section class="card" aria-label="Credit charge"><h2>Credit charge, a year</h2><div class="big">' + fmtBp(csaOn ? withCsa : unc) + '</div>' +
-      '<div class="bars" role="img" aria-label="Credit charge drawn to one scale: ' + fmtBp(unc) + ' without a CSA, ' + fmtBp(withCsa) + ' with a CSA.">' +
+    '<div class="pair-blks">' +
+    '<section class="blk" aria-label="Credit charge"><h2 class="lab">Credit charge, a year</h2><div class="fig-big">' + fmtBp(csaOn ? withCsa : unc) + '</div>' +
+      '<div class="qbars" role="img" aria-label="Credit charge drawn to one scale: ' + fmtBp(unc) + ' without a CSA, ' + fmtBp(withCsa) + ' with a CSA.">' +
         row("No CSA", fmtBp(unc), unc / mx, "off", !csaOn) + row("With a CSA", fmtBp(withCsa), withCsa / mx, "on", csaOn) + '</div>' +
       csaCard + '<p class="sub">No CSA is about ' + fmtCad(off.uncollateralized_cva) + ' upfront.</p></section>' +
-    '<section class="card" aria-label="Fit with your credit line"><h2>Fit with your credit line (' + (csaOn ? "with" : "without") + ' a CSA)</h2>' +
-      '<span class="chip ' + cur.verdict + '">' + VERDICT[cur.verdict] + '</span>' +
-      '<div class="bars" role="meter" aria-label="Credit line used" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.min(100, Math.round(use * 100)) + '" aria-valuetext="' + Math.round(use * 100) + ' percent of the line">' +
+    '<section class="decision" data-v="' + cur.verdict + '" aria-label="Fit with your credit line (' + (csaOn ? "with" : "without") + ' a CSA)">' +
+      '<div class="stub"><h2 class="lab">Decision, ' + (csaOn ? "with" : "without") + ' a CSA</h2><strong class="dword">' + VERDICT[cur.verdict] + '</strong></div>' +
+      '<div class="dbody"><div class="qbars" role="meter" aria-label="Credit line used" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.min(100, Math.round(use * 100)) + '" aria-valuetext="' + Math.round(use * 100) + ' percent of the line">' +
         row("No CSA", Math.round(uOff * 100) + "%", uOff / top, tone(uOff, off.verdict), !csaOn, 1 / top) +
         row("With a CSA", Math.round(uOn * 100) + "%", uOn / top, tone(uOn, on.verdict), csaOn, 1 / top) + '</div>' +
-      '<p class="sub">The dark tick is your line, ' + fmtCad(limit) + ' on 95th percentile peak exposure. ' + line + '</p></section>' +
+      '<p class="sub">The dark tick is your line, ' + fmtCad(limit) + ' on 95th percentile peak exposure. ' + line + '</p></div></section>' +
     '</div>' + livebar;
   return html;
 }
@@ -367,7 +363,7 @@ async function renderLive() {
   $("snap").textContent = "";
   const prev = $("out").firstElementChild;
   setBusy(true);
-  if (!prev || !prev.classList.contains("card")) $("out").innerHTML = '<p class="sub">Pricing ' + data.inputs.n_scenarios.toLocaleString("en-CA") + ' scenarios on the engine.</p><div class="busy" role="presentation"></div>';
+  if (!prev || !prev.classList.contains("blk")) $("out").innerHTML = '<p class="sub">Pricing ' + data.inputs.n_scenarios.toLocaleString("en-CA") + ' scenarios on the engine.</p><div class="busy" role="presentation"></div>';
   else if (!$("out").querySelector(".busy")) $("out").insertAdjacentHTML("afterbegin", '<div class="busy" role="presentation"></div><p class="sub">Pricing on the engine.</p>');
   const t0 = performance.now();
   try {
@@ -508,5 +504,4 @@ async function probe(base) {
     setBusy(false);
   }
 })();
-</script>
-</body></html>
+</script></body></html>
