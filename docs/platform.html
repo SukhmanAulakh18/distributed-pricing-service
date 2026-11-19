@@ -225,13 +225,21 @@ footer li a { display: inline-flex; align-items: center; min-height: 44px; }
   html { scroll-behavior: auto; }
   * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }
+/* The section nav below is the one that sticks here; the site nav scrolls away so the two never overlap. */
+.sitenav { background: var(--bg); border-bottom: 1px solid var(--line); }
+.sitenav ul { list-style: none; margin: 0 auto; padding: 0 12px; max-width: 1080px; display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+.sitenav a { display: flex; align-items: center; min-height: 44px; padding: 0 12px; color: var(--muted); text-decoration: none; font: 500 0.9375rem/1 var(--body); white-space: nowrap; border-bottom: 2px solid transparent; }
+.sitenav a:hover { color: var(--ink); }
+.sitenav a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent, var(--primary)); }
+.sitenav a:focus-visible { outline: 3px solid var(--accent, var(--primary)); outline-offset: -3px; }
 </style></head>
 <body>
+<nav class="sitenav" aria-label="Site"><ul><li><a href="index.html">Home</a></li><li><a href="portal.html">Client hedge</a></li><li><a href="desk.html#predeal">Decision API</a></li><li><a href="platform.html" aria-current="page">Library &amp; platform</a></li><li><a href="kit.html">Guided tour</a></li><li><a href="case-study.html">Case study</a></li></ul></nav>
 <nav class="top" aria-label="Sections"><div class="in">
   <a class="brand" href="#top">Library and platform</a>
   <a href="#explorer">Architecture</a><a href="#library">Library</a><a href="#scale">Scale</a><a href="#data">Data</a><a href="#operate">Operate</a><a href="#ship">Ship</a>
   <span class="gap"></span>
-  <a href="desk.html">Customer product</a><a href="index.html">Case study</a>
+  <a href="index.html#demo">Customer product</a><a href="case-study.html">Case study</a>
   <button type="button" id="theme" aria-label="Switch colour theme">Theme</button>
 </div></nav>
 
@@ -244,7 +252,7 @@ footer li a { display: inline-flex; align-items: center; min-height: 44px; }
       <a class="cta" href="#explorer">Trace a request</a>
       <a class="txt" href="desk.html">The desk product</a>
       <a class="txt" href="portal.html">Client portal</a>
-      <a class="txt" href="index.html">Case study</a>
+      <a class="txt" href="case-study.html">Case study</a>
     </div>
   </div>
   <ul class="proof" aria-label="Four measured proof numbers">
@@ -464,7 +472,7 @@ PYBIND11_MODULE(pricer_core, m, py::mod_gil_not_used())</pre>
 
 <footer><div class="wrap">
   <p><strong>Honest limits.</strong> Market data and trades are synthetic. Every measurement is from one 10-core laptop running a kind cluster, so absolute speeds will differ on real hardware. The models are textbook: Black-Scholes, geometric Brownian motion Monte Carlo and a simple CVA. The chaos run is one 10-minute run, not a soak test.</p>
-  <ul><li><a href="https://github.com/SukhmanAulakh18/distributed-pricing-service">Repository</a></li><li><a href="index.html">Case study</a></li><li><a href="desk.html">Customer product, the desk</a></li><li><a href="portal.html">Client portal</a></li><li><a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/PERFORMANCE_REVIEW.md">Performance review</a></li></ul>
+  <ul><li><a href="https://github.com/SukhmanAulakh18/distributed-pricing-service">Repository</a></li><li><a href="case-study.html">Case study</a></li><li><a href="index.html#demo">Customer product, the desk</a></li><li><a href="portal.html">Client portal</a></li><li><a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/PERFORMANCE_REVIEW.md">Performance review</a></li></ul>
 </div></footer>
 
 <script>
