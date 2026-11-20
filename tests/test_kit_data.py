@@ -51,11 +51,12 @@ def test_page_skins_match_the_theme_files():
 
 
 def test_front_door_fallbacks_match_the_data():
-    """The front door's no-script defaults (10M USD, 2 years) and proof strip come from kit.json."""
+    """The front door's no-script defaults (5M USD, 2 years) and proof strip come from kit.json."""
     d = json.load(open(KIT))
     html = open(os.path.join(ROOT, "docs", "index.html")).read()
-    c = d["cells"]["10000000|2.0"]
+    c = d["cells"]["5000000|2.0"]
     assert f'{c["forward_rate"]:.4f}' in html
+    assert f'{c["utilisation"] * 100:.0f}%' in html and c["verdict"] in html
     assert f'{c["off_bps"]:.1f}' in html and f'{c["on_bps"]:.1f}' in html
     assert f'{round((1 - c["on_bps"] / c["off_bps"]) * 100)}%' in html
     assert f'{d["proof"]["chaos_availability_pct"]:.3f}%' in html

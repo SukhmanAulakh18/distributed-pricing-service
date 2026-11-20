@@ -10,11 +10,11 @@
 <body>
 <nav class="sitenav" aria-label="Site"><div class="sitenav-in">
   <a class="mark" href="index.html" aria-label="Distributed Pricing Service, home"><span class="glyph" aria-hidden="true"></span><span class="wm">Pricing Service</span></a>
-  <ul><li><a href="index.html">Home</a></li><li class="g"><a href="portal.html">Client hedge</a></li><li><a href="desk.html#predeal">Decision API</a></li><li class="g"><a href="platform.html" aria-current="page">Library &amp; platform</a></li><li class="g"><a href="kit.html">Guided tour</a></li><li><a href="case-study.html">Case study</a></li></ul>
+  <ul><li><a href="index.html">Home</a></li><li class="g"><a href="portal.html">Client hedge</a></li><li><a href="desk.html#predeal">Bank decision</a></li><li><a href="kit.html">60-second tour</a></li><li class="g"><a href="platform.html" aria-current="page">Engineering evidence</a></li><li><a href="case-study.html">Case study</a></li></ul>
   <button class="theme-btn" type="button">Dark</button>
 </div></nav>
 <nav class="subnav" aria-label="Sections"><ul>
-  <li><a href="#top">Top</a></li><li><a href="#explorer">Architecture</a></li><li><a href="#library">Library</a></li><li><a href="#scale">Scale</a></li><li><a href="#data">Data</a></li><li><a href="#operate">Operate</a></li><li><a href="#ship">Ship</a></li>
+  <li><a href="#top">Top</a></li><li><a href="#decisions">Decisions</a></li><li><a href="#explorer">Architecture</a></li><li><a href="#library">Library</a></li><li><a href="#scale">Scale</a></li><li><a href="#data">Data</a></li><li><a href="#operate">Operate</a></li><li><a href="#ship">Ship</a></li>
   <li class="sp" aria-hidden="true"></li>
   <li><a href="index.html#demo">Customer product</a></li><li><a href="case-study.html">Case study</a></li>
 </ul></nav>
@@ -25,6 +25,7 @@
   <div class="hero-grid">
     <div class="hero-copy">
       <p class="lede">Measured on a laptop cluster; every number links to its result file.</p>
+      <p class="cap">Terms: <b>PFE</b> (peak exposure: how much the counterparty could owe us in a bad-case, 95th-percentile scenario); <b>CVA</b> (the price of the counterparty’s default risk); <b>GIL</b> (Python’s global interpreter lock, which lets only one thread run Python code at a time); <b>KEDA</b> (a Kubernetes autoscaler that adds or removes workers as the queue grows or empties).</p>
       <div class="btns">
         <a class="btn" href="#explorer">Trace a request</a>
         <a class="link" href="desk.html">The desk product</a>
@@ -41,6 +42,19 @@
   </div>
 </div></header>
 <noscript><div class="container"><p class="callout warn">The charts and the architecture explorer need JavaScript. The key numbers, the siege scorecard, the console captures and every evidence file link below work without it.</p></div></noscript>
+
+<section class="sec" id="decisions" aria-labelledby="h-dec"><div class="container">
+  <div class="sec-head"><h2 id="h-dec">Five engineering decisions, each measured.</h2>
+  <p>Each row is a problem, the decision that fixed it and the measured outcome, with a link to the chart.</p></div>
+  <ul class="siege">
+    <li><h3>Threads took turns</h3><dl><dt>Problem</dt><dd>Python threads calling the engine ran one at a time.</dd><dt>Decision</dt><dd>Release the GIL inside the pybind11 binding.</dd><dt>Outcome</dt><dd>GIL held: 44 to 46 pricings/s from 1 to 8 threads. Released: 45.8 to 175.5 pricings/s.</dd></dl><a href="#d-gil">See the chart</a></li>
+    <li><h3>One call per option is slow</h3><dl><dt>Problem</dt><dd>A Python call for every option spends its time on call overhead.</dd><dt>Decision</dt><dd>One batch call over NumPy arrays read in place (zero-copy), split across threads.</dd><dt>Outcome</dt><dd>Pure Python loop 0.85M/s, per-call binding 3.3M/s, batch on 8 threads 147M/s.</dd></dl><a href="#d-batch">See the chart</a></li>
+    <li><h3>Urgent requests waited</h3><dl><dt>Problem</dt><dd>Intraday requests queued behind big batch books.</dd><dt>Decision</dt><dd>Separate priority lanes in Redis Streams.</dd><dt>Outcome</dt><dd>Intraday during batch: 5.17 s first-in-first-out, 0.32 s with priority lanes.</dd></dl><a href="#d-pri">See the chart</a></li>
+    <li><h3>Results changed with worker count</h3><dl><dt>Problem</dt><dd>The same book gave different numbers on different worker counts.</dd><dt>Decision</dt><dd>Common random numbers seeded by market-data version, names and nodes only.</dd><dt>Outcome</dt><dd>Identical PFE and CVA on 1, 2, 4 and 8 workers.</dd></dl><a href="#d-workers">See the table</a></li>
+    <li><h3>Storage sat in the request path</h3><dl><dt>Problem</dt><dd>Writing every price to Cassandra before answering added latency.</dd><dt>Decision</dt><dd>A write-behind log: a background thread drains a bounded queue.</dd><dt>Outcome</dt><dd>Price p99 5.49 ms with a synchronous write, 1.65 ms with write-behind.</dd></dl><a href="#d-wb">See the chart</a></li>
+  </ul>
+  <p class="ev">Evidence: <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/bench/results/core.json">bench/results/core.json</a> (gil, batch), <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/bench/results/priority.json">priority.json</a>, <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/bench/results/exposure.json">exposure.json</a>, <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/bench/results/write_behind.json">write_behind.json</a>.</p>
+</div></section>
 
 <section class="sec" id="explorer" aria-labelledby="h-exp"><div class="container">
   <div class="sec-head"><h2 id="h-exp">Pick any part of the system and see why it is there.</h2>
@@ -86,16 +100,16 @@
 
 <section class="sec" id="library" aria-labelledby="h-lib"><div class="container">
   <div class="sec-head"><h2 id="h-lib">The C++ core lets Python threads run in parallel and reads NumPy memory in place.</h2>
-  <p>pybind11 releases the GIL around every pricing call and takes arrays without copying them; the module keeps no global state.</p></div>
+  <p>pybind11 releases the GIL (Python’s one-thread-at-a-time lock) around every pricing call and takes arrays without copying them; the module keeps no global state.</p></div>
 <figure class="code"><figcaption>core/python/bindings.cpp</figcaption><pre class="console cmd" tabindex="0">m.def("price_european_mc", &amp;european, ..., py::call_guard&lt;py::gil_scoped_release&gt;());
 PYBIND11_MODULE(pricer_core, m, py::mod_gil_not_used())</pre></figure>
   <div class="cols-2">
-    <div class="block"><h3>Threads scale only when the GIL is released</h3><div class="vz console" data-id="gil" data-h="300" data-label="Line chart: pricing calls per second against Python threads, GIL released rises to 176 and GIL held stays at about 45"></div></div>
-    <div class="block"><h3>One call, eight threads: 147M prices a second</h3><div class="vz console" data-id="batch" data-h="300" data-label="Bar chart on a log axis: options per second for a pure Python loop, a per-call binding, bs_batch on one thread and bs_batch on eight threads"></div></div>
+    <div class="block" id="d-gil"><h3>Threads scale only when the GIL is released</h3><div class="vz console" data-id="gil" data-h="300" data-label="Line chart: pricing calls per second against Python threads, GIL released rises to 176 and GIL held stays at about 45"></div></div>
+    <div class="block" id="d-batch"><h3>One call, eight threads: 147M prices a second</h3><div class="vz console" data-id="batch" data-h="300" data-label="Bar chart on a log axis: options per second for a pure Python loop, a per-call binding, bs_batch on one thread and bs_batch on eight threads"></div></div>
   </div>
   <p class="ev">Evidence: <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/bench/results/core.json">bench/results/core.json</a> (gil, batch) on a 10-core arm64 laptop; code in <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/core/python/bindings.cpp">core/python/bindings.cpp</a>.</p>
 
-  <div class="block">
+  <div class="block" id="d-workers">
     <h3>Same numbers on 1, 2, 4 or 8 workers</h3>
     <p class="cap">A counter-based random stream means a scenario draws the same numbers wherever it runs. Choose a worker count: speed changes, the answer does not.</p>
     <div class="ctl"><span class="lab" id="w-lab">Workers</span><div class="seg" role="group" aria-labelledby="w-lab" id="wseg"></div></div>
@@ -124,14 +138,14 @@ PYBIND11_MODULE(pricer_core, m, py::mod_gil_not_used())</pre></figure>
 
 <section class="sec alt" id="scale" aria-labelledby="h-scale"><div class="container">
   <div class="sec-head"><h2 id="h-scale">Add workers and book throughput rises; intraday pricing stays fast beside batch.</h2>
-  <p>Books split into tasks on Redis Streams. Two streams keep risk batch from queueing ahead of the trading desk, and KEDA sizes each pool on its own lag.</p></div>
+  <p>Books split into tasks on Redis Streams. Two streams keep risk batch from queueing ahead of the trading desk, and KEDA (the autoscaler) sizes each pool on its own lag.</p></div>
   <div class="block">
     <div class="ctl"><h3>Book pricing, trades a second</h3><div class="seg" role="group" aria-label="Chart view" id="pfseg"><button type="button" aria-pressed="true" data-v="workers">By workers</button><button type="button" aria-pressed="false" data-v="task">By task size</button></div></div>
     <div class="vz console" data-id="pf" data-h="320" data-label="Chart of book pricing throughput in trades per second, by worker count for books of 1,000, 10,000 and 50,000 trades, or by task size at 4 workers"></div>
     <p class="ev">Evidence: <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/bench/results/portfolio.json">bench/results/portfolio.json</a>. A 10,000-trade book goes from 2,295 trades a second on 1 worker to 7,335 on 8. Tasks of one trade are 2.6 times slower than tasks of 50; the default sits on the plateau.</p>
   </div>
   <div class="cols-2">
-    <div class="block"><h3>Intraday price during a batch run</h3><div class="vz console" data-id="pri" data-h="300" data-label="Grouped bars: a 1,000-trade intraday book takes 0.22 s idle and 5.17 s during batch under FIFO, versus 0.30 s idle and 0.32 s during batch with priority streams"></div>
+    <div class="block" id="d-pri"><h3>Intraday price during a batch run</h3><div class="vz console" data-id="pri" data-h="300" data-label="Grouped bars: a 1,000-trade intraday book takes 0.22 s idle and 5.17 s during batch under FIFO, versus 0.30 s idle and 0.32 s during batch with priority streams"></div>
       <p class="cap">First-in-first-out queueing made intraday wait 5.17 s behind batch. Priority streams cut it to 0.32 s; batch pays 0.6 s.</p>
       <p class="ev">Evidence: <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/bench/results/priority.json">bench/results/priority.json</a>.</p></div>
     <div class="block"><h3>KEDA autoscaling, replayed</h3>
@@ -172,7 +186,7 @@ PYBIND11_MODULE(pricer_core, m, py::mod_gil_not_used())</pre></figure>
     </ul>
     <p class="ev">Evidence: <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/bench/results/chaos-run3.json">bench/results/chaos-run3.json</a>, windows computed from every recorded price request after each <code>SIGKILL cassandra-0</code>. The alert <code>CassandraReplicaDown</code> routed to the database team. The separate per-fault result files were not committed, so these windows come from the run itself.</p>
   </div>
-  <div class="block">
+  <div class="block" id="d-wb">
     <h3>The price log never blocks a price</h3>
     <div class="cols-2">
       <div class="vz console" data-id="wb" data-h="260" data-label="Bar chart: price latency p50 and p99 in milliseconds, synchronous log write 3.68 and 5.49, write-behind 1.03 and 1.65"></div>
@@ -184,25 +198,32 @@ PYBIND11_MODULE(pricer_core, m, py::mod_gil_not_used())</pre></figure>
 </div></section>
 
 <section class="sec alt" id="operate" aria-labelledby="h-op"><div class="container">
-  <div class="sec-head"><h2 id="h-op">Every injected failure was seen, routed to an owner and can be replayed here.</h2>
-  <p>Ten minutes, 11 faults: pods, workers, a Cassandra node, Redis and a whole Kubernetes node, under continuous load.</p></div>
+  <div class="sec-head"><h2 id="h-op">Each injected failure was detected, recovered and checked; one chaos-run loss is fixed but not re-run.</h2>
+  <p>Read each fault as failure, then detection, then recovery, then verification. Ten minutes, 11 faults: pods, workers, a Cassandra node, Redis and a whole Kubernetes node, under continuous load.</p></div>
   <div class="block">
     <h3>Chaos run, replayed</h3>
     <div class="vz console" data-id="chaos" data-h="340" data-label="Chart of a 10 minute chaos run: prices served per second, cumulative availability, numbered fault markers and six failed requests"></div>
     <div class="ctl"><label for="cscrub">Time</label><input type="range" id="cscrub" min="0" max="600" step="5" value="0"></div>
     <p class="read" id="cread" aria-live="polite"></p>
     <ol class="steps" id="flist"></ol>
-    <p class="ev">Evidence: <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/bench/results/chaos-run3.json">bench/results/chaos-run3.json</a>: 76,481 prices, 6 errors (99.992%), p99 553 ms; 29 of 30 books complete with 0 of 58,000 trades failed; 4 of 4 exposure runs identical. Run 2 was excluded as contaminated, as noted in <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/PERFORMANCE_REVIEW.md">PERFORMANCE_REVIEW.md</a>.</p>
+    <p class="ev">Evidence: <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/bench/results/chaos-run3.json">bench/results/chaos-run3.json</a>: 76,481 prices, 6 errors (99.992%), p99 553 ms; 29 of 30 books complete with 0 of 58,000 trades failed; 4 of 4 exposure runs identical. Run 2 is excluded because screenshots and Rancher crash-looping on the same CPUs skewed it (99.61%); see <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/PERFORMANCE_REVIEW.md">PERFORMANCE_REVIEW.md</a>.</p>
+    <div class="callout">
+      <p><b>Status of the 10-minute chaos run.</b> 99.992% of 76,481 prices were served through 11 faults, 0 of 58,000 trades failed, and 29 of 30 books completed. The lost book was a client connection reset while a node was down. The fix is an Idempotency-Key header plus <code>GET /jobs/{id}</code>, so the client can poll the same job instead of resending it.</p>
+      <ul>
+        <li><b>Tested:</b> the client-reset retry with the same key is in the siege suite (6 of 6 scenarios pass).</li>
+        <li><b>Needs re-verification:</b> the full chaos run has not been repeated since the fix, so 29 of 30 is the last measured result.</li>
+      </ul>
+    </div>
   </div>
   <div class="block">
-    <h3>Siege scorecard: recovered, detected, routed</h3>
+    <h3>Siege scorecard: failure, detection, recovery, verification</h3>
     <ul class="siege">
-      <li><h3>Client resets, retries with the same key</h3><p class="f">One job, one record; the retry returns the baseline result.</p><dl><dt>Recovered</dt><dd><span class="pass">pass</span> in 2.17 s</dd><dt>Detected</dt><dd>jobs_total{kind=portfolio}</dd><dt>Routed</dt><dd>core, BookFailureFastBurn</dd></dl></li>
-      <li><h3>Worker killed holding an exposure block</h3><p class="f">Block reclaimed; PFE bit-identical to the local run.</p><dl><dt>Recovered</dt><dd><span class="pass">pass</span> in 0.83 s</dd><dt>Detected</dt><dd>worker_reclaimed_total</dd><dt>Routed</dt><dd>core, TasksStuckPending</dd></dl></li>
-      <li><h3>Poisoned messages in the stream</h3><p class="f">Bad messages dropped or failed; the book still prices.</p><dl><dt>Recovered</dt><dd><span class="pass">pass</span> in 0.97 s</dd><dt>Detected</dt><dd>worker_tasks_total{outcome=poison}</dd><dt>Routed</dt><dd>quant, PoisonTrade</dd></dl></li>
-      <li><h3>Redis down for 0.4 s mid-book</h3><p class="f">API answers 503 with Retry-After; the retry completes the same job once.</p><dl><dt>Recovered</dt><dd><span class="pass">pass</span> in 2.16 s</dd><dt>Detected</dt><dd>worker_tasks_total{kind=portfolio}</dd><dt>Routed</dt><dd>platform, RedisCircuitOpen</dd></dl></li>
-      <li><h3>Worker killed mid-task</h3><p class="f">Another worker reclaims it; prices match the clean run.</p><dl><dt>Recovered</dt><dd><span class="pass">pass</span> in 0.98 s</dd><dt>Detected</dt><dd>worker_reclaimed_total</dd><dt>Routed</dt><dd>core, TasksStuckPending</dd></dl></li>
-      <li><h3>Duplicate delivery after a reclaim</h3><p class="f">A late identical write is harmless; a late error never replaces a good result.</p><dl><dt>Recovered</dt><dd><span class="pass">pass</span> in 1.15 s</dd><dt>Detected</dt><dd>worker_reclaimed_total</dd><dt>Routed</dt><dd>core, TasksStuckPending</dd></dl></li>
+      <li><h3>Client abandons its book requests mid-flight, then retries with the same key</h3><dl><dt>Detected by</dt><dd>alert BookFailureFastBurn; metrics jobs_total{kind=portfolio,mode=distributed,outcome=complete}</dd><dt>Recovery</dt><dd>owner core; 2.17 s</dd><dt>Verified</dt><dd><span class="pass">Tested: pass</span>. One job, one record; the retry returns the baseline result.</dd></dl></li>
+      <li><h3>Worker killed holding an exposure block</h3><dl><dt>Detected by</dt><dd>alert TasksStuckPending; metrics jobs_total{kind=exposure,mode=distributed,outcome=complete}; worker_reclaimed_total; worker_tasks_total{kind=exposure,outcome=ok}</dd><dt>Recovery</dt><dd>owner core; 0.83 s</dd><dt>Verified</dt><dd><span class="pass">Tested: pass</span>. Block reclaimed; PFE bit-identical to the local run.</dd></dl></li>
+      <li><h3>Malformed message, a crash-looping task and an unpriceable task in the stream</h3><dl><dt>Detected by</dt><dd>alert PoisonTrade; metrics worker_tasks_total{kind=bogus,outcome=error}; worker_tasks_total{kind=portfolio,outcome=poison}; worker_tasks_total{kind=unknown,outcome=malformed}</dd><dt>Recovery</dt><dd>owner quant; 0.97 s</dd><dt>Verified</dt><dd><span class="pass">Tested: pass</span>. Bad messages dropped or failed; the book still prices.</dd></dl></li>
+      <li><h3>Redis unreachable for 0.4 s with the book half done</h3><dl><dt>Detected by</dt><dd>alert RedisCircuitOpen; metrics worker_tasks_total{kind=portfolio,outcome=ok}</dd><dt>Recovery</dt><dd>owner platform; 2.16 s</dd><dt>Verified</dt><dd><span class="pass">Tested: pass</span>. API answers 503 with Retry-After; the retry completes the same job once.</dd></dl></li>
+      <li><h3>Worker killed while holding a claimed task</h3><dl><dt>Detected by</dt><dd>alert TasksStuckPending; metrics worker_reclaimed_total</dd><dt>Recovery</dt><dd>owner core; 0.98 s</dd><dt>Verified</dt><dd><span class="pass">Tested: pass</span>. Another worker reclaims it; prices match the clean run.</dd></dl></li>
+      <li><h3>Original worker finishes after its task was reclaimed and redone</h3><dl><dt>Detected by</dt><dd>alert TasksStuckPending; metrics worker_reclaimed_total; worker_tasks_total{kind=portfolio,outcome=error}</dd><dt>Recovery</dt><dd>owner core; 1.15 s</dd><dt>Verified</dt><dd><span class="pass">Tested: pass</span>. A late identical write is harmless; a late error never replaces a good result.</dd></dl></li>
     </ul>
     <p class="ev">Evidence: <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/bench/results/siege.json">bench/results/siege.json</a>, generated by <code>pytest tests/siege</code>: 6 passed, 0 failed.</p>
   </div>
