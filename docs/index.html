@@ -15,37 +15,37 @@
 <body>
 <nav class="sitenav" aria-label="Site"><div class="sitenav-in">
   <a class="mark" href="index.html" aria-label="Distributed Pricing Service, home"><span class="glyph" aria-hidden="true"></span><span class="wm">Pricing Service</span></a>
-  <ul><li><a href="index.html" aria-current="page">Home</a></li><li class="g"><a href="portal.html">Client hedge</a></li><li><a href="desk.html#predeal">Decision API</a></li><li class="g"><a href="platform.html">Library &amp; platform</a></li><li class="g"><a href="kit.html">Guided tour</a></li><li><a href="case-study.html">Case study</a></li></ul>
+  <ul><li><a href="index.html" aria-current="page">Home</a></li><li class="g"><a href="portal.html">Client hedge</a></li><li><a href="desk.html#predeal">Bank decision</a></li><li><a href="kit.html">60-second tour</a></li><li class="g"><a href="platform.html">Engineering evidence</a></li><li><a href="case-study.html">Case study</a></li></ul>
   <button class="theme-btn" type="button">Dark</button>
 </div></nav>
 <main>
 
 <header class="hero"><div class="container hero-top">
-  <h1>One engine, two products.</h1>
+  <h1>Price the hedge. Make the credit call.</h1>
   <div class="hero-grid">
     <div class="hero-copy">
-      <p class="lede">A credit decision for the desk, a C++ library for the quants.</p>
+      <p class="lede">One C++ pricing engine answers two people: a treasurer asking what an FX hedge costs, and the bank deciding whether to take it.</p>
       <div class="btns">
-        <a class="btn" href="kit.html">Take the guided tour</a>
+        <a class="btn" href="portal.html?n=5000000&amp;t=2">Walk through a $5M hedge</a>
         <a class="link" href="#demo">See both sides at once</a>
       </div>
     </div>
     <div class="ticket settle" id="hticket">
-      <a class="half client" href="portal.html">
-        <strong class="half-t">For the desk and its clients</strong>
+      <a class="half client" href="portal.html?n=5000000&amp;t=2">
+        <strong class="half-t">The treasurer&rsquo;s question</strong>
         <span class="big-rate"><span class="pip" id="h-fwd"><span class="sr">1.3459</span><span aria-hidden="true"><span class="pf">1.34</span><span class="pp">59</span></span></span></span>
-        <span class="cap">CAD per USD, forward, with the decision beside it</span>
-        <span class="verdict" id="h-verdict" data-v="approve_with_csa"><b id="h-vt">Approve with a CSA</b></span>
+        <span class="cap">What rate do I lock in, and what does collateral save me?</span>
         <span class="go">Price a hedge</span>
       </a>
       <div class="spine" aria-hidden="true"><b>one engine</b></div>
-      <a class="half engine console" href="platform.html">
-        <strong class="half-t">For the library team</strong>
+      <a class="half engine console" href="desk.html#predeal">
+        <strong class="half-t">The bank&rsquo;s question</strong>
+        <span class="verdict" id="h-verdict" data-v="approve"><b id="h-vt">Approve</b></span>
         <span class="mono-lines" id="h-call">POST /risk/predeal
 10,000 scenarios
 201 trades, 1.4 s first quote</span>
-        <span class="cap">A pybind11 library on Kubernetes, behind one JSON answer</span>
-        <span class="go">Open the platform</span>
+        <span class="cap">Can this trade fit the client&rsquo;s credit limit, and at what charge?</span>
+        <span class="go">See the decision</span>
       </a>
     </div>
   </div>
@@ -54,13 +54,13 @@
 <section class="sec" id="demo" aria-labelledby="demo-h"><div class="container">
   <div class="sec-head">
     <h2 id="demo-h">The same request, two views</h2>
-    <p>Pick a hedge. The client sees a decision; the library team sees the engine call behind it.</p>
+    <p>Pick a hedge. The treasurer sees a rate and a charge; the bank sees whether the trade fits the credit limit. Both come from one engine call.</p>
   </div>
   <form class="ctl" id="ctl" onsubmit="return false" aria-label="Choose a hedge">
     <fieldset><legend>Amount to sell, in USD</legend><div class="chips" id="cn">
       <label class="chip"><input type="radio" name="n" value="1000000"><span>1M</span></label>
-      <label class="chip"><input type="radio" name="n" value="5000000"><span>5M</span></label>
-      <label class="chip"><input type="radio" name="n" value="10000000" checked><span>10M</span></label>
+      <label class="chip"><input type="radio" name="n" value="5000000" checked><span>5M</span></label>
+      <label class="chip"><input type="radio" name="n" value="10000000"><span>10M</span></label>
       <label class="chip"><input type="radio" name="n" value="25000000"><span>25M</span></label>
     </div></fieldset>
     <fieldset><legend>Term</legend><div class="chips" id="ct">
@@ -74,8 +74,8 @@
   <div class="ticket" id="split">
     <article class="half client" aria-labelledby="pc-h">
       <header>
-        <h3 id="pc-h">For the desk and its clients</h3>
-        <p>A treasurer hedging FX gets a rate, a charge, the CSA saving and a decision.</p>
+        <h3 id="pc-h">What the treasurer sees</h3>
+        <p>A company selling USD forward gets a locked-in rate and the bank&rsquo;s credit charge, with and without collateral.</p>
       </header>
       <div class="big-rate"><span class="pip" id="fwd"><span class="sr">1.3459</span><span aria-hidden="true"><span class="pf">1.34</span><span class="pp">59</span></span></span></div>
       <p class="cap">CAD per USD, forward</p>
@@ -84,52 +84,64 @@
         <div class="bar"><div><span>With the proposed CSA</span><b><span id="on">0.8</span> bp a year</b></div><div class="track"><i class="on" id="onb" style="transform: scaleX(.139)"></i></div></div>
         <p class="saving">The CSA cuts the charge by <span id="cut">80%</span>.</p>
       </div>
-      <div class="verdict" id="verdict" data-v="approve_with_csa"><b id="vt">Approve with a CSA</b><span id="vr">Peak exposure is 115% of the credit limit without one, so the desk approves only with a CSA.</span></div>
-      <div class="acts"><a class="btn" href="portal.html">Price a hedge</a><a class="link" href="desk.html#predeal">The trader&rsquo;s decision API</a></div>
+      <div class="acts"><a class="btn" href="portal.html?n=5000000&amp;t=2" id="go-portal">Price this hedge</a></div>
     </article>
 
     <div class="spine" aria-hidden="true"><b>one engine</b></div>
 
     <article class="half engine console" aria-labelledby="pd-h">
       <header>
-        <h3 id="pd-h">For the library team</h3>
-        <p>A C++ pricing library behind pybind11, run as a service.</p>
+        <h3 id="pd-h">What the bank sees</h3>
+        <p>The credit desk checks the trade against the client&rsquo;s limit before agreeing to it.</p>
       </header>
+      <div class="verdict" id="verdict" data-v="approve"><b id="vt">Approve</b><span id="vr">Peak exposure uses 58% of the C$2.00M credit limit.</span></div>
       <ol class="path" id="path" aria-label="Request path">
         <li><b>API</b><span>POST /risk/predeal</span></li>
         <li><b>C++ engine</b><span>through pybind11</span></li>
         <li><b>Result</b><span>one JSON answer</span></li>
       </ol>
       <pre id="req" tabindex="0" aria-label="Request">{ "new_trade": { "kind": "forward",
-    "maturity": 2.0, "quantity": 10000 },
+    "maturity": 2.0, "quantity": 5000 },
   "credit_limit": 2000000, "n_scenarios": 10000 }</pre>
-      <pre id="resp" tabindex="0" aria-label="Response">{ "verdict": "approve_with_csa",
-  "peak_pfe_after": 2306113,
-  "cva_charge_running_bps": 0.76 }</pre>
+      <pre id="resp" tabindex="0" aria-label="Response">{ "verdict": "approve",
+  "peak_pfe_after": 1153056,
+  "cva_charge_running_bps": 3.74 }</pre>
       <dl class="facts">
         <div><dt>Scenarios per quote</dt><dd id="nsc">10,000</dd></div>
         <div><dt>Book size</dt><dd id="ntr">201 trades</dd></div>
         <div><dt>First quote</dt><dd id="fq">1.4 s</dd></div>
         <div><dt>Re-quote, book cached</dt><dd id="rq">0.7 s</dd></div>
       </dl>
-      <div class="acts"><a class="btn" href="platform.html">Open the platform</a><a class="link" href="case-study.html">Read the case study</a></div>
+      <div class="acts"><a class="btn" href="desk.html#predeal">Open the bank&rsquo;s decision</a><a class="link" href="platform.html">How the engine is built</a></div>
     </article>
   </div>
-  <p class="cap">Precomputed by the engine through POST /risk/predeal on synthetic data. Timings come from one laptop and a 201-trade book. Indicative, not a quote.</p>
+  <p class="cap">Precomputed, not live: the C++ engine priced every choice here through POST /risk/predeal on synthetic data, and a CI test re-runs a quote through the engine to check it still matches. Timings come from one laptop and a 201-trade book. Indicative, not a quote.</p>
 </div></section>
 
 <section class="sec alt" aria-labelledby="proof-h"><div class="container">
   <div class="sec-head">
     <h2 id="proof-h">Five numbers, each with its evidence</h2>
-    <p>Measured on a laptop. Open one to see where it comes from.</p>
+    <p>Measured on a laptop, on synthetic data. Open one to see where it comes from.</p>
   </div>
   <div class="rows">
-    <a href="case-study.html#reliability"><span class="v"><span class="pip" id="p-chaos"><span class="sr">99.992%</span><span aria-hidden="true"><span class="pf">99.9</span><span class="pp">92</span><span class="pu">%</span></span></span></span><span class="l" id="p-chaos-l">of 76,481 prices served through 11 faults</span><span class="e">Chaos run</span></a>
+    <a href="platform.html#h-op"><span class="v"><span class="pip" id="p-chaos"><span class="sr">99.992%</span><span aria-hidden="true"><span class="pf">99.9</span><span class="pp">92</span><span class="pu">%</span></span></span></span><span class="l" id="p-chaos-l">of 76,481 prices served through 11 faults</span><span class="e">Chaos run: one book lost, fixed, re-run pending</span></a>
     <a href="case-study.html#performance"><span class="v" id="p-pfe">1 to 8</span><span class="l">workers, exposure result identical</span><span class="e">Scaling test</span></a>
     <a href="portal.html"><span class="v" id="p-csa">87%</span><span class="l">off the credit charge, at best, with a CSA</span><span class="e">Client hedge</span></a>
     <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/SLO.md"><span class="v">299 of 300</span><span class="l">quotes shed in an overload burst</span><span class="e">Service levels</span></a>
     <a href="https://github.com/SukhmanAulakh18/distributed-pricing-service/blob/main/docs/OPERATIONS.md#release"><span class="v">Signed</span><span class="l">releases, scanned then signed by digest</span><span class="e">Release process</span></a>
   </div>
+</div></section>
+
+<section class="sec" id="terms" aria-labelledby="terms-h"><div class="container">
+  <div class="sec-head">
+    <h2 id="terms-h">Four terms, in plain English</h2>
+  </div>
+  <dl class="terms">
+    <div><dt>FX forward</dt><dd>A contract to exchange currency later at a rate fixed today, so a company knows what its USD will be worth.</dd></div>
+    <div><dt>CVA</dt><dd>Credit valuation adjustment: what the bank charges for the risk that the client defaults while the trade is open.</dd></div>
+    <div><dt>PFE</dt><dd>Potential future exposure: how much the client could owe the bank in a bad case, the 95th percentile of simulated outcomes.</dd></div>
+    <div><dt>CSA</dt><dd>Credit support annex: a collateral agreement where both sides post cash as the trade moves, which shrinks exposure and the charge.</dd></div>
+  </dl>
 </div></section>
 
 <section class="sec" aria-labelledby="how-h"><div class="container">
@@ -148,11 +160,17 @@
   </ol>
 </div></section>
 
-<section class="band console tour" aria-labelledby="tour-h"><div class="container">
+<section class="band console tour" id="demo-path" aria-labelledby="tour-h"><div class="container">
   <div class="sec-head">
-    <h2 id="tour-h">Five steps, two minutes, on a phone</h2>
-    <div class="block"><p>From a client&rsquo;s call to the decision, then the proof it survives failures.</p>
-    <div class="btns"><a class="btn" href="kit.html">Start the guided tour</a></div></div>
+    <h2 id="tour-h">The 60-second demo</h2>
+    <div class="block">
+      <ol class="demo-steps">
+        <li><a href="portal.html?n=5000000&amp;t=2">Price a $5M, 2-year hedge</a><span>Then tick the CSA box: the credit charge falls from 3.7 to 0.8 bp a year.</span></li>
+        <li><a href="desk.html#predeal">See the bank&rsquo;s decision</a><span>Press &ldquo;Needs CSA&rdquo; to watch a larger trade breach the limit.</span></li>
+        <li><a href="platform.html#h-op">See it survive failures</a><span>Each injected fault, how it was detected, and what is still to re-verify.</span></li>
+      </ol>
+      <div class="btns"><a class="btn" href="kit.html">Or take the five-step tour</a></div>
+    </div>
   </div>
 </div></section>
 
@@ -170,7 +188,7 @@
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var D = null, st = { n: '10000000', t: '2.0' }, first = true;
+  var D = null, st = { n: '5000000', t: '2.0' }, first = true;
   var ctl = $('ctl');
   function m(x) { return x >= 1e6 ? 'C$' + (x / 1e6).toFixed(2) + 'M' : 'C$' + Math.round(x / 1e3) + 'K'; }
   function grp(x) { return Math.round(x).toLocaleString('en-US'); }
@@ -206,6 +224,7 @@
     var q = Math.round(+st.n / 1000), mat = (+st.t).toFixed(1);
     $('req').textContent = '{ "new_trade": { "kind": "forward",\n    "maturity": ' + mat + ', "quantity": ' + q + ' },\n  "credit_limit": ' + D.limit_cad + ', "n_scenarios": ' + D.predeal.n_scenarios + ' }';
     $('resp').textContent = '{ "verdict": "' + c.verdict + '",\n  "peak_pfe_after": ' + Math.round(c.peak_pfe) + ',\n  "cva_charge_running_bps": ' + (csa ? c.on_bps : c.off_bps).toFixed(2) + ' }';
+    $('go-portal').href = 'portal.html?n=' + st.n + '&t=' + (+st.t);
     $('nsc').textContent = grp(D.predeal.n_scenarios); $('ntr').textContent = D.predeal.trades + ' trades';
     $('fq').textContent = (D.predeal.first_quote_ms / 1000).toFixed(1) + ' s'; $('rq').textContent = (D.predeal.requote_ms / 1000).toFixed(1) + ' s';
     $('h-call').textContent = 'POST /risk/predeal\n' + grp(D.predeal.n_scenarios) + ' scenarios\n' + D.predeal.trades + ' trades, ' + (D.predeal.first_quote_ms / 1000).toFixed(1) + ' s first quote';

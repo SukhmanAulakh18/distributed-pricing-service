@@ -97,17 +97,18 @@ details ul { margin: 0 0 var(--space-sm); padding-left: var(--space-lg); display
 <body>
 <nav class="sitenav" aria-label="Site"><div class="sitenav-in">
   <a class="mark" href="index.html" aria-label="Distributed Pricing Service, home"><span class="glyph" aria-hidden="true"></span><span class="wm">Pricing Service</span></a>
-  <ul><li><a href="index.html">Home</a></li><li class="g"><a href="portal.html" aria-current="page">Client hedge</a></li><li><a href="desk.html#predeal">Decision API</a></li><li class="g"><a href="platform.html">Library &amp; platform</a></li><li class="g"><a href="kit.html">Guided tour</a></li><li><a href="case-study.html">Case study</a></li></ul>
+  <ul><li><a href="index.html">Home</a></li><li class="g"><a href="portal.html" aria-current="page">Client hedge</a></li><li><a href="desk.html#predeal">Bank decision</a></li><li><a href="kit.html">60-second tour</a></li><li class="g"><a href="platform.html">Engineering evidence</a></li><li><a href="case-study.html">Case study</a></li></ul>
   <button class="theme-btn" type="button">Dark</button>
 </div></nav>
-<div class="banner" role="note" id="banner">Indicative. Synthetic market data and counterparty. Precomputed by the platform&rsquo;s C++ engine via POST /risk/predeal; not a quote.</div>
+<div class="banner" role="note" id="banner">Indicative. Synthetic market data and counterparty. Results are precomputed by the C++ engine through POST /risk/predeal; a CI test re-runs one cell through the real endpoint and checks it matches. Not a quote.</div>
 <main>
 <div class="container">
 <header class="phead">
   <div class="brandline" id="wordmark">Hedge portal</div>
   <h1 class="h1-s">Sell USD forward</h1>
   <p class="lede" id="tagline">Sell USD forward and see what the bank charges for your credit.</p>
-  <span class="badge check" id="badge" role="status">Precomputed by the engine (synthetic)</span>
+  <p class="sub">For a corporate treasurer hedging a USD receivable. The credit charge (CVA) is what the bank charges for the risk that you default.</p>
+  <span class="badge check" id="badge" role="status">Precomputed by the C++ engine (synthetic)</span>
 </header>
 
 <div class="layout">
@@ -126,7 +127,7 @@ details ul { margin: 0 0 var(--space-sm); padding-left: var(--space-lg); display
       <div class="pair"><input type="number" id="t-live" min="0.25" max="5" step="0.25" inputmode="decimal" aria-describedby="t-help"><input type="range" id="t-range" min="0.25" max="5" step="0.25" aria-label="Tenor slider, years"></div>
       <p class="help" id="t-help"></p></div>
   </div>
-  <label class="check"><input type="checkbox" id="csa"><span>I already have a collateral agreement (CSA)<small>Both sides post collateral as the trade moves. Zero threshold, 10 business day margin period.</small></span></label>
+  <label class="check"><input type="checkbox" id="csa"><span>I already have a collateral agreement (CSA)<small>Tick to see how collateral changes the charge. Both sides post collateral as the trade moves. Zero threshold, 10 business day margin period.</small></span></label>
   <p class="help" id="snap" aria-live="polite"></p>
 </form>
 <details id="runlive">
@@ -147,6 +148,7 @@ http://localhost:8001/portal.html?api=http://localhost:8000</pre>
 </section>
 </div>
 
+<p class="sub"><a href="desk.html#predeal">The bank&rsquo;s side of this quote: how the credit desk decides</a></p>
 <div class="more">
 <details>
   <summary>How this is priced</summary>
@@ -184,7 +186,7 @@ const fmtMn = (x) => String(+(x / 1e6).toFixed(2));
 const fmtUsd = (x) => "USD " + fmtMn(x) + " million";
 const fmtYrs = (t) => t + (t === 1 ? " year" : " years");
 const VERDICT = { approve: "Approve", approve_with_csa: "Approve with CSA", refer_to_credit: "Refer to credit" };
-const BANNER_PRE = "Indicative. Synthetic market data and counterparty. Precomputed by the platform’s C++ engine via POST /risk/predeal; not a quote.";
+const BANNER_PRE = "Indicative. Synthetic market data and counterparty. Results are precomputed by the C++ engine through POST /risk/predeal; a CI test re-runs one cell through the real endpoint and checks it matches. Not a quote.";
 const BANNER_LIVE = "Indicative. Synthetic market data and counterparty. Priced live by the platform’s C++ engine via POST /risk/predeal; not a quote.";
 const LIMITS = { nMin: 0.1, nMax: 25, tMin: 0.25, tMax: 5 };
 let data = null, api = null, mode = "pre", timer = 0, ctl = null, seq = 0;
@@ -384,7 +386,7 @@ function applyMode() {
   const live = mode === "live";
   $("pre-controls").hidden = live; $("live-controls").hidden = !live;
   $("banner").textContent = live ? BANNER_LIVE : BANNER_PRE;
-  if (live) badge("live", "Live: C++ engine at " + api); else badge("", "Precomputed by the engine (synthetic)");
+  if (live) badge("live", "Live: C++ engine at " + api); else badge("", "Precomputed by the C++ engine (synthetic)");
   $("how-last").innerHTML = live ? "Live mode sends the same request as <code>bench/bench_portal.py</code> to <code>POST /risk/predeal</code>; the page does no pricing." : "Every number is looked up from a grid produced by <code>bench/bench_portal.py</code> calling <code>POST /risk/predeal</code>; the page does no pricing.";
   syncControls();
 }

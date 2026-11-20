@@ -90,7 +90,7 @@ ul.tight { margin: 0; padding-left: var(--space-lg); display: grid; gap: var(--s
 <body>
 <nav class="sitenav" aria-label="Site"><div class="sitenav-in">
   <a class="mark" href="index.html" aria-label="Distributed Pricing Service, home"><span class="glyph" aria-hidden="true"></span><span class="wm">Pricing Service</span></a>
-  <ul><li><a href="index.html">Home</a></li><li class="g"><a href="portal.html">Client hedge</a></li><li><a href="desk.html#predeal" aria-current="page">Decision API</a></li><li class="g"><a href="platform.html">Library &amp; platform</a></li><li class="g"><a href="kit.html">Guided tour</a></li><li><a href="case-study.html">Case study</a></li></ul>
+  <ul><li><a href="index.html">Home</a></li><li class="g"><a href="portal.html">Client hedge</a></li><li><a href="desk.html#predeal" aria-current="page">Bank decision</a></li><li><a href="kit.html">60-second tour</a></li><li class="g"><a href="platform.html">Engineering evidence</a></li><li><a href="case-study.html">Case study</a></li></ul>
   <button class="theme-btn" type="button">Dark</button>
 </div></nav>
 <nav class="subnav" aria-label="Sections"><ul>
@@ -105,6 +105,7 @@ ul.tight { margin: 0; padding-left: var(--space-lg); display: grid; gap: var(--s
     <div class="hero-copy">
       <p class="lede">A corporate client asks for a 5-year equity hedge; the desk answers in seconds.</p>
       <div class="btns"><a class="btn" href="#predeal">Run a pre-deal check</a></div>
+      <p class="sub"><a href="portal.html?n=5000000&amp;t=2">The client&rsquo;s side: price the same hedge in the portal</a></p>
     </div>
     <ul class="strip console" id="tiles" aria-label="Four measured results"></ul>
   </div>
@@ -118,13 +119,13 @@ ul.tight { margin: 0; padding-left: var(--space-lg); display: grid; gap: var(--s
     <li><b>What will the client&rsquo;s possible default cost us</b> (CVA)?<span>CVA is the price tag on the client defaulting while they owe us money.</span></li>
     <li><b>Does a collateral agreement change the answer?</b><span>A CSA is the collateral agreement: when the trade moves in our favour, they hand over cash.</span></li>
   </ol>
-  <p class="note">Measured by <code>bench/bench_xva.py</code> on the author&rsquo;s laptop (<span id="mach"></span>), with a zero-threshold CSA and a 10-business-day margin period unless stated. Percentages are computed on this page from the raw benchmark file, on the same scenarios.</p>
+  <p class="note">Measured by <code>bench/bench_xva.py</code> on the author&rsquo;s laptop (<span id="mach"></span>), with a zero-threshold CSA and a 10-business-day margin period unless stated. The margin period of risk (MPoR) is the business days between the last collateral call and closing out a defaulted client. Percentages are computed on this page from the raw benchmark file, on the same scenarios.</p>
 </div></div></section>
 
 
 <section class="sec" id="predeal" aria-labelledby="pd-h"><div class="container">
   <div class="sh"><h2 id="pd-h">Pre-deal check: say yes, say yes with a CSA, or refer</h2>
-  <p class="note"><b>In-browser model for intuition; the real engine is the API call below.</b> Pick the client’s book, a new trade and the client’s credit limit on peak PFE. The page prices the book with and without the new trade on the same random scenarios, so the difference is the trade and not the noise. The CSA terms come from the sliders in <a href="#play">Negotiate the CSA</a>.</p></div>
+  <p class="note"><b>In-browser model (2,000 scenarios) for intuition, not the engine.</b> The engine&rsquo;s measured results are in <a href="#measured">Measured on the platform</a>, from <code>bench/results/xva.json</code>. Pick the client’s book, a new trade and the client’s credit limit on peak PFE. The page prices the book with and without the new trade on the same random scenarios, so the difference is the trade and not the noise. The CSA terms come from the sliders in <a href="#play">Negotiate the CSA</a>.</p></div>
   <div class="sim">
     <form class="panel fm" id="pdctl" onsubmit="return false" aria-label="Pre-deal inputs">
       <label>Client’s existing book
@@ -183,7 +184,7 @@ ul.tight { margin: 0; padding-left: var(--space-lg); display: grid; gap: var(--s
   <div class="sh"><h2 id="who-h">Who uses it</h2><p class="note">Five people ask this system different questions. Each one acts on a different number.</p></div>
   <div class="who">
     <div><h3>Trader</h3><p class="q"><b>Decision:</b> can I do this trade, and what do I charge on top of the market price?</p><p class="n">Driven by: incremental CVA of the new trade</p></div>
-    <div><h3>XVA desk</h3><p class="q"><b>Decision:</b> how much CVA and DVA P&amp;L do we carry, and what do we hedge?</p><p class="n">Driven by: CVA, DVA, bilateral CVA</p></div>
+    <div><h3>XVA desk</h3><p class="q"><b>Decision:</b> how much CVA and DVA P&amp;L do we carry (DVA is the value of our own default risk to the counterparty), and what do we hedge?</p><p class="n">Driven by: CVA, DVA, bilateral CVA</p></div>
     <div><h3>Credit risk</h3><p class="q"><b>Decision:</b> does the worst plausible exposure fit inside this client’s credit limit?</p><p class="n">Driven by: peak PFE at 95%</p></div>
     <div><h3>Collateral and legal</h3><p class="q"><b>Decision:</b> which CSA terms are worth negotiating: threshold, minimum transfer, margin period?</p><p class="n">Driven by: CVA and PFE with and without the CSA</p></div>
     <div><h3>SRE and platform</h3><p class="q"><b>Decision:</b> will the numbers arrive on time, and the same, even when nodes die?</p><p class="n">Driven by: latency, and identical results on any worker count</p></div>
@@ -192,7 +193,7 @@ ul.tight { margin: 0; padding-left: var(--space-lg); display: grid; gap: var(--s
 
 <section class="sec" id="play" aria-labelledby="play-h"><div class="container">
   <div class="sh"><h2 id="play-h">Negotiate the CSA</h2>
-  <p class="note"><b>In-browser model, same rules as the engine, 2,000 scenarios: for intuition. Platform results below are from the C++ engine.</b> One underlying (spot 100, 3% rate), a small book, monthly dates for five years, margin calls at each node. The book is a different one from the benchmark’s, so percentages will differ; the shape is the point.</p></div>
+  <p class="note"><b>In-browser model, same rules as the engine, 2,000 scenarios: for intuition. The C++ engine&rsquo;s measured results are in <a href="#measured">Measured on the platform</a>, from <code>bench/results/xva.json</code>.</b> One underlying (spot 100, 3% rate), a small book, monthly dates for five years, margin calls at each node. The book is a different one from the benchmark’s, so percentages will differ; the shape is the point.</p></div>
   <div class="sim">
     <form class="panel fm" id="ctl" onsubmit="return false" aria-label="Simulation inputs">
       <label>Book (what we hold against the client)
