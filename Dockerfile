@@ -1,5 +1,5 @@
 # Stage 1: compile the C++ library and pybind11 module into a wheel.
-FROM python:3.12.16-slim-bookworm AS build
+FROM python:3.15.1-slim-bookworm AS build
 RUN apt-get update && apt-get install -y --no-install-recommends g++ && rm -rf /var/lib/apt/lists/*
 WORKDIR /src
 COPY pyproject.toml ./
@@ -7,7 +7,7 @@ COPY core ./core
 RUN pip wheel --no-cache-dir --no-deps -w /wheels .
 
 # Stage 2: slim runtime with only the wheel and the service code.
-FROM python:3.12.16-slim-bookworm
+FROM python:3.15.1-slim-bookworm
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
