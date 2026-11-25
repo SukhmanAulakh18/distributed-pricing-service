@@ -8,5 +8,5 @@ httpx==0.28.1
 fakeredis==2.40.0
 matplotlib==3.11.2
 websocket-client==1.9.2
-ruff==0.17.5
+ruff==0.17.6
 pytest-cov==7.1.0
